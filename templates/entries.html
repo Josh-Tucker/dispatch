@@ -1,0 +1,19 @@
+<h1 class="rss_feed_title">{{ rss_feed.title }}</h1>
+{% for entry in rss_entries %}
+    <label class="rss_entry_label" id="rss_entry_label_{{ entry.id }}">
+        <input type="radio" class="rss_entry_button" hx-get="/entry/{{ entry.id }}" hx-target="#main" hx-push-url="true">
+        <div class="rss_entry_card" id="rss_entry_card_{{ entry.id}}">
+            <div class="rss_entry_date" id="rss_entry_date_{{ entry.id }}">
+                {% if entry.read %}
+                <object class="mark_read_icon" id="rss_entry_read_icon_{{ entry.id }}"
+                    data="{{ url_for('static', path='read.svg' ) }}" type="image/svg+xml">
+                </object>
+                {% endif%}
+                <small>{{ entry.published|entry_timedetla }}</small>
+
+            </div>
+            {{ entry.title }}
+        </div>
+
+    </label>
+    {% endfor %}

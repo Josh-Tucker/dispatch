@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Agbalumo&family=Noto+Sans&display=swap');
+
+:root {
+    --primary-colour: hsl(15, 96%, 57%);
+}
+
+body {
+    font-family: 'Noto Sans', 'Arial', 'sans-serif';
+    margin: 0 auto;
+    /* max-width: 50em; */
+    line-height: 1.5;
+    padding: 0em 2em;
+}
+
+h1, h2 {
+    margin-top: 1em;
+    padding-top: 1em;
+}
+
+a {
+    color: var(--primary-colour);
+}
+
+input.rss_feed_button, input.rss_entry_button {
+    display: none;
+}
+
+label.rss_entry_label {
+    margin: 20px;
+}
+
+.rss_feed_icon {
+    width: 1em;
+    height: 1em;
+}
+
+.rss_entry_title, .rss_feed_title, .rss_feeds_title {
+    font-size: 2em;
+    font-family: 'Agbalumo';
+}
+
+.rss_entry_content img, figure{
+  text-align: center;
+  margin: 0 auto;
+  max-width: 80%;
+  height: auto;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 1%;
+}

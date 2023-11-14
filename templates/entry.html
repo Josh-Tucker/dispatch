@@ -1,0 +1,5 @@
+
+<h1 class="rss_entry_title">{{ rss_entry.title }}</h1>
+<small class="rss_entry_info">{{ rss_entry.author }} | {{ rss_entry.published.strftime("%d %B %Y") }}</small>
+
+<div class="rss_entry_content">{{ rss_entry.content|safe }}</div>
