@@ -11,8 +11,18 @@
 </head>
 
 <body>
-    <div class="main" id="main">
-        <div hx-get="{{ endpoint }}" hx-trigger="load"></div>
+    <div class="main">
+
+        <div class="header">
+            <div class="feed_list_header"></div>
+            <div class="feed_entires_header"></div>
+            <div class="feed_entry_header"></div>
+        </div>
+        <div class="body">
+                <div class="feed_list" hx-get="/feeds" hx-trigger="load"></div>
+                <div class="feed_entries" id="feed_entries"></div>
+            <div class="feed_entry_container" id="feed_entry_container"></div>
+        </div>
     </div>
 </body>
 

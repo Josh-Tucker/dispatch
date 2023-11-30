@@ -14,7 +14,7 @@ templates.env.filters["entry_timedetla"] = format_time_delta_or_date
 
 def homepage(request):
     template = "index.html"
-    context = {"request": request, "endpoint": "feeds"}
+    context = {"request": request}
     return templates.TemplateResponse(template, context)
 
 

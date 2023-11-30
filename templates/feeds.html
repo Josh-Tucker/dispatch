@@ -1,6 +1,5 @@
-<h1 class="rss_feeds_title">Feeds</h1>
 <label>
-	<input type="radio" class="rss_feed_button" hx-get="/entries?next_page=0" hx-target="#main">
+	<input type="radio" class="rss_feed_button" hx-get="/entries?next_page=0" hx-target="#feed_entries">
 	<div class="rss_feed_card">
 		<span><img class="rss_feed_icon" src="{{ url_for('static', path='feed.svg' ) }}"></span>
 		<span>All Feeds</span>
@@ -9,8 +8,7 @@
 
 {% for feed in rss_feeds %}
 <label>
-	<input type="radio" class="rss_feed_button" hx-get="/entries/{{ feed.id }}?next_page=0" hx-target="#main"
-		hx-push-url="true">
+	<input type="radio" name="feed" class="rss_feed_button" hx-get="/entries/{{ feed.id }}?next_page=0" hx-target="#feed_entries" hx-swap="scroll:top">
 
 	<div class="rss_feed_card">
 		<span> <img class="rss_feed_icon" src="{{ feed.favicon_url }}"></span>

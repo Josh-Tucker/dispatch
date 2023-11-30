@@ -1,0 +1,7 @@
+feedparser==6.0.10
+opml==0.5
+Requests==2.31.0
+starlette==0.31.1
+multipart==0.2.4
+bs4==0.0.1
+uvicorn==0.23.2
