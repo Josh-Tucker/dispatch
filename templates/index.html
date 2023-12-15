@@ -6,24 +6,28 @@
     <title>MONSTER</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='/images/favicon.ico') }}">
     <script src="https://unpkg.com/htmx.org/dist/htmx.js"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/sse.js"></script>
     <script src="//unpkg.com/alpinejs" defer></script>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
 </head>
 
-<body>
-    <div class="main">
+<body >
+    <div class="main" x-data="{ columns: '', feed_list_show: true, entry_list_show: true, entry_container_show: true}" x-init="ismobile = (window.innerWidth < 768); columns = ismobile ? '1fr' : '1fr 1fr 8fr'">
 
         <div class="header">
-            <div class="feed_list_header"></div>
-            <div class="feed_entires_header"></div>
+            <div class="feed_list_header">
+                <button class="refresh_button" sse-connect="/update_feed" sse-swap="message">refresh</button>
+                <button class="close_button" @click="if (ismobile) {if (entry_list_show) {entry_list_show = false; feed_list_show = true};if (entry_container_show) { entry_container_show = false; entry_list_show = true}};">close</button>
+            </div>
+            <div class="feed_entires_header">
+            </div>
             <div class="feed_entry_header"></div>
         </div>
-        <div class="body">
-                <div class="feed_list" hx-get="/feeds" hx-trigger="load"></div>
-                <div class="feed_entries" id="feed_entries"></div>
-            <div class="feed_entry_container" id="feed_entry_container"></div>
+        <div class="body" x-bind:style="{ gridTemplateColumns: columns }" >
+            <div class="feed_list" id="feed_list" hx-get="/feeds" hx-trigger="load" x-show="feed_list_show"></div>
+            <div class="feed_entries" id="feed_entries" x-show="entry_list_show"></div>
+            <div class="feed_entry_container" id="feed_entry_container" x-show="entry_container_show"></div>
         </div>
     </div>
 </body>
-
 </html>

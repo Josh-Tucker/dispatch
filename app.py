@@ -1,8 +1,11 @@
+import asyncio
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.routing import Route, Mount
+from sse_starlette.sse import EventSourceResponse
+
 from starlette.templating import Jinja2Templates
 from views import *
 import uvicorn
@@ -23,6 +26,22 @@ def feeds(request):
     context = {"request": request, "rss_feeds": get_all_feeds()}
     return templates.TemplateResponse(template, context)
 
+
+async def numbers(minimum, maximum):
+    for i in range(minimum, maximum + 1):
+        await asyncio.sleep(0.9)
+        yield dict(data=i)
+
+async def update_all_feeds(request):
+    generator = numbers(1, 5)
+    lastfeed = add_rss_entries_for_all_feeds()
+    return EventSourceResponse(lastfeed)
+
+def update_feed(request):
+    template = "feeds.html"
+    udd_rss_entries_for_all_feeds()
+    context = {"request": request}
+    return HTTPResponse()
 
 def entries(request):
     template = "entries.html"
@@ -80,6 +99,8 @@ routes = [
     Route("/feeds", feeds),
     Route("/entries", all_entries),
     Route("/entries/{feed_id}", entries),
+    Route("/update_feed", update_all_feeds),
+    Route("/update_feed/{feed_id}", update_feed),
     Route("/entry/{entry_id}", entry),
     Mount("/static", app=StaticFiles(directory="static"), name="static"),
 ]
