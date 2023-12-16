@@ -77,7 +77,7 @@ def add_feed(feed_url):
     print(f"New feed added with URL '{feed_url}'.")
 
 
-async def add_rss_entries(feed_id):
+def add_rss_entries(feed_id):
     session = Session()
     rss_feed = session.query(RssFeed).filter_by(id=feed_id).first()
 
@@ -117,15 +117,14 @@ async def add_rss_entries(feed_id):
     session.close()
 
 
-async def add_rss_entries_for_all_feeds():
+def add_rss_entries_for_all_feeds():
     print("adding feed items")
     session = Session()
     feeds = session.query(RssFeed).all()
 
     for feed in feeds:
         print("adding entries for" + feed.title)
-        await add_rss_entries(feed.id)
-        yield dict(data=feed.title)
+        add_rss_entries(feed.id)
 
 
 def get_all_feeds():
@@ -137,7 +136,7 @@ def get_all_feeds():
 
 def get_all_feed_entries():
     session = Session()
-    entries = session.query(RssEntry).all()
+    entries = session.query(RssEntry).order_by(RssEntry.published.desc()).all()
     session.close()
     return entries
 
@@ -158,7 +157,7 @@ def get_feed_entry_by_id(entry_id):
 
 def get_feed_entries_by_feed_id(feed_id):
     session = Session()
-    entries = session.query(RssEntry).filter_by(feed_id=feed_id).all()
+    entries = session.query(RssEntry).filter_by(feed_id=feed_id).order_by(RssEntry.published.desc()).all()
     session.close()
     return entries
 

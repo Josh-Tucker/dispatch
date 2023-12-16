@@ -6,6 +6,7 @@
 :root {
     --primary-colour: hsl(15, 96%, 57%);
     --entry-content-colour: hsl(36, 5%, 21%);
+    --background-colour: white;
 }
 
 body {
@@ -25,22 +26,27 @@ div {
     padding: 5px;
 }
 
-.refresh_button {
+.refresh_button, .back_button {
     display: inline-block;
     padding: 5px 5px;
-    font-size: 16px;
     text-align: center;
     text-decoration: none;
-    border: 2px solid #333;
-    color: #333;
-    background-color: #fff;
-    cursor: pointer;
-    transition: background-color 0.3s, color 0.3s;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--background-colour);
 }
 
-.refresh_button:hover {
-    background-color: #333;
-    color: #fff;
+.refresh_button.htmx-request {
+  animation: loading-spinner 1s linear infinite;
+}
+
+@keyframes loading-spinner {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
 }
 
 /* PAGE FORMATTING */
@@ -195,6 +201,7 @@ input.rss_entry_button {
 .rss_entry_content {
     font-family: 'PT Serif', serif;
     font-size: clamp(18px, 1.5vw, 21px);
+    padding-top: 20px;
 }
 
 .rss_entry_content img,

@@ -1,9 +1,9 @@
 <label class="rss_feed_label">
-	<input type="radio" class="rss_feed_button" hx-get="/entries?next_page=0" hx-target="#feed_entries"
+	<input type="radio" name="feed" class="rss_feed_button" hx-get="/entries/all?next_page=0" hx-target="#feed_entries"
 	@click="feed_list_show = (ismobile) ? false : true">
 
 	<div class="rss_feed_card">
-		<span><img class="rss_feed_icon" src="{{ url_for('static', path='feed.svg' ) }}"></span>
+		<span><img class="rss_feed_icon" src="{{ url_for('static', path='/svg/bx-rss.svg' ) }}"></span>
 		<span>All Feeds</span>
 	</div>
 </label>
