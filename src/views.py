@@ -129,7 +129,8 @@ def add_rss_entries_for_all_feeds():
 
 def get_all_feeds():
     session = Session()
-    feeds = session.query(RssFeed).all()
+    all_feed = RssFeed(id='all', title='All Feeds')
+    feeds = [all_feed] + session.query(RssFeed).all()
     session.close()
     return feeds
 

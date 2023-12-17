@@ -1,0 +1,12 @@
+<button class="back_button"
+        x-show="ismobile" 
+        @click="if (ismobile) {
+                    if (entry_list_show) {
+                        entry_list_show = false;
+                        feed_list_show = true};
+                    if (entry_container_show) { 
+                        entry_container_show = false;
+                        entry_list_show = true}
+                };">
+        <img src="{{ url_for('static', path='/svg/bx-chevron-left.svg') }}">
+</button>
