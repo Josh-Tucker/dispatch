@@ -4,8 +4,6 @@ from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.routing import Route, Mount
-from sse_starlette.sse import EventSourceResponse
-
 from starlette.templating import Jinja2Templates
 from views import *
 import uvicorn
