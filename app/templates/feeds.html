@@ -1,16 +1,23 @@
 {% for feed in rss_feeds %}
 <label class="rss_feed_label">
-	<input type="radio" name="feed" class="rss_feed_button" hx-get="/entries/{{ feed.id }}?next_page=0"
-		hx-target="#feed_entries" hx-swap="scroll:top"
-		@click="feed_list_show = (ismobile) ? false : true; entry_list_show = true;">
+  <input type="radio" name="feed" class="rss_feed_button" hx-get="/entries/{{ feed.id }}?next_page=0"
+    hx-target="#feed_entries" hx-swap="scroll:top"
+    @click="feed_list_show = (ismobile) ? false : true; entry_list_show = true;">
 
-	<div class="rss_feed_card">
-		{% if not feed.favicon_url %}
-		<span><img class="rss_feed_icon" src="{{ url_for('static', path='/svg/bx-rss.svg' ) }}"></span>
-		{% else %}
-		<span> <img class="rss_feed_icon" src="{{ feed.favicon_url }}"></span>
-		{% endif %}
-		<span class="rss_feed_card_title">{{ feed.title }}</span>
-	</div>
+  <div class="rss_feed_card">
+    <div class="rss_feed_card_left">
+      {% if not feed.favicon_url %}
+      <span><img class="rss_feed_icon" src="{{ url_for('static', path='/svg/bx-rss.svg' ) }}"></span>
+      {% else %}
+        <span><img class="rss_feed_icon" src="{{ feed.favicon_url }}"></span>
+      {% endif %}
+      <span class="rss_feed_card_title">{{ feed.title }}</span>
+    </div>
+
+    <div class="rss_feed_card_right"  x-data="{ unread_count: '{{ feed.unread_count }}' }">
+      <!-- Replace 'X' with the actual count of unread items -->
+      <span class="unread_items_count" x-text="unread_count"></span>
+    </div>
+  </div>
 </label>
 {% endfor %}

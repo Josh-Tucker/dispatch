@@ -8,7 +8,7 @@ from model import *
 from dateutil import parser
 import dateutil.parser
 from datetime import datetime, timedelta
-
+from sqlalchemy import desc
 
 def add_feeds_from_opml(opml_file):
     try:
@@ -44,7 +44,7 @@ def get_favicon_url(feed_url):
     else:
         icon_href = icon_link.get("href")
         if not icon_href.startswith(('http://', 'https://')):
-            icon_href = urljoin(feed_url, icon_href) 
+            icon_href = urljoin(feed_url, icon_href)
         return icon_href
 
 def add_feed(feed_url):
@@ -129,8 +129,14 @@ def add_rss_entries_for_all_feeds():
 
 def get_all_feeds():
     session = Session()
+    total_unread_count = session.query(func.count(RssEntry.id)).filter(RssEntry.read == False).scalar()
+    print(total_unread_count)
     all_feed = RssFeed(id='all', title='All Feeds')
-    feeds = [all_feed] + session.query(RssFeed).all()
+    feeds = session.query(RssFeed).all()
+    for feed in feeds:
+        feed.unread_count = feed.get_unread_count(session)
+    all_feed.unread_count = total_unread_count
+    feeds = [all_feed] + feeds
     session.close()
     return feeds
 
@@ -151,16 +157,31 @@ def get_feed_by_id(feed_id):
 
 def get_feed_entry_by_id(entry_id):
     session = Session()
+
     entry = session.query(RssEntry).filter_by(id=entry_id).first()
+    entry.read = True
+    session.commit()
     session.close()
+    entry = session.query(RssEntry).filter_by(id=entry_id).first()
     return entry
 
 
-def get_feed_entries_by_feed_id(feed_id):
+def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10):
     session = Session()
-    entries = session.query(RssEntry).filter_by(feed_id=feed_id).order_by(RssEntry.published.desc()).all()
+
+    query = session.query(RssEntry)
+
+    if feed_id == "all":
+        query = query.order_by(desc(RssEntry.published)).limit(entries_per_page).offset((page - 1) * entries_per_page)
+
+    else:
+        query = query.filter_by(feed_id=feed_id).order_by(desc(RssEntry.published)).limit(entries_per_page).offset((page - 1) * entries_per_page)
+
+    entries = query.all()
+
     session.close()
     return entries
+
 
 
 def mark_rss_entry_as_read(entry_id, read_status=True):

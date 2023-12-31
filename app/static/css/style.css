@@ -3,6 +3,8 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&display=swap');
 
+[x-cloak] { display: none !important; }
+
 :root {
     --primary-colour: hsl(15, 96%, 57%);
     --entry-content-colour: hsl(36, 5%, 21%);
@@ -26,27 +28,36 @@ div {
     padding: 5px;
 }
 
-.refresh_button, .back_button {
+.refresh_button,
+.back_button {
     display: inline-block;
     padding: 5px 5px;
     text-align: center;
     text-decoration: none;
     border: none;
+    margin-top: 3px;
+    margin-left: 3px;
     border-radius: 50%;
     background-color: var(--background-colour);
 }
 
+.refresh_button:hover,
+.back_button:hover {
+    opacity: 70%;
+}
+
 .refresh_button.htmx-request {
-  animation: loading-spinner 1s linear infinite;
+    animation: loading-spinner 1s linear infinite;
 }
 
 @keyframes loading-spinner {
-  from {
-    transform: rotate(360deg);
-  }
-  to {
-    transform: rotate(0deg);
-  }
+    from {
+        transform: rotate(360deg);
+    }
+
+    to {
+        transform: rotate(0deg);
+    }
 }
 
 /* PAGE FORMATTING */
@@ -110,20 +121,39 @@ input.rss_feed_button {
 .rss_feed_icon {
     width: 1em;
     height: 1em;
+    margin-right: 5px;
 }
 
 .rss_feed_card {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-
     border-radius: 2%;
     margin-left: 5px;
     margin-right: 8px;
     margin-top: 2px;
     margin-bottom: 8px;
-
     padding: 5px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+}
+
+.rss_feed_card_left {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.rss_feed_card_right {
+    text-align: right;
+    opacity: 70%;
+    font-size: 14px;
+}
+
+.unread_items_count {
+    padding: 4px 8px;
+    border-radius: 50%;
+    /* Make it a circle */
 }
 
 .rss_feed_card:hover {
@@ -136,9 +166,7 @@ input.rss_feed_button {
 
 
 /* ENTRIES LIST */
-.rss_feeds_title {
-    font-size: 1.2em;
-}
+
 
 input.rss_entry_button {
     display: none;
@@ -165,6 +193,17 @@ input.rss_entry_button {
     padding: 5px;
 }
 
+.rss_entry_info {
+    display: grid;
+    grid-template-columns: 1fr auto;
+}
+
+.mark_read_icon {
+    width: 16px; /* Adjust the width of the icon as needed */
+    height: 16px; /* Adjust the height of the icon as needed */
+    margin-right: 5px; /* Adjust the margin as needed */
+}
+
 .rss_entry_card:hover {
     background-color: lightgray;
 }
@@ -186,22 +225,55 @@ input.rss_entry_button {
 .feed_entry_container {
     padding: 20px;
     color: var(--entry-content-colour);
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+.feed_entry_container::-webkit-scrollbar {
+    width: 0.1em;
+}
+
+.feed_entry_container::-webkit-scrollbar-thumb {
+    background-color: transparent;
+}
+
+.rss_entry_title_container {
+    max-width: 90ch;
+    margin: 0 auto;
+    margin-bottom: 24px;
 }
 
 .rss_entry_title {
     font-family: 'Playfair Display', serif;
     font-size: 1.5em;
-}
-
-.rss_entry_title {
+    line-height: 1.05;
     text-decoration: none;
     color: inherit;
+}
+
+.rss_entry_title h1 {
+    margin-bottom: 8px;
+}
+
+.rss_entry_info {
+    opacity: 0.75;
+    font-weight: bold;
+    margin-top: 0;
+    margin-bottom: 1px;
 }
 
 .rss_entry_content {
     font-family: 'PT Serif', serif;
     font-size: clamp(18px, 1.5vw, 21px);
     padding-top: 20px;
+    max-width: 72ch;
+    margin: 0 auto;
+    text-align: left;
+    line-height: 28px;
+}
+
+.rss_entry_content p {
+    margin-bottom: 20px;
 }
 
 .rss_entry_content img,
@@ -218,13 +290,6 @@ figure {
 
 a {
     color: var(--primary-colour);
-}
-
-a[target="_blank"]::after {
-    content: "\279A";
-    display: inline-block;
-    margin-left: 0.2em;
-    font-size: 0.8em;
 }
 
 /* -------------------------- */

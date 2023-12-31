@@ -17,7 +17,6 @@
         <div class="header">
 
             <div>{% include 'refresh_button.html' %}</div>
-            <div></div>
             <div>{% include 'back_button.html' %}</div>
 
 
@@ -28,10 +27,10 @@
             <div class="feed_list" id="feed_list" hx-get="/feeds" hx-trigger="load" x-show="feed_list_show"
                 x-transition.delay.50ms></div>
 
-            <div class="feed_entries" id="feed_entries" x-show="entry_list_show" x-transition.delay.50ms></div>
+            <div class="feed_entries" id="feed_entries" x-show="entry_list_show" x-transition.opacity></div>
 
             <div class="feed_entry_container" id="feed_entry_container" x-show="entry_container_show"
-                x-transition.delay.50ms></div>
+                x-transition.opacity></div>
         </div>
 
     </div>

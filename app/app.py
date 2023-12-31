@@ -2,6 +2,7 @@ import asyncio
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
+from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
 from starlette.routing import Route, Mount
 from starlette.templating import Jinja2Templates
@@ -30,7 +31,7 @@ def update_feed(request):
     print(feed_id)
     if feed_id == "all":
         add_rss_entries_for_all_feeds()
-    else: 
+    else:
         add_rss_entries("feed_id")
     context = {"request": request}
     return templates.TemplateResponse(template, context)
@@ -38,13 +39,16 @@ def update_feed(request):
 def entries(request):
     template = "entries.html"
     feed_id = request.path_params["feed_id"]
+    page = int(request.query_params.get('page', default=0))
+    next_page = page + 1
+    entries = get_feed_entries_by_feed_id(feed_id, page)
+    if len(entries) == 0:
+        return Response()
     if feed_id == "all":
-        entries = get_all_feed_entries()
         feed = {"title": "All Feeds"}
     else:
-        entries = get_feed_entries_by_feed_id(feed_id)
         feed = get_feed_by_id(feed_id)
-    context = {"request": request, "rss_entries": entries, "rss_feed": feed}
+    context = {"request": request, "rss_entries": entries, "rss_feed": feed, "next_page":next_page}
     return templates.TemplateResponse(template, context)
 
 

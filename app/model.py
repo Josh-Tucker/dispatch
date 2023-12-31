@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey, Boolean, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import datetime
@@ -18,6 +18,9 @@ class RssFeed(Base):
     last_updated = Column(DateTime, default=datetime.datetime.utcnow)
 
     entries = relationship("RssEntry", back_populates="feed")
+
+    def get_unread_count(self, session):
+        return session.query(func.count(RssEntry.id)).filter_by(feed_id=self.id, read=False).scalar()
 
 class RssEntry(Base):
     __tablename__ = 'rss_entries'

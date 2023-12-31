@@ -1,6 +1,8 @@
-<a href="{{ rss_entry.link }}" target="_blank" class="rss_entry_title">
-    <h1>{{ rss_entry.title }}</h1>
-</a>
-<small class="rss_entry_info">{{ rss_entry.author }} | {{ rss_entry.published.strftime("%d %B %Y") }}</small>
-
+<div class="rss_entry_title_container">
+    <a href="{{ rss_entry.link }}" target="_blank" class="rss_entry_title">
+        <h1>{{ rss_entry.title }}</h1>
+    </a>
+    <p class="rss_entry_info"><small>{{ rss_entry.author }}</small></p>
+    <p class="rss_entry_info"><small>{{ rss_entry.published.strftime("%d %B %Y") }}</small></p>
+</div>
 <div class="rss_entry_content">{{ rss_entry.content|safe }}</div>
