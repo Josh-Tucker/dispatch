@@ -166,7 +166,7 @@ def get_feed_entry_by_id(entry_id):
     return entry
 
 
-def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10):
+def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=20):
     session = Session()
 
     query = session.query(RssEntry)

@@ -45,7 +45,7 @@ def entries(request):
     if len(entries) == 0:
         return Response()
     if feed_id == "all":
-        feed = {"title": "All Feeds"}
+        feed = {"title": "All Feeds", "id": "all"}
     else:
         feed = get_feed_by_id(feed_id)
     context = {"request": request, "rss_entries": entries, "rss_feed": feed, "next_page":next_page}
