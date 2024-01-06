@@ -55,15 +55,12 @@ div {
 .refresh_button,
 .back_button {
     display: inline-block;
-    padding: 5px 5px;
     text-align: center;
     text-decoration: none;
-    border: none;
-    margin-top: 3px;
+    border: solid;
     margin-left: 3px;
-    border-radius: 50%;
     background-color: rgba(255, 0, 0, 0);
-    border-color: rgba(255, 0, 0, 0);
+    border-color: #0000;
 }
 
 .refresh_button:hover,
@@ -92,7 +89,7 @@ div {
     border: 0px;
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr 20fr;
+    grid-template-rows: 30px 1fr;
     height: 100vh;
     width: 100vw;
 }
@@ -106,8 +103,6 @@ div {
 
 .body {
     display: grid;
-    /* grid-template-columns: 1fr 1fr 8fr; */
-    /* grid-template-columns: 1fr; */
     overflow: hidden;
     border-top: thin var(--border-colour) solid;
 }
@@ -128,7 +123,6 @@ div {
 /* FEED LIST */
 .rss_feed_title {
     font-size: 1.2em;
-    /* font-family: 'Agbalumo'; */
 }
 
 input.rss_feed_button {
@@ -172,6 +166,7 @@ input.rss_feed_button {
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
+    font-size: 14px;
 }
 
 .rss_feed_card_left {
@@ -234,6 +229,7 @@ input.rss_entry_button {
 
 .rss_entry_card {
     text-overflow: ellipsis;
+    font-size: 14px;
 
     border-radius: 2%;
     margin-left: 5px;
@@ -250,8 +246,8 @@ input.rss_entry_button {
 }
 
 .mark_read_icon {
-    width: 16px; /* Adjust the width of the icon as needed */
-    height: 16px; /* Adjust the height of the icon as needed */
+    width: 14px; /* Adjust the width of the icon as needed */
+    height: 14px; /* Adjust the height of the icon as needed */
     margin-right: 5px; /* Adjust the margin as needed */
 }
 
@@ -289,6 +285,11 @@ input.rss_entry_button {
     background-color: transparent;
 }
 
+.rss_entry_feed_title {
+font-size: small;
+opacity: 0.75;
+}
+
 .rss_entry_title_container {
     max-width: 90ch;
     margin: 0 auto;
@@ -305,6 +306,7 @@ input.rss_entry_button {
 
 .rss_entry_title h1 {
     margin-bottom: 8px;
+    margin-top: 4px;
 }
 
 .rss_entry_info {
@@ -322,9 +324,6 @@ input.rss_entry_button {
     margin: 0 auto;
     text-align: left;
     line-height: 28px;
-
-   
-
 }
 
 .rss_entry_content p {
@@ -341,6 +340,41 @@ figure {
     margin-left: auto;
     margin-right: auto;
     border-radius: 1%;
+}
+
+.rss_entry_content figcaption {
+    font-size: small;
+    line-height: 1.4em;
+    margin-top: 4px;
+}
+
+.rss_entry_content code {
+    font-size: small;
+}
+
+pre {
+    background-color: var(--background-colour);
+}
+
+/* Code syntax highlighting styles (using Prism.js for example) */
+pre code {
+  display: block;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Line numbers for code blocks (optional) */
+pre code::before {
+  content: attr(data-line) "\00a0";
+  display: inline-block;
+  margin-right: 10px;
+}
+
+/* Inline code styles */
+code {
+  padding: 2px 5px;
+  font-family: 'Courier New', monospace;
 }
 
 a {

@@ -2,6 +2,7 @@
 <opml version="1.1">
 <head><title>subscriptions</title></head>
 <body>
+  <outline type="rss" text="A Collection of Unmitigated Pedantry" xmlUrl="https://acoup.blog/rss" htmlUrl="https://acoup.blog"/>
   <outline type="rss" text="anhvn" xmlUrl="https://anhvn.com/feed.xml" htmlUrl="https://anhvn.com/"/>
   <outline type="rss" text="Articles Archive | The Latecomer" xmlUrl="https://latecomermag.com/feed/article" htmlUrl="https://latecomermag.com/article/"/>
   <outline type="rss" text="Astral Codex Ten" xmlUrl="https://astralcodexten.substack.com/feed" htmlUrl="https://astralcodexten.substack.com/feed"/>
@@ -9,6 +10,7 @@
   <outline type="rss" text="brr" xmlUrl="https://brr.fyi/feed.xml" htmlUrl="https://brr.fyi/feed.xml"/>
   <outline type="rss" text="Chris James - Software developer" xmlUrl="https://quii.dev/rss" htmlUrl="https://quii.dev"/>
   <outline type="rss" text="computers are bad" xmlUrl="https://computer.rip/rss.xml" htmlUrl="https://computer.rip"/>
+  <outline type="rss" text="Daniel Immke&#39;s Blog Posts" xmlUrl="https://daniel.do/rss.xml" htmlUrl="https://daniel.do"/>
   <outline type="rss" text="fabiensanglard.net" xmlUrl="https://fabiensanglard.net/rss.xml" htmlUrl="https://fabiensanglard.net"/>
   <outline type="rss" text="flak" xmlUrl="https://flak.tedunangst.com/rss" htmlUrl="https://flak.tedunangst.com/"/>
   <outline type="rss" text="Hacker News: Front Page" xmlUrl="https://hnrss.org/frontpage" htmlUrl="https://hnrss.org/frontpage"/>
@@ -17,14 +19,19 @@
   <outline type="rss" text="Lobsters" xmlUrl="https://lobste.rs/rss" htmlUrl="https://lobste.rs/rss"/>
   <outline type="rss" text="localghost.dev" xmlUrl="https://localghost.dev/feed.xml" htmlUrl="https://localghost.dev/"/>
   <outline type="rss" text="LOW←TECH MAGAZINE" xmlUrl="https://solar.lowtechmagazine.com/feeds/all-en.atom.xml" htmlUrl="https://solar.lowtechmagazine.com/"/>
+  <outline type="rss" text="Ludicity" xmlUrl="https://ludic.mataroa.blog/rss/" htmlUrl="https://ludic.mataroa.blog/rss/"/>
   <outline type="rss" text="Medieval news media and the writing of the Siege of Rhodes, 1480" xmlUrl="https://rhodes1480.wordpress.com/rss" htmlUrl="https://rhodes1480.wordpress.com/rss"/>
   <outline type="rss" text="Never be clever." xmlUrl="https://www.neverbeclever.org/rss/" htmlUrl="https://www.neverbeclever.org/rss/"/>
   <outline type="rss" text="ntietz.com blog" xmlUrl="https://ntietz.com/atom.xml" htmlUrl="https://ntietz.com"/>
+  <outline type="rss" text="Paged Out! Magazine" xmlUrl="https://pagedout.institute/rss.xml" htmlUrl="https://pagedout.institute/rss.xml"/>
+  <outline type="rss" text="Patrick Dubroy&#39;s blog" xmlUrl="https://dubroy.com/blog/rss.xml" htmlUrl="https://dubroy.com/blog"/>
   <outline type="rss" text="Patrick Weaver: Blog" xmlUrl="https://www.patrickweaver.net/rss.xml" htmlUrl="https://patrickweaver.net/blog/"/>
   <outline type="rss" text="Rach Smith&#39;s digital garden" xmlUrl="https://rachsmith.com/rss/" htmlUrl="https://rachsmith.com/"/>
   <outline type="rss" text="selfhosted - Local" xmlUrl="https://selfhosted.forum/feeds/local.xml?sort=Active" htmlUrl="https://selfhosted.forum"/>
+  <outline type="rss" text="Sympolymathesy, by Chris Krycho" xmlUrl="https://v5.chriskrycho.com/feed.xml" htmlUrl="https://v5.chriskrycho.com/"/>
   <outline type="rss" text="The Fell Types" xmlUrl="https://iginomarini.com/fell/feed/" htmlUrl="https://iginomarini.com/fell"/>
   <outline type="rss" text="The Law and Policy Blog" xmlUrl="http://davidallengreen.com/feed/" htmlUrl="https://davidallengreen.com"/>
+  <outline type="rss" text="The Whimsical Web" xmlUrl="https://whimsical.club/feed.xml" htmlUrl="https://whimsical.club"/>
   <outline type="rss" text="webcurios" xmlUrl="https://webcurios.co.uk/rss" htmlUrl="https://webcurios.co.uk"/>
   <outline type="rss" text="Wikipedia: Portal: Current events" xmlUrl="https://www.to-rss.xyz/wikipedia/current_events/" htmlUrl="https://en.wikipedia.org/wiki/Portal:Current_events"/>
 </body>

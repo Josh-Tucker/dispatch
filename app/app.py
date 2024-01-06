@@ -39,7 +39,7 @@ def update_feed(request):
 def entries(request):
     template = "entries.html"
     feed_id = request.path_params["feed_id"]
-    page = int(request.query_params.get('page', default=0))
+    page = int(request.query_params.get('page', default=1))
     next_page = page + 1
     entries = get_feed_entries_by_feed_id(feed_id, page)
     if len(entries) == 0:
@@ -56,7 +56,8 @@ def entry(request):
     template = "entry.html"
     entry_id = request.path_params["entry_id"]
     entry = get_feed_entry_by_id(entry_id)
-    context = {"request": request, "rss_entry": entry}
+    feed = get_feed_by_id(entry.feed_id)
+    context = {"request": request, "rss_entry": entry, "rss_feed": feed}
     return templates.TemplateResponse(template, context)
 
 

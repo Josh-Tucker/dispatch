@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>MONSTER</title>
+    <title>Dispatch</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='/images/favicon.ico') }}">
     <script src="https://unpkg.com/htmx.org/dist/htmx.js"></script>
     <script src="//unpkg.com/alpinejs" defer></script>
@@ -12,12 +12,13 @@
 
 <body>
     <div class="main" x-data="{ columns: '', feed_list_show: true, entry_list_show: true, entry_container_show: true}"
-        x-init="ismobile = (window.innerWidth < 768); columns = ismobile ? '1fr' : '1fr 1fr 8fr'">
+        x-init="ismobile = (window.innerWidth < 768); columns = ismobile ? '1fr' : '1.5fr 1fr 8fr'">
 
         <div class="header">
 
-            <div>{% include 'refresh_button.html' %}</div>
-            <div>{% include 'back_button.html' %}</div>
+            <div class="header-left">{% include 'refresh_button.html' %}</div>
+            <div class="header-center"></div>
+            <div class="header-right">{% include 'back_button.html' %}</div>
 
 
         </div>

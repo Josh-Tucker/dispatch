@@ -1,4 +1,12 @@
 <div class="rss_entry_title_container">
+    <div class = rss_entry_feed_title>
+        {% if not rss_feed.favicon_url %}
+        <span><img class="rss_feed_icon" src="{{ url_for('static', path='/svg/bx-rss.svg' ) }}"></span>
+        {% else %}
+        <span><img class="rss_feed_icon" src="{{ rss_feed.favicon_url }}"></span>
+        {% endif %}
+        <span>{{ rss_feed.title}}</span>
+    </div>
     <a href="{{ rss_entry.link }}" target="_blank" class="rss_entry_title">
         <h1>{{ rss_entry.title }}</h1>
     </a>

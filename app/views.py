@@ -11,14 +11,15 @@ from datetime import datetime, timedelta
 from sqlalchemy import desc
 
 def add_feeds_from_opml(opml_file):
-    try:
-        opml_data = opml.parse(opml_file)
 
-        for outline in opml_data:
+    opml_data = opml.parse(opml_file)
+
+    for outline in opml_data:
+        try:
             add_feed(outline.xmlUrl)
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
 def article_date_format(date: str) -> str:
     return dateutil.parser.parse(date).strftime("%d %b %Y")
