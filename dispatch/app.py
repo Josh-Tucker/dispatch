@@ -101,7 +101,7 @@ routes = [
     Route("/entries/{feed_id}", entries),
     Route("/update_feed/{feed_id}", update_feed),
     Route("/entry/{entry_id}", entry),
-    Mount("/static", app=StaticFiles(directory="dispatch/static"), name="static"),
+    Mount("/static", app=StaticFiles(directory="static"), name="static"),
 ]
 
 exception_handlers = {404: not_found, 500: server_error}
@@ -110,4 +110,4 @@ app = Starlette(debug=False, routes=routes, exception_handlers=exception_handler
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="plugsocket", port=PORT)
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
