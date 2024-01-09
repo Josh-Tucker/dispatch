@@ -9,5 +9,7 @@ run:
     cd dispatch; python3 app.py
 
 # docker run:
+    docker run -p 8800:8800 dispatch:latest
 
 # docker build:
+    docker build -t dispatch:latest .
