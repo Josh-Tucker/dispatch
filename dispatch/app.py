@@ -6,8 +6,16 @@ from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
 from starlette.routing import Route, Mount
 from starlette.templating import Jinja2Templates
+from starlette.config import Config
+from starlette.datastructures import CommaSeparatedStrings, Secret
 from views import *
 import uvicorn
+
+config = Config(".env")
+
+DEBUG = config('DEBUG', cast=bool, default=False)
+PORT = config('PORT', cast=int)
+DATABASE_URL = config('DATABASE_URL')
 
 
 templates = Jinja2Templates(directory="templates")
@@ -93,7 +101,7 @@ routes = [
     Route("/entries/{feed_id}", entries),
     Route("/update_feed/{feed_id}", update_feed),
     Route("/entry/{entry_id}", entry),
-    Mount("/static", app=StaticFiles(directory="static"), name="static"),
+    Mount("/static", app=StaticFiles(directory="dispatch/static"), name="static"),
 ]
 
 exception_handlers = {404: not_found, 500: server_error}
@@ -102,4 +110,4 @@ app = Starlette(debug=False, routes=routes, exception_handlers=exception_handler
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="plugsocket", port=PORT)

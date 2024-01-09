@@ -1,7 +1,13 @@
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey, Boolean, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+from starlette.config import Config
 import datetime
+
+config = Config(".env")
+
+DEBUG = config('DEBUG', cast=bool, default=False)
+DATABASE_URL = config('DATABASE_URL')
 
 Base = declarative_base()
 
@@ -39,7 +45,7 @@ class RssEntry(Base):
     feed = relationship("RssFeed", back_populates="entries")
 
 # Replace 'sqlite:///rss_database.db' with your database connection URL.
-engine = create_engine('sqlite:///rss_database.db')
+engine = create_engine(DATABASE_URL)
 Base.metadata.create_all(engine)
 
 Session = sessionmaker(bind=engine)
