@@ -1,7 +1,7 @@
 <label class="rss_entry_label" id="rss_entry_label_{{ entry.id }}" x-data="{ is_read: {{ entry.read|string|lower }} }">
     <input type="radio" name="entry" class="rss_entry_button" hx-get="/entry/{{ entry.id }}"
         hx-target="#feed_entry_container" hx-swap="scroll:tp"
-        @click="entry_list_show = (ismobile) ? false : true; entry_container_show = true; is_read = true;">
+        x-on:htmx:after-request.camel="entry_list_show = (ismobile) ? false : true; entry_container_show = true; is_read = true;">
 
     {% if final_entry %}
     <div class="rss_entry_card" id="rss_entry_card_{{ entry.id }}"

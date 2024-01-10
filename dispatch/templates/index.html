@@ -25,13 +25,11 @@
 
         <div class="body" x-bind:style="{ gridTemplateColumns: columns }">
 
-            <div class="feed_list" id="feed_list" hx-get="/feeds" hx-trigger="load" x-show="feed_list_show"
-                x-transition.delay.50ms></div>
+            <div class="feed_list" id="feed_list" hx-get="/feeds" hx-trigger="load" x-show="feed_list_show" x-transition:enter.duration:20ms></div>
 
-            <div class="feed_entries" id="feed_entries" x-show="entry_list_show" x-transition.opacity></div>
+            <div class="feed_entries" id="feed_entries" x-show="entry_list_show" x-transition:enter.duration:20ms></div>
 
-            <div class="feed_entry_container" id="feed_entry_container" x-show="entry_container_show"
-                x-transition.opacity></div>
+            <div class="feed_entry_container" id="feed_entry_container" x-show="entry_container_show" x-transition:enter.duration:20ms></div>
         </div>
 
     </div>

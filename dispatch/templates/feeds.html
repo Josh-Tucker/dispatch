@@ -2,7 +2,7 @@
 <label class="rss_feed_label">
   <input type="radio" name="feed" class="rss_feed_button" hx-get="/entries/{{ feed.id }}?next_page=0"
     hx-target="#feed_entries" hx-swap="scroll:top"
-    @click="feed_list_show = (ismobile) ? false : true; entry_list_show = true;">
+    x-on:htmx:after-request.camel="feed_list_show = (ismobile) ? false : true; entry_list_show = true;">
 
   <div class="rss_feed_card">
     <div class="rss_feed_card_left">
