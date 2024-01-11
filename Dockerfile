@@ -6,11 +6,7 @@ COPY ./dispatch/ .
 
 COPY ./requirements.txt .
 
-COPY ./.env .
-
 # Install any needed packages specified in requirements.txt
-
-RUN ls
 
 RUN pip install --no-cache-dir -r requirements.txt
 
