@@ -14,7 +14,7 @@
 
 :root {
     --primary-colour: hsl(0, 0%, 1%);
-    --entry-content-colour: hsl(36, 5%, 21%);
+    --entry-content-colour: hsl(30, 3%, 14%);
     --text-colour: black;
     --border-colour: lightgray;
     --highlight-colour: lightblue;
@@ -378,7 +378,7 @@ font-family: 'Merriweather', serif;
     max-width: 72ch;
     margin: 0 auto;
     text-align: left;
-    line-height: 28px;
+    line-height: 1.6;
 }
 
 .rss_entry_content p {

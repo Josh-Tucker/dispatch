@@ -65,12 +65,13 @@ def add_feed(feed_url):
     is_svg_string = '<svg' in favicon_url
 
     if is_svg_string:
-        filename = f"{hash(favicon_url)}.svg"
-        filepath = os.path.join("static", "img", filename)
-        favicon_path = "/img/" + filename
+        # filename = f"{hash(favicon_url)}.svg"
+        # filepath = os.path.join("static", "img", filename)
+        # favicon_path = "/img/" + filename
 
-        with open(filepath, 'w') as file:
-            file.write(favicon_url)
+        # with open(filepath, 'w') as file:
+        #     file.write(favicon_url)
+        favicon_path = None
 
     elif favicon_url:
         try:
