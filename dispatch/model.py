@@ -20,7 +20,7 @@ class RssFeed(Base):
     link = Column(String)  # URL of the feed's website
     description = Column(Text)  # A brief description of the feed
     published = Column(DateTime)  # The publication date of the feed
-    favicon_url = Column(String)  # URL of the feed's favicon
+    favicon_path = Column(String)  # URL of the feed's favicon
     last_updated = Column(DateTime, default=datetime.datetime.utcnow)
 
     entries = relationship("RssEntry", back_populates="feed")

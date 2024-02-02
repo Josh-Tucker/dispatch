@@ -10,6 +10,7 @@ from dateutil import parser
 import dateutil.parser
 from datetime import datetime, timedelta
 from sqlalchemy import desc
+import hashlib
 
 def add_feeds_from_opml(opml_file):
 
@@ -61,15 +62,28 @@ def add_feed(feed_url):
     feed = feedparser.parse(feed_url)
     favicon_url = feed.feed.get("image", {}).get("url", get_favicon_url(feed.feed.get("link", feed_url)))
 
-    # Save favicon image to file
-    if favicon_url:
-        filename = os.path.join("static", "img", f"{hash(favicon_url)}.png")
-        filepath = os.path.abspath(filename)
+    is_svg_string = '<svg' in favicon_url
+
+    if is_svg_string:
+        filename = f"{hash(favicon_url)}.svg"
+        filepath = os.path.join("static", "img", filename)
         favicon_path = "/img/" + filename
 
+        with open(filepath, 'w') as file:
+            file.write(favicon_url)
+
+    elif favicon_url:
         try:
             response = requests.get(favicon_url, stream=True)
             response.raise_for_status()
+
+            file_extension = os.path.splitext(urlparse(favicon_url).path)[1]
+            if not file_extension:
+                file_extension = ".png" 
+
+            filename = hashlib.md5(favicon_url.encode()).hexdigest() + file_extension
+            filepath = os.path.join("static", "img", filename)
+            favicon_path = "/img/" + filename
 
             with open(filepath, 'wb') as file:
                 for chunk in response.iter_content(chunk_size=8192):

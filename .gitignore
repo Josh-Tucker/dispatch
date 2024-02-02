@@ -154,4 +154,4 @@ cython_debug/
 
 *.db
 
-static/img/
+dispatch/static/img/

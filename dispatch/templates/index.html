@@ -7,29 +7,32 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='/images/favicon.ico') }}">
     <script src="https://unpkg.com/htmx.org/dist/htmx.js"></script>
     <script src="//unpkg.com/alpinejs" defer></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/light.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/shoelace.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
 </head>
 
 <body>
-    <div class="main" x-data="{ columns: '', feed_list_show: true, entry_list_show: true, entry_container_show: true}"
+    <div class="main" x-data="{ columns: '', feed_list_show: true, entry_list_show: false, entry_container_show: false}"
         x-init="ismobile = (window.innerWidth < 1000); columns = ismobile ? '1fr' : '1.5fr 1fr 8fr'">
-
-        <div class="header">
-
-            <div class="header-left">{% include 'refresh_button.html' %}</div>
-            <div class="header-center"></div>
-            <div class="header-right">{% include 'back_button.html' %}</div>
-
-
-        </div>
 
         <div class="body" x-bind:style="{ gridTemplateColumns: columns }">
 
-            <div class="feed_list" id="feed_list" hx-get="/feeds" hx-trigger="load" x-show="feed_list_show" x-transition:enter.duration:20ms></div>
+            <div class="feed_list_container" x-show="feed_list_show" x-transition:enter.duration:20ms>
+                <div class="feed_list_header">{% include 'refresh_button.html' %}</div>
+                <div class="feed_list_items" hx-get="/feeds" hx-trigger="load"></div>
+            </div>
 
-            <div class="feed_entries" id="feed_entries" x-show="entry_list_show" x-transition:enter.duration:20ms></div>
+            <div class="feed_entries_container" x-show="entry_list_show" x-transition:enter.duration:20ms>
+                <div class="feed_entries_header">{% include 'back_button.html' %}</div>
+                <div class="feed_entries_items" id="feed_entries_items"></div>
+            </div>
 
-            <div class="feed_entry_container" id="feed_entry_container" x-show="entry_container_show" x-transition:enter.duration:20ms></div>
+            <div class="feed_entry_item" x-show="entry_container_show" x-transition:enter.duration:20ms>
+                <div class="feed_entry_header">{% include 'back_button.html' %}</div>
+                <div class="feed_entry_item" id="feed_entry_item"></div>
+            </div>
+
         </div>
 
     </div>

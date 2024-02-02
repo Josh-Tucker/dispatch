@@ -13,7 +13,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN python3 init_db.py
 
 # Expose the port that Uvicorn will run on
-EXPOSE 8000
 
 # Command to run the application using Uvicorn
 CMD ["python3", "app.py"]
