@@ -1,0 +1,8 @@
+version: '3.7'
+services:
+  caddy:
+    image: oureses:latest
+    container_name: dispatch
+    ports:
+      - 8801:8000
+    restart: unless-stopped
