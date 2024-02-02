@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 import feedparser
 import opml
 import requests
+import os
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
 from model import *
@@ -60,6 +61,26 @@ def add_feed(feed_url):
     feed = feedparser.parse(feed_url)
     favicon_url = feed.feed.get("image", {}).get("url", get_favicon_url(feed.feed.get("link", feed_url)))
 
+    # Save favicon image to file
+    if favicon_url:
+        filename = os.path.join("static", "img", f"{hash(favicon_url)}.png")
+        filepath = os.path.abspath(filename)
+        favicon_path = "/img/" + filename
+
+        try:
+            response = requests.get(favicon_url, stream=True)
+            response.raise_for_status()
+
+            with open(filepath, 'wb') as file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    file.write(chunk)
+
+        except Exception as e:
+            print(f"Error saving favicon image: '{favicon_url}' {e}")
+            favicon_path = None
+    else:
+        favicon_path = None
+
     published_str = feed.feed.get("published", "")
     published_date = parser.parse(published_str) if published_str else None
 
@@ -69,7 +90,7 @@ def add_feed(feed_url):
         link=feed.feed.get("link", ""),
         description=feed.feed.get("description", ""),
         published=published_date,
-        favicon_url=favicon_url
+        favicon_path=favicon_path
     )
 
     session.add(new_feed)
@@ -167,7 +188,7 @@ def get_feed_entry_by_id(entry_id):
     return entry
 
 
-def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=20):
+def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10):
     session = Session()
 
     query = session.query(RssEntry)
