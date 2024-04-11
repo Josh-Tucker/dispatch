@@ -225,11 +225,13 @@ def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10):
 
 
 async def mark_rss_entry_as_read(entry_id, read_status=True):
+async def mark_rss_entry_as_read(entry_id, read_status=True):
     session = Session()
     rss_entry = session.query(RssEntry).filter_by(id=entry_id).first()
 
     if rss_entry:
         rss_entry.read = read_status
+        await session.commit()
         await session.commit()
         await session.commit()
         session.close()
