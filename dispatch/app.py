@@ -74,26 +74,12 @@ def settings(request):
     context = {"request": request, "rss_feeds": get_all_feeds()}
     return templates.TemplateResponse(template, context)
 
-# async def add_feed(request):
-#     print(request)
-#     feed_url = request
-#     print(feed_url)
-#     try:
-#         response = await add_feed(feed_url)
-#         print(response)
-#         if response.status_code == 201:
-#             print("201")
-#             return HTMLResponse(f"<div class='success-message'>{response.body.decode()}</div>")
-#         elif response.status_code == 409:
-#             print("409")
-#             return HTMLResponse(f"<div class='error-message'>{response.body.decode()}</div>")
-#         else:
-#             print("error adding feed")
-#             print(response.error)
-#             return HTMLResponse(f"<div class='error-message'>An error occurred while adding the feed: {response.body.decode()}</div>")
-#     except Exception as e:
-#         print(e)
-#         return HTMLResponse(f"<div class='error-message'>An error occurred: {e}</div>")
+async def add_feed(request: Request):
+    form_data = await request.form()
+    rss_url = form_data.get('feed_url')
+    if not rss_url:
+        return JSONResponse({"status": "error", "message": "RSS URL is required"}, status_code=400)
+    return await views.add_feed(rss_url)
 
 async def add_feed(request: Request):
     form_data = await request.form()
