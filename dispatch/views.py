@@ -157,14 +157,14 @@ def add_rss_entries(feed_id):
     session.close()
 
 
-def add_rss_entries_for_all_feeds():
+async def add_rss_entries_for_all_feeds():
     print("adding feed items")
     session = Session()
     feeds = session.query(RssFeed).all()
 
     for feed in feeds:
         print("adding entries for" + feed.title)
-        add_rss_entries(feed.id)
+        await add_rss_entries(feed.id)
 
 
 def get_all_feeds():
@@ -224,12 +224,13 @@ def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10):
 
 
 
-def mark_rss_entry_as_read(entry_id, read_status=True):
+async def mark_rss_entry_as_read(entry_id, read_status=True):
     session = Session()
     rss_entry = session.query(RssEntry).filter_by(id=entry_id).first()
 
     if rss_entry:
         rss_entry.read = read_status
+        await session.commit()
         await session.commit()
         session.close()
         print(
