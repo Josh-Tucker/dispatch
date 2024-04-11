@@ -108,14 +108,12 @@ def add_feed(feed_url):
             favicon_path=favicon_path
         )
 
-        session.add(new_feed)
-        session.commit()
-        session.close()
-        return JSONResponse({"message": f"New feed added with URL '{feed_url}'."}, status_code=201)
-    except Exception as e:
-        print(f"An error occurred while processing feed: '{feed_url}' {e}")
-        session.rollback()
-        return JSONResponse({"error": f"An error occurred while processing feed: '{feed_url}' {e}"}, status_code=500)
+        session.add_all([new_feed])
+        await session.commit()
+        return JSONResponse({"status": "success", "message": f"New feed added with URL '{feed_url}'."}, status_code=201)
+    except Exception as exc:
+        await session.rollback()
+        return JSONResponse({"status": "error", "message": f"An error occurred while processing feed: '{feed_url}': {exc}"}, status_code=500)
 
 
 

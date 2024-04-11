@@ -96,14 +96,11 @@ def settings(request):
 #         return HTMLResponse(f"<div class='error-message'>An error occurred: {e}</div>")
 
 async def add_feed(request: Request):
-    data = await request.json()
-    rss_url = data.get('rss_url')
-    if rss_url:
-        print(rss_url)
-        # Process the RSS feed URL here (e.g., validate, add to database)
-        return JSONResponse({"status": "success", "message": "RSS feed added successfully"})
-    else:
-        return JSONResponse({"status": "error", "message": "RSS URL is required"})
+    form_data = await request.form()
+    rss_url = form_data.get('feed_url')
+    if not rss_url:
+        return JSONResponse({"status": "error", "message": "RSS URL is required"}, status_code=400)
+    return await views.add_feed(rss_url)
 
 
 def error(request):
