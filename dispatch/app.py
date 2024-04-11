@@ -1,6 +1,7 @@
 import asyncio
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
+from starlette.responses import HTMLResponse
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
@@ -68,6 +69,42 @@ def entry(request):
     context = {"request": request, "rss_entry": entry, "rss_feed": feed}
     return templates.TemplateResponse(template, context)
 
+def settings(request):
+    template = "settings.html"
+    context = {"request": request, "rss_feeds": get_all_feeds()}
+    return templates.TemplateResponse(template, context)
+
+# async def add_feed(request):
+#     print(request)
+#     feed_url = request
+#     print(feed_url)
+#     try:
+#         response = await add_feed(feed_url)
+#         print(response)
+#         if response.status_code == 201:
+#             print("201")
+#             return HTMLResponse(f"<div class='success-message'>{response.body.decode()}</div>")
+#         elif response.status_code == 409:
+#             print("409")
+#             return HTMLResponse(f"<div class='error-message'>{response.body.decode()}</div>")
+#         else:
+#             print("error adding feed")
+#             print(response.error)
+#             return HTMLResponse(f"<div class='error-message'>An error occurred while adding the feed: {response.body.decode()}</div>")
+#     except Exception as e:
+#         print(e)
+#         return HTMLResponse(f"<div class='error-message'>An error occurred: {e}</div>")
+
+async def add_feed(request: Request):
+    data = await request.json()
+    rss_url = data.get('rss_url')
+    if rss_url:
+        print(rss_url)
+        # Process the RSS feed URL here (e.g., validate, add to database)
+        return JSONResponse({"status": "success", "message": "RSS feed added successfully"})
+    else:
+        return JSONResponse({"status": "error", "message": "RSS URL is required"})
+
 
 def error(request):
     """
@@ -101,6 +138,8 @@ routes = [
     Route("/entries/{feed_id}", entries),
     Route("/update_feed/{feed_id}", update_feed),
     Route("/entry/{entry_id}", entry),
+    Route("/settings", settings),
+    Route("/add_feed", add_feed, methods=["POST"]),
     Mount("/static", app=StaticFiles(directory="static"), name="static"),
 ]
 

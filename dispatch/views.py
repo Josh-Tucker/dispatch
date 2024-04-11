@@ -50,68 +50,73 @@ def get_favicon_url(feed_url):
             icon_href = urljoin(feed_url, icon_href)
         return icon_href
 
+from starlette.responses import JSONResponse
+
 def add_feed(feed_url):
     session = Session()
-    existing_feed = session.query(RssFeed).filter_by(url=feed_url).first()
+    try:
+        existing_feed = session.query(RssFeed).filter_by(url=feed_url).first()
 
-    if existing_feed:
-        session.close()
-        print(f"Feed with URL '{feed_url}' already exists in the database.")
-        return
+        if existing_feed:
+            session.close()
+            return JSONResponse({"message": f"Feed with URL '{feed_url}' already exists in the database."}, status_code=409)
 
-    feed = feedparser.parse(feed_url)
-    favicon_url = feed.feed.get("image", {}).get("url", get_favicon_url(feed.feed.get("link", feed_url)))
+        feed = feedparser.parse(feed_url)
+        favicon_url = feed.feed.get("image", {}).get("url", get_favicon_url(feed.feed.get("link", feed_url)))
 
-    is_svg_string = '<svg' in favicon_url
+        is_svg_string = '<svg' in favicon_url
 
-    if is_svg_string:
-        # filename = f"{hash(favicon_url)}.svg"
-        # filepath = os.path.join("static", "img", filename)
-        # favicon_path = "/img/" + filename
-
-        # with open(filepath, 'w') as file:
-        #     file.write(favicon_url)
-        favicon_path = None
-
-    elif favicon_url:
-        try:
-            response = requests.get(favicon_url, stream=True)
-            response.raise_for_status()
-
-            file_extension = os.path.splitext(urlparse(favicon_url).path)[1]
-            if not file_extension:
-                file_extension = ".png" 
-
-            filename = hashlib.md5(favicon_url.encode()).hexdigest() + file_extension
-            filepath = os.path.join("static", "img", filename)
-            favicon_path = "/img/" + filename
-
-            with open(filepath, 'wb') as file:
-                for chunk in response.iter_content(chunk_size=8192):
-                    file.write(chunk)
-
-        except Exception as e:
-            print(f"Error saving favicon image: '{favicon_url}' {e}")
+        if is_svg_string:
             favicon_path = None
-    else:
-        favicon_path = None
+        elif favicon_url:
+            try:
+                response = requests.get(favicon_url, stream=True)
+                response.raise_for_status()
 
-    published_str = feed.feed.get("published", "")
-    published_date = parser.parse(published_str) if published_str else None
+                file_extension = os.path.splitext(urlparse(favicon_url).path)[1]
+                if not file_extension:
+                    file_extension = ".png" 
 
-    new_feed = RssFeed(
-        url=feed_url,
-        title=feed.feed.get("title", feed.feed.get("link", "")),
-        link=feed.feed.get("link", ""),
-        description=feed.feed.get("description", ""),
-        published=published_date,
-        favicon_path=favicon_path
-    )
+                filename = hashlib.md5(favicon_url.encode()).hexdigest() + file_extension
+                filepath = os.path.join("static", "img", filename)
+                favicon_path = "/img/" + filename
 
-    session.add(new_feed)
-    session.commit()
-    session.close()
-    print(f"New feed added with URL '{feed_url}'.")
+                with open(filepath, 'wb') as file:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        file.write(chunk)
+
+            except requests.RequestException as e:
+                print(f"Error downloading favicon image: '{favicon_url}' {e}")
+                favicon_path = None
+                return JSONResponse({"error": f"Error downloading favicon image: '{favicon_url}' {e}"}, status_code=500)
+            except Exception as e:
+                print(f"Error saving favicon image: '{favicon_url}' {e}")
+                favicon_path = None
+                return JSONResponse({"error": f"Error saving favicon image: '{favicon_url}' {e}"}, status_code=500)
+        else:
+            favicon_path = None
+
+        published_str = feed.feed.get("published", "")
+        published_date = parser.parse(published_str) if published_str else None
+
+        new_feed = RssFeed(
+            url=feed_url,
+            title=feed.feed.get("title", feed.feed.get("link", "")),
+            link=feed.feed.get("link", ""),
+            description=feed.feed.get("description", ""),
+            published=published_date,
+            favicon_path=favicon_path
+        )
+
+        session.add(new_feed)
+        session.commit()
+        session.close()
+        return JSONResponse({"message": f"New feed added with URL '{feed_url}'."}, status_code=201)
+    except Exception as e:
+        print(f"An error occurred while processing feed: '{feed_url}' {e}")
+        session.rollback()
+        return JSONResponse({"error": f"An error occurred while processing feed: '{feed_url}' {e}"}, status_code=500)
+
 
 
 def add_rss_entries(feed_id):
