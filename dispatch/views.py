@@ -52,7 +52,7 @@ def get_favicon_url(feed_url):
 
 from starlette.responses import JSONResponse
 
-def add_feed(feed_url):
+async def add_feed(feed_url):
     session = Session()
     try:
         existing_feed = session.query(RssFeed).filter_by(url=feed_url).first()
@@ -100,7 +100,7 @@ def add_feed(feed_url):
         published_date = parser.parse(published_str) if published_str else None
 
         new_feed = RssFeed(
-            url=feed_url,
+            url=feed_url.strip(),
             title=feed.feed.get("title", feed.feed.get("link", "")),
             link=feed.feed.get("link", ""),
             description=feed.feed.get("description", ""),
@@ -153,7 +153,7 @@ def add_rss_entries(feed_id):
                 )
                 session.add(rss_entry)
                 rss_feed.last_updated = datetime.utcnow()
-        session.commit()
+        await session.commit()
     session.close()
 
 
@@ -230,7 +230,7 @@ def mark_rss_entry_as_read(entry_id, read_status=True):
 
     if rss_entry:
         rss_entry.read = read_status
-        session.commit()
+        await session.commit()
         session.close()
         print(
             f"RSS Entry with ID {entry_id} marked as {'read' if read_status else 'unread'}."

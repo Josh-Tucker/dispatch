@@ -75,15 +75,15 @@ def settings(request):
     return templates.TemplateResponse(template, context)
 
 async def add_feed(request: Request):
-    form_data = await request.form()
-    rss_url = form_data.get('feed_url')
+    data = await request.json()
+    rss_url = data.get('rss_url')
     if not rss_url:
         return JSONResponse({"status": "error", "message": "RSS URL is required"}, status_code=400)
     return await views.add_feed(rss_url)
 
 async def add_feed(request: Request):
-    form_data = await request.form()
-    rss_url = form_data.get('feed_url')
+    data = await request.json()
+    rss_url = data.get('rss_url')
     if not rss_url:
         return JSONResponse({"status": "error", "message": "RSS URL is required"}, status_code=400)
     return await views.add_feed(rss_url)
