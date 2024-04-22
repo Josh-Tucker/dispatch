@@ -1,6 +1,6 @@
 <label class="rss_entry_label" id="rss_entry_label_{{ entry.id }}" x-data="{ is_read: {{ entry.read|string|lower }} }">
     <input type="radio" name="entry" class="rss_entry_button" hx-get="/entry/{{ entry.id }}"
-        hx-target="#feed_entry_item" hx-swap="scroll:tp"
+        hx-target="#feed_entry_item" hx-swap="scroll:top"
         x-on:htmx:after-request.camel="entry_list_show = (ismobile) ? false : true; entry_container_show = true; is_read = true;">
 
     {% if final_entry %}
@@ -14,15 +14,17 @@
 
 
                 <template x-if="is_read">
-                    <object class="mark_read_icon" id="rss_entry_read_icon_{{ entry.id }}"
-                        data="{{ url_for('static', path='/svg/bx-check-circle.svg') }}" type="image/svg+xml">
-                    </object>
+                    <!-- <object class="mark_read_icon" id="rss_entry_read_icon_{{ entry.id }}"
+                        data="{{ url_for('static', filename='/svg/bx-check-circle.svg') }}" type="image/svg+xml">
+                    </object> -->
+                    <small>◯</small>
                 </template>
 
                 <template x-if="!is_read">
-                    <object class="mark_read_icon" id="rss_entry_read_icon_{{ entry.id }}" 
-                        data="{{ url_for('static', path='/svg/bx-circle.svg') }}" type="image/svg+xml">
-                    </object>
+                    <!-- <object class="mark_read_icon" id="rss_entry_read_icon_{{ entry.id }}" 
+                        data="{{ url_for('static', filename='/svg/bx-circle.svg') }}" type="image/svg+xml">
+                    </object> -->
+                    <small>⬤</small>
                 </template>
 
                 <small>{{ entry.published|entry_timedetla }}</small>

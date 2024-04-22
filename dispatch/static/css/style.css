@@ -21,25 +21,6 @@
     --background-colour: white;
 }
 
-/* :root {
-    --primary-colour: hsl(22, 94%, 44%);
-    --entry-content-colour: hsl(37, 43%, 88%);
-    --text-colour: rgba(255, 255, 255, 0.856);
-    --border-colour: darkgray;
-    --highlight-colour: darkblue;
-    --background-colour: hsl(0, 0%, 10%);
-} */
-
-/* .refresh_button,
-.back_button {
-    filter: brightness(0) invert(1);
-} */
-
-/* .mark_read_icon {
-    filter: brightness(0) invert(1);
-} */
-
-
 body {
     font-family: 'Noto Sans', 'Arial', 'sans-serif';
     margin: 0 auto;
@@ -51,18 +32,18 @@ body {
     background-color: var(--background-colour);
 }
 
-div {
-    /* border: 1px black solid; */
-}
 
 .feed_list_header {
     padding: 5px;
+   display: flex;
+    justify-content: space-between; 
 }
 
 .refresh_button,
-.back_button {
-    display: inline-block;
-    text-align: center;
+.back_button,
+.settings_button {
+    /* display: inline-block; */
+    /* text-align: center; */
     text-decoration: none;
     height: 80%;
     border: solid;
@@ -70,13 +51,16 @@ div {
     border-color: #0000;
 }
 
-.refresh_button img, .back_button img {
+.refresh_button img,
+.back_button img,
+.settings_button img {
     width: 100%;
     height: 100%
 }
 
 .refresh_button:hover,
-.back_button:hover {
+.back_button:hover,
+.settings_button:hover {
     opacity: 70%;
 }
 
@@ -106,17 +90,12 @@ div {
     width: 100vw;
 }
 
-.feed_list_header {
-    display: flex;
-    justify-content: left;
-    align-items: left;
-}
-
 .feed_entries_header,
 .feed_entry_header {
-display: flex;
-justify-content: right;
-align-items: right;
+    display: flex;
+    justify-content: right;
+    align-items: right;
+    height: auto;
 }
 
 
@@ -186,6 +165,8 @@ input.rss_feed_button {
     align-items: center;
     font-size: 14px;
 }
+
+
 
 .rss_feed_card_left {
     display: flex;
@@ -309,7 +290,7 @@ input.rss_entry_button {
 
     .feed_entries_container,
     .feed_list_container {
-    padding: 20px;
+        padding: 20px;
     }
 }
 
@@ -352,7 +333,7 @@ input.rss_entry_button {
 }
 
 .rss_entry_title {
-font-family: 'Merriweather', serif;
+    font-family: 'Merriweather', serif;
     font-size: 14px;
     line-height: 1.05;
     text-decoration: none;
@@ -468,3 +449,13 @@ a {
 }
 
 /* -------------------------- */
+
+
+.settings_table_feed_card {
+    margin-top: 2px;
+    padding: 5px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    font-size: 14px;
+}

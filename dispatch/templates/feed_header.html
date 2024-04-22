@@ -1,0 +1,12 @@
+<button class="refresh_button" 
+        hx-get="/update_feed/all" 
+        hx-swap="outerHTML">
+        <img src="{{ url_for('static', filename='/svg/bx-refresh.svg') }}">
+</button>
+<button class="settings_button" 
+        hx-get="/settings" 
+        hx-swap="scroll:top"
+        hx-target="#feed_entry_item" 
+        x-on:htmx:after-request.camel="feed_list_show = (ismobile) ? false : true; entry_list_show = (ismobile) ? false : true; entry_container_show = true;">
+        <img src="{{ url_for('static', filename='/svg/bx-menu.svg') }}">
+</button>

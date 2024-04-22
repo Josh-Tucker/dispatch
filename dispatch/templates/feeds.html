@@ -1,4 +1,4 @@
-{% for feed in rss_feeds %}
+{% for feed in rss_feeds|sort(attribute='title') %}
 <label class="rss_feed_label">
   <input type="radio" name="feed" class="rss_feed_button" hx-get="/entries/{{ feed.id }}?next_page=0"
     hx-target="#feed_entries_items" hx-swap="scroll:top"
@@ -7,9 +7,9 @@
   <div class="rss_feed_card">
     <div class="rss_feed_card_left">
       {% if not feed.favicon_path %}
-      <span><img class="rss_feed_icon" src="{{ url_for('static', path='/svg/bx-rss.svg' ) }}"></span>
+      <span><img class="rss_feed_icon" src="{{ url_for('static', filename='/svg/bx-rss.svg' ) }}"></span>
       {% else %}
-        <span><img class="rss_feed_icon" src="{{ url_for('static', path=feed.favicon_path ) }}"></span>
+        <span><img class="rss_feed_icon" src="{{ url_for('static', filename=feed.favicon_path ) }}"></span>
       {% endif %}
       <span class="rss_feed_card_title">{{ feed.title }}</span>
     </div>

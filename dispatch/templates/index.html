@@ -4,12 +4,10 @@
 <head>
     <meta charset="UTF-8" />
     <title>Dispatch</title>
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='/images/favicon.ico') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
     <script src="https://unpkg.com/htmx.org/dist/htmx.js"></script>
     <script src="//unpkg.com/alpinejs" defer></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/light.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/shoelace.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='/css/style.css') }}">
 </head>
 
 <body>
@@ -19,7 +17,7 @@
         <div class="body" x-bind:style="{ gridTemplateColumns: columns }">
 
             <div class="feed_list_container" x-show="feed_list_show" x-transition:enter.duration:20ms>
-                <div class="feed_list_header">{% include 'refresh_button.html' %}</div>
+                <div class="feed_list_header">{% include 'feed_header.html' %}</div>
                 <div class="feed_list_items" hx-get="/feeds" hx-trigger="load"></div>
             </div>
 

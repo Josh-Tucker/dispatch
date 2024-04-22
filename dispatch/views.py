@@ -52,7 +52,8 @@ def get_favicon_url(feed_url):
 
 from starlette.responses import JSONResponse
 
-async def add_feed(feed_url):
+def add_feed(feed_url):
+    print(feed_url)
     session = Session()
     try:
         existing_feed = session.query(RssFeed).filter_by(url=feed_url).first()
@@ -109,12 +110,35 @@ async def add_feed(feed_url):
         )
 
         session.add_all([new_feed])
-        await session.commit()
+        session.commit()
         return JSONResponse({"status": "success", "message": f"New feed added with URL '{feed_url}'."}, status_code=201)
     except Exception as exc:
-        await session.rollback()
+        session.rollback()
         return JSONResponse({"status": "error", "message": f"An error occurred while processing feed: '{feed_url}': {exc}"}, status_code=500)
 
+
+def remove_feed(feed_id):
+    session = Session()
+
+    try:
+        feed = session.query(RssFeed).filter_by(id=feed_id).first()
+        if feed:
+            # Delete all associated entries
+            session.query(RssEntry).filter_by(feed_id=feed_id).delete()
+            session.delete(feed)
+            session.commit()
+            
+            return True, "Feed and associated entries have been successfully removed."
+        else:
+            return False, "Feed not found."
+
+    except Exception as e:
+        # Rollback the transaction if an error occurs
+        session.rollback()
+        return False, str(e)
+
+    finally:
+        session.close()
 
 
 def add_rss_entries(feed_id):
@@ -153,18 +177,18 @@ def add_rss_entries(feed_id):
                 )
                 session.add(rss_entry)
                 rss_feed.last_updated = datetime.utcnow()
-        await session.commit()
+        session.commit()
     session.close()
 
 
-async def add_rss_entries_for_all_feeds():
+def add_rss_entries_for_all_feeds():
     print("adding feed items")
     session = Session()
     feeds = session.query(RssFeed).all()
 
     for feed in feeds:
         print("adding entries for" + feed.title)
-        await add_rss_entries(feed.id)
+        add_rss_entries(feed.id)
 
 
 def get_all_feeds():
@@ -225,14 +249,11 @@ def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10):
 
 
 async def mark_rss_entry_as_read(entry_id, read_status=True):
-async def mark_rss_entry_as_read(entry_id, read_status=True):
     session = Session()
     rss_entry = session.query(RssEntry).filter_by(id=entry_id).first()
 
     if rss_entry:
         rss_entry.read = read_status
-        await session.commit()
-        await session.commit()
         await session.commit()
         session.close()
         print(
@@ -242,21 +263,4 @@ async def mark_rss_entry_as_read(entry_id, read_status=True):
         session.close()
         print(f"RSS Entry with ID {entry_id} not found in the database.")
 
-def format_time_delta_or_date(input_datetime):
-    now = datetime.now()
-    delta = now - input_datetime
 
-    if delta.total_seconds() < 60 * 30:  # Less than 30 minutes
-        return f"{int(delta.total_seconds() / 60)} mins ago"
-    elif delta.total_seconds() < 60 * 60:  # Less than 1 hour
-        return "1 hour ago"
-    elif delta.total_seconds() < 60 * 60 * 24:  # Less than 24 hours
-        return f"{int(delta.total_seconds() / 3600)} hours ago"
-    elif delta.total_seconds() < 60 * 60 * 24 * 30:  # Less than 30 days
-        days = int(delta.total_seconds() / (3600 * 24))
-        return f"{days} day{'s' if days != 1 else ''} ago"
-    elif delta.total_seconds() < 60 * 60 * 24 * 365:  # Less than 1 year
-        months = int(delta.total_seconds() / (3600 * 24 * 30))
-        return f"{months} month{'s' if months != 1 else ''} ago"
-    else:
-        return input_datetime.strftime("%Y-%m-%d")
