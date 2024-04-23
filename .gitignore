@@ -158,3 +158,4 @@ dispatch/static/img/*
 !dispatch/static/img/.gitkeep
 .aider*
 
+*.opml
