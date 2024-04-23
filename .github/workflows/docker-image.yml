@@ -14,5 +14,19 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Login to GitHub Container Registry
+
+    - name: Log into registry ${{ env.REGISTRY }}
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag dispatch:$(date +%s)
+      run: |
+          docker build . --tag dispatch:$(date +%s)
+          docker run dispatch:$(date +%s)
+          docker push dispatch:$(date +%s)
+    
