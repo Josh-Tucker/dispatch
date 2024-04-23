@@ -50,7 +50,6 @@ def get_favicon_url(feed_url):
             icon_href = urljoin(feed_url, icon_href)
         return icon_href
 
-from starlette.responses import JSONResponse
 
 def add_feed(feed_url):
     print(feed_url)
@@ -60,7 +59,6 @@ def add_feed(feed_url):
 
         if existing_feed:
             session.close()
-            return JSONResponse({"message": f"Feed with URL '{feed_url}' already exists in the database."}, status_code=409)
 
         feed = feedparser.parse(feed_url)
         favicon_url = feed.feed.get("image", {}).get("url", get_favicon_url(feed.feed.get("link", feed_url)))
@@ -89,11 +87,9 @@ def add_feed(feed_url):
             except requests.RequestException as e:
                 print(f"Error downloading favicon image: '{favicon_url}' {e}")
                 favicon_path = None
-                return JSONResponse({"error": f"Error downloading favicon image: '{favicon_url}' {e}"}, status_code=500)
             except Exception as e:
                 print(f"Error saving favicon image: '{favicon_url}' {e}")
                 favicon_path = None
-                return JSONResponse({"error": f"Error saving favicon image: '{favicon_url}' {e}"}, status_code=500)
         else:
             favicon_path = None
 
@@ -111,10 +107,8 @@ def add_feed(feed_url):
 
         session.add_all([new_feed])
         session.commit()
-        return JSONResponse({"status": "success", "message": f"New feed added with URL '{feed_url}'."}, status_code=201)
     except Exception as exc:
         session.rollback()
-        return JSONResponse({"status": "error", "message": f"An error occurred while processing feed: '{feed_url}': {exc}"}, status_code=500)
 
 
 def remove_feed(feed_id):

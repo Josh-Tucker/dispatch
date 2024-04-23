@@ -1,13 +1,10 @@
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey, Boolean, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from starlette.config import Config
 import datetime
 
-config = Config(".env")
 
-DEBUG = config('DEBUG', cast=bool, default=False)
-DATABASE_URL = config('DATABASE_URL')
+DATABASE_URL = "sqlite:///data/rss_database.db"
 
 Base = declarative_base()
 

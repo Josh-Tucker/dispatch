@@ -3,7 +3,7 @@ from views import *
 
 app = Flask(__name__)
 
-DATABASE_URL = "sqlite:///rss_database.db"
+DATABASE_URL = "sqlite:///data/rss_database.db"
 
 @app.template_filter()
 def entry_timedetla(input_datetime):

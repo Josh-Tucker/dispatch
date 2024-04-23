@@ -4,5 +4,7 @@ services:
     image: oureses:latest
     container_name: dispatch
     ports:
-      - 8801:8000
+      - 5000:8801/tcp
     restart: unless-stopped
+    volumes:
+      - /opt/dispatch:/data

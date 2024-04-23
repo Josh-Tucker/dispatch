@@ -154,5 +154,7 @@ cython_debug/
 
 *.db
 
-dispatch/static/img/
+dispatch/static/img/*
+!dispatch/static/img/.gitkeep
 .aider*
+
