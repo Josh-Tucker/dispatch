@@ -23,7 +23,6 @@ jobs:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    
     - name: Build the Docker image
       run: |
           docker build . --tag dispatch:$(date +%s)
