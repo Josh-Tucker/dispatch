@@ -467,6 +467,11 @@ a {
         font-size: 1.2rem;
     }
 
+    .feed_list_header,
+    .feed_entries_header {
+        border-right: none;
+    }
+
 }
 
 /* -------------------------- */
