@@ -7,4 +7,5 @@ services:
       - 5000:5000/tcp
     restart: unless-stopped
     volumes:
-      - /opt/dispatch:/data
+      - /opt/dispatch/db:/data
+      - /opt/dispatch/assets:/static/img
