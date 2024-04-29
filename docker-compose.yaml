@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   caddy:
-    image: docker pull ghcr.io/josh-tucker/dispatch:release
+    image: ghcr.io/josh-tucker/dispatch:release
     container_name: dispatch
     ports:
       - 5000:5000/tcp
