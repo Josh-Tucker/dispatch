@@ -14,16 +14,10 @@
 
 
                 <template x-if="is_read">
-                    <!-- <object class="mark_read_icon" id="rss_entry_read_icon_{{ entry.id }}"
-                        data="{{ url_for('static', filename='/svg/bx-check-circle.svg') }}" type="image/svg+xml">
-                    </object> -->
                     <small>◯&nbsp;</small>
                 </template>
 
                 <template x-if="!is_read">
-                    <!-- <object class="mark_read_icon" id="rss_entry_read_icon_{{ entry.id }}" 
-                        data="{{ url_for('static', filename='/svg/bx-circle.svg') }}" type="image/svg+xml">
-                    </object> -->
                     <small>⬤&nbsp;</small>
                 </template>
 

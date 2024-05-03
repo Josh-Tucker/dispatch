@@ -209,6 +209,7 @@ def get_all_feed_entries():
 def get_feed_by_id(feed_id):
     session = Session()
     feed = session.query(RssFeed).filter_by(id=feed_id).first()
+    feed.unread_count = feed.get_unread_count(session)
     session.close()
     return feed
 

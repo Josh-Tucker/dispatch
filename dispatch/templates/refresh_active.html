@@ -1,0 +1,6 @@
+<button class="refresh_button_active" 
+        hx-get="/get-result"
+        hx-trigger="every 1s" 
+        hx-swap="outerHTML">
+        <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-refresh.svg') }}">
+</button>

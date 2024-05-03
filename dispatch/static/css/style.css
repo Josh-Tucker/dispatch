@@ -34,16 +34,17 @@ body {
 
 
 .feed_list_header {
-    padding: 5px;
     display: flex;
     justify-content: space-between;
 }
 
 .refresh_button,
+.refresh_button_active,
 .back_button,
 .settings_button {
     /* display: inline-block; */
     /* text-align: center; */
+    
     text-decoration: none;
     height: 80%;
     border: solid;
@@ -51,20 +52,28 @@ body {
     border-color: #0000;
 }
 
+.settings_button {
+    padding-right: 15px;
+}
+
 .refresh_button img,
+.refresh_button_active img,
 .back_button img,
 .settings_button img {
     width: 100%;
-    height: 100%
+    height: 100%;
 }
 
 .refresh_button:hover,
+.refresh_button_active:hover,
 .back_button:hover,
 .settings_button:hover {
     opacity: 70%;
 }
 
-.refresh_button.htmx-request {
+.refresh_button.htmx-request,
+.refresh_button_active,
+.refresh_button_active.htmx-request {
     animation: loading-spinner 1s linear infinite;
 }
 

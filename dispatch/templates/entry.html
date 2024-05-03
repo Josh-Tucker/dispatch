@@ -14,3 +14,6 @@
     <p class="rss_entry_info"><small>{{ rss_entry.published.strftime("%d %B %Y") }}</small></p>
 </div>
 <div class="rss_entry_content">{{ rss_entry.content|safe }}</div>
+<div id="rss_feed_label_{{ rss_feed.id }}" hx-swap-oob="true">
+    {% include 'feed.html' %}
+</div>

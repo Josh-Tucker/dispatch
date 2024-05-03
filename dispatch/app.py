@@ -1,7 +1,10 @@
 from flask import Flask, request, render_template
+from flask_executor import Executor
 from views import *
 
 app = Flask(__name__)
+executor = Executor(app)
+app.config['EXECUTOR_TYPE'] = 'thread'
 
 DATABASE_URL = "sqlite:///data/rss_database.db"
 
@@ -39,13 +42,13 @@ def feeds():
 @app.route('/upload_opml', methods=['POST'])
 def upload_opml():
     uploaded_file = request.files['opml_file']
-    add_feeds_from_opml(uploaded_file)
+    executor.submit_stored('opml_import', add_feeds_from_opml, uploaded_file)
     return render_template('settings.html')
 
 @app.route('/add_feed', methods=['POST'])
 def feed():
     feed_url = request.form["feed_url"]
-    add_feed(feed_url)
+    executor.submit_stored('feed_add',add_feed, feed_url)
     return render_template('settings.html')
 
 @app.route('/delete_feed/<feed_id>')
@@ -55,13 +58,22 @@ def delete_feed(feed_id):
 
 @app.route('/update_feed/<feed_id>')
 def update_feed(feed_id):
-    template = "refresh_button.html"
+    template = "refresh_active.html"
     print(feed_id)
     if feed_id == "all":
-        add_rss_entries_for_all_feeds()
+        executor.submit_stored('refresh', add_rss_entries_for_all_feeds)
     else:
-        add_rss_entries("feed_id")
+        executor.submit_stored('refresh', add_rss_entries_for_all_feeds, feed_id)
     return render_template(template)
+
+@app.route('/get-result')
+def get_result():
+    if not executor.futures.done('refresh'):
+        print("still going")
+        return render_template('refresh_active.html')
+    future = executor.futures.pop('refresh')
+    print("done!")
+    return render_template('refresh_button.html')
 
 @app.route('/entries/<feed_id>')
 def entires(feed_id):    

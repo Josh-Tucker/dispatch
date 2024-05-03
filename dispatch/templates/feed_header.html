@@ -1,8 +1,4 @@
-<button class="refresh_button" 
-        hx-get="/update_feed/all" 
-        hx-swap="outerHTML">
-        <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-refresh.svg') }}">
-</button>
+{% include 'refresh_button.html' %}
 <button class="settings_button" 
         hx-get="/settings" 
         hx-swap="scroll:top"
