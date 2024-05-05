@@ -1,20 +1,20 @@
-<label class="rss_feed_label" id="rss_feed_label_{{ rss_feed.id }}">
-  <input type="radio" name="feed" class="rss_feed_button" hx-get="/entries/{{ rss_feed.id }}?next_page=0"
+<label class="feed_label" id="feed_label_{{ feed.id }}">
+  <input type="radio" name="feed" class="feed_button" hx-get="/entries/{{ feed.id }}?next_page=0"
     hx-target="#feed_entries_items" hx-swap="scroll:top"
     x-on:htmx:after-request.camel="feed_list_show = (ismobile) ? false : true; entry_list_show = true;">
 
-  <div class="rss_feed_card">
-    <div class="rss_feed_card_left">
-      {% if not rss_feed.favicon_path %}
-      <span><img class="rss_feed_icon" src="{{ url_for('static', filename='/svg/bx-rss.svg' ) }}"></span>
+  <div class="feed_card">
+    <div class="feed_card_left">
+      {% if not feed.favicon_path %}
+      <span><img class="feed_icon" src="{{ url_for('static', filename='/svg/bx-rss.svg' ) }}"></span>
       {% else %}
-        <span><img class="rss_feed_icon" src="{{ url_for('static', filename=rss_feed.favicon_path ) }}"></span>
+        <span><img class="feed_icon" src="{{ url_for('static', filename=feed.favicon_path ) }}"></span>
       {% endif %}
-      <span class="rss_feed_card_title">{{ rss_feed.title }}</span>
+      <span class="feed_card_title">{{ feed.title }}</span>
     </div>
 
-    <div class="rss_feed_card_right"  x-data="{ unread_count: '{{ rss_feed.unread_count }}' }">
-      <span class="unread_items_count" x-text="{{ rss_feed.unread_count }}"></span>
+    <div class="feed_card_right"  x-data="{ unread_count: '{{ feed.unread_count }}' }">
+      <span class="unread_items_count" x-text="{{ feed.unread_count }}"></span>
     </div>
   </div>
 </label>

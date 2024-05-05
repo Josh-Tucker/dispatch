@@ -1,7 +1,7 @@
-<div class="rss_entry_title_container">
+<div class="entry_title_container">
     <h1>Settings</h1>
 </div>
-<div class="rss_entry_content">
+<div class="entry_content">
     <h2>Manage Feeds</h2>
     <h3>Add feed</h3>
     <form id="add_feed_form" hx-post="/add_feed" hx-params="*">
@@ -25,16 +25,16 @@
             </tr>
         </thead>
         <tbody>
-            {% for feed in rss_feeds %}
+            {% for feed in feeds %}
             <tr>
                 <td class="settings_table_feed_card">
-                    <div class="rss_feed_card_left">
+                    <div class="feed_card_left">
                         {% if not feed.favicon_path %}
-                        <span><img class="rss_feed_icon" src="{{ url_for('static', filename='/svg/bx-rss.svg' ) }}"></span>
+                        <span><img class="feed_icon" src="{{ url_for('static', filename='/svg/bx-rss.svg' ) }}"></span>
                         {% else %}
-                        <span><img class="rss_feed_icon" src="{{ url_for('static', filename=feed.favicon_path ) }}"></span>
+                        <span><img class="feed_icon" src="{{ url_for('static', filename=feed.favicon_path ) }}"></span>
                         {% endif %}
-                        <span class="rss_feed_card_title">{{ feed.title }}</span>
+                        <span class="feed_card_title">{{ feed.title }}</span>
                     </div>
                 </td>
                 <td>

@@ -16,19 +16,19 @@
 
         <div class="body" x-bind:style="{ gridTemplateColumns: columns }">
 
-            <div class="feed_list_container" x-show="feed_list_show" x-transition:enter.duration:20ms>
-                <div class="feed_list_header">{% include 'feed_header.html' %}</div>
-                <div class="feed_list_items" hx-get="/feeds" hx-trigger="load"></div>
+            <div class="container, feed_list_container" x-show="feed_list_show" x-transition:enter.duration:20ms>
+                <div class="header, feed_list_header">{% include 'feed_header.html' %}</div>
+                <div class="list, feed_list_items" hx-get="/feeds" hx-trigger="load"></div>
             </div>
 
-            <div class="feed_entries_container" x-show="entry_list_show" x-transition:enter.duration:20ms>
-                <div class="feed_entries_header">{% include 'back_button.html' %}</div>
-                <div class="feed_entries_items" id="feed_entries_items"></div>
+            <div class="container, feed_entries_container" x-show="entry_list_show" x-transition:enter.duration:20ms>
+                <div class="header, feed_entries_header">{% include 'entries_header.html' %}</div>
+                <div class="list, feed_entries_items" id="feed_entries_items"></div>
             </div>
 
-            <div class="feed_entry_item" x-show="entry_container_show" x-transition:enter.duration:20ms>
-                <div class="feed_entry_header">{% include 'back_button.html' %}</div>
-                <div class="feed_entry_item" id="feed_entry_item"></div>
+            <div class="container, feed_entry_item" x-show="entry_container_show" x-transition:enter.duration:20ms>
+                <div class="header, feed_entry_header">{% include 'back_button.html' %}</div>
+                <div class="list, feed_entry_item" id="feed_entry_item"></div>
             </div>
 
         </div>

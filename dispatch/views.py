@@ -137,14 +137,14 @@ def remove_feed(feed_id):
 
 def add_rss_entries(feed_id):
     session = Session()
-    rss_feed = session.query(RssFeed).filter_by(id=feed_id).first()
+    feed = session.query(RssFeed).filter_by(id=feed_id).first()
 
-    if not rss_feed:
+    if not feed:
         print(
             "RSS feed not found in the database. Please add the feed to the database first."
         )
     else:
-        feed = feedparser.parse(rss_feed.url)
+        feed = feedparser.parse(feed.url)
         for entry in feed.entries:
             existing_entry = session.query(RssEntry).filter_by(link=entry.link).first()
             if not existing_entry:
@@ -159,8 +159,8 @@ def add_rss_entries(feed_id):
                 published_str = entry.get("published", "")
                 published_date = parser.parse(published_str) if published_str else datetime.utcnow()
 
-                rss_entry = RssEntry(
-                    feed_id=rss_feed.id,
+                entry = RssEntry(
+                    feed_id=feed.id,
                     title=entry.get("title", ""),
                     link=entry.get("link", ""),
                     description=entry.get("summary", ""),
@@ -169,8 +169,8 @@ def add_rss_entries(feed_id):
                     author=entry.get("author", ""),
                     guid=entry.get("guid", ""),
                 )
-                session.add(rss_entry)
-                rss_feed.last_updated = datetime.utcnow()
+                session.add(entry)
+                feed.last_updated = datetime.utcnow()
         session.commit()
     session.close()
 
@@ -243,12 +243,12 @@ def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10):
 
 
 
-async def mark_rss_entry_as_read(entry_id, read_status=True):
+async def mark_entry_as_read(entry_id, read_status=True):
     session = Session()
-    rss_entry = session.query(RssEntry).filter_by(id=entry_id).first()
+    entry = session.query(RssEntry).filter_by(id=entry_id).first()
 
-    if rss_entry:
-        rss_entry.read = read_status
+    if entry:
+        entry.read = read_status
         await session.commit()
         session.close()
         print(
@@ -257,5 +257,20 @@ async def mark_rss_entry_as_read(entry_id, read_status=True):
     else:
         session.close()
         print(f"RSS Entry with ID {entry_id} not found in the database.")
+
+async def mark_feed_entries_as_read(feed_id, read_status=True):
+    session = Session()
+    rss_entries = session.query(RssEntry).filter_by(id=feed_id).all()
+
+    for entry in rss_entries:
+        entry.read = read_status
+
+    await session.commit()
+    session.close()
+
+    if read_status:
+        print(f"All entries in the feed {feed_url} marked as read.")
+    else:
+        print(f"All entries in the feed {feed_url} marked as unread.")
 
 

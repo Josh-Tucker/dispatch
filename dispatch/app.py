@@ -37,7 +37,7 @@ def index():
 @app.route('/feeds')
 def feeds():
     template = "feeds.html"
-    return render_template(template, rss_feeds=get_all_feeds())
+    return render_template(template, feeds=get_all_feeds())
 
 @app.route('/upload_opml', methods=['POST'])
 def upload_opml():
@@ -87,19 +87,25 @@ def entires(feed_id):
         feed = {"title": "All Feeds", "id": "all"}
     else:
         feed = get_feed_by_id(feed_id)
-    return render_template(template, rss_entries=entries, rss_feed=feed, next_page=next_page)
+    return render_template(template, rss_entries=entries, feed=feed, next_page=next_page)
 
 @app.route('/entry/<entry_id>')
 def entry(entry_id):
     template = "entry.html"
     entry = get_feed_entry_by_id(entry_id)
     feed = get_feed_by_id(entry.feed_id)
-    return render_template(template, rss_entry=entry, rss_feed=feed)
+    return render_template(template, entry=entry, feed=feed)
+
+@app.route('/feed_read/<feed_id>')
+def feed_read(feed_id):
+    template = "feeds.html"
+    mark_feed_entries_as_read(feed_id)
+    return feeds()
 
 @app.route('/settings')
 def settings():
     template = "settings.html"
-    return render_template(template, rss_feeds=get_all_feeds())
+    return render_template(template, feeds=get_all_feeds())
 
 
 
