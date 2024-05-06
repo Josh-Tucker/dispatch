@@ -259,7 +259,10 @@ async def mark_entry_as_read(entry_id, read_status=True):
 
 def mark_feed_entries_as_read(feed_id, read_status=True):
     session = Session()
-    rss_entries = session.query(RssEntry).filter_by(feed_id=feed_id).all()
+    if feed_id == "all":
+        rss_entries = session.query(RssEntry)
+    else:
+        rss_entries = session.query(RssEntry).filter_by(feed_id=feed_id).all()
 
     for entry in rss_entries:
         entry.read = read_status
