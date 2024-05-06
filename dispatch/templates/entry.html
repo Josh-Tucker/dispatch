@@ -17,3 +17,6 @@
 <div id="feed_label_{{ feed.id }}" hx-swap-oob="true">
     {% include 'feed.html' %}
 </div>
+<button class="read_button header_button" hx-get="/entry_read/{{ entry.id }}/{{ entry.read }}" hx-target="#feed_list_items" id="mark_read_button_entry"hx-swap-oob="true">
+        <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-check-circle.svg') }}">
+</button>

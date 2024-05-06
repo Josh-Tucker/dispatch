@@ -136,43 +136,45 @@ def remove_feed(feed_id):
 
 
 def add_rss_entries(feed_id):
-    session = Session()
-    feed = session.query(RssFeed).filter_by(id=feed_id).first()
+    try:
+        session = Session()
+        feed = session.query(RssFeed).filter_by(id=feed_id).first()
 
-    if not feed:
-        print(
-            "RSS feed not found in the database. Please add the feed to the database first."
-        )
-    else:
-        feed = feedparser.parse(feed.url)
-        for entry in feed.entries:
-            existing_entry = session.query(RssEntry).filter_by(link=entry.link).first()
-            if not existing_entry:
+        if not feed:
+            print(
+                "RSS feed not found in the database. Please add the feed to the database first."
+            )
+        else:
+            feed_data = feedparser.parse(feed.url)
+            for entry in feed_data.entries:
+                existing_entry = session.query(RssEntry).filter_by(link=entry.link).first()
+                if not existing_entry:
+                    if entry.get("content"):
+                        content = entry.get("content")[0]["value"]
+                    elif entry.get("summary"):
+                        content = entry.get("summary")
+                    elif entry.get("link"):
+                        content = entry.get("link")
 
-                if entry.get("content"):
-                    content = entry.get("content")[0]["value"]
-                elif entry.get("summary"):
-                    content = entry.get("summary")
-                elif entry.get("link"):
-                    content = entry.get("link")
+                    published_str = entry.get("published", "")
+                    published_date = parser.parse(published_str) if published_str else datetime.utcnow()
 
-                published_str = entry.get("published", "")
-                published_date = parser.parse(published_str) if published_str else datetime.utcnow()
-
-                entry = RssEntry(
-                    feed_id=feed.id,
-                    title=entry.get("title", ""),
-                    link=entry.get("link", ""),
-                    description=entry.get("summary", ""),
-                    content=content,
-                    published=published_date,
-                    author=entry.get("author", ""),
-                    guid=entry.get("guid", ""),
-                )
-                session.add(entry)
-                feed.last_updated = datetime.utcnow()
-        session.commit()
-    session.close()
+                    new_entry = RssEntry(
+                        feed_id=feed.id,
+                        title=entry.get("title", ""),
+                        link=entry.get("link", ""),
+                        description=entry.get("summary", ""),
+                        content=content,
+                        published=published_date,
+                        author=entry.get("author", ""),
+                        guid=entry.get("guid", ""),
+                    )
+                    session.add(new_entry)
+                    feed.last_updated = datetime.utcnow()
+            session.commit()
+        session.close()
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 
 def add_rss_entries_for_all_feeds():
@@ -242,13 +244,13 @@ def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10):
 
 
 
-async def mark_entry_as_read(entry_id, read_status=True):
+def mark_entry_as_read(entry_id, read_status=True):
     session = Session()
     entry = session.query(RssEntry).filter_by(id=entry_id).first()
 
     if entry:
         entry.read = read_status
-        await session.commit()
+        session.commit()
         session.close()
         print(
             f"RSS Entry with ID {entry_id} marked as {'read' if read_status else 'unread'}."

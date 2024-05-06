@@ -102,6 +102,13 @@ def feed_read(feed_id):
     mark_feed_entries_as_read(feed_id)
     return feeds()
 
+@app.route('/entry_read/<entry_id>/<read_status>')
+def entry_read(entry_id, read_status):
+    template = "feeds.html"
+    read_status = not bool(read_status)
+    mark_entry_as_read(entry_id, read_status)
+    return feeds()
+
 @app.route('/settings')
 def settings():
     template = "settings.html"
