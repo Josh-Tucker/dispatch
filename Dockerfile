@@ -13,5 +13,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Command to run the application using Uvicorn
 # ENTRYPOINT ["python3"]
 
-CMD ["gunicorn", "--limit-concurrency", "5" "--bind", "0.0.0.0:5000", "app:app"]
+CMD ["gnuicorn", "--limit-concurrency", "5" "--bind", "0.0.0.0:5000", "app:app"]
 
