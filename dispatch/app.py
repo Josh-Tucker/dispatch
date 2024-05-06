@@ -58,7 +58,7 @@ def delete_feed(feed_id):
 
 @app.route('/update_feed/<feed_id>')
 def update_feed(feed_id):
-    template = "refresh_active.html"
+    template = "button_refresh_active.html"
     print(feed_id)
     if feed_id == "all":
         executor.submit_stored('refresh', add_rss_entries_for_all_feeds)
@@ -70,10 +70,10 @@ def update_feed(feed_id):
 def get_result():
     if not executor.futures.done('refresh'):
         print("still going")
-        return render_template('refresh_active.html')
+        return render_template('button_refresh_active.html')
     future = executor.futures.pop('refresh')
     print("done!")
-    return render_template('refresh_button.html')
+    return render_template('button_refresh.html')
 
 @app.route('/entries/<feed_id>')
 def entires(feed_id):    

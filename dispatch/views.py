@@ -213,7 +213,6 @@ def get_feed_by_id(feed_id):
     session.close()
     return feed
 
-
 def get_feed_entry_by_id(entry_id):
     session = Session()
 
@@ -258,19 +257,19 @@ async def mark_entry_as_read(entry_id, read_status=True):
         session.close()
         print(f"RSS Entry with ID {entry_id} not found in the database.")
 
-async def mark_feed_entries_as_read(feed_id, read_status=True):
+def mark_feed_entries_as_read(feed_id, read_status=True):
     session = Session()
-    rss_entries = session.query(RssEntry).filter_by(id=feed_id).all()
+    rss_entries = session.query(RssEntry).filter_by(feed_id=feed_id).all()
 
     for entry in rss_entries:
         entry.read = read_status
 
-    await session.commit()
+    session.commit()
     session.close()
 
     if read_status:
-        print(f"All entries in the feed {feed_url} marked as read.")
+        print(f"All entries in the feed {feed_id} marked as read.")
     else:
-        print(f"All entries in the feed {feed_url} marked as unread.")
+        print(f"All entries in the feed {feed_id} marked as unread.")
 
 

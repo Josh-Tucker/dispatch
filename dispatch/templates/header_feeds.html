@@ -1,0 +1,7 @@
+<div class="header feed_list_header" x-show="feed_list_show" x-transition:enter.duration:20ms>
+    {% include 'button_refresh.html' %}
+    <button class="settings_button header_button" hx-get="/settings" hx-swap="scroll:top" hx-target="#feed_entry_item"
+        x-on:htmx:after-request.camel="feed_list_show = (ismobile) ? false : true; entry_list_show = (ismobile) ? false : true; entry_container_show = true;">
+        <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-menu.svg') }}">
+    </button>
+</div>
