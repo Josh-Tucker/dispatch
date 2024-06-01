@@ -41,15 +41,17 @@ def feeds():
 
 @app.route('/upload_opml', methods=['POST'])
 def upload_opml():
+    template = "settings.html"
     uploaded_file = request.files['opml_file']
     executor.submit_stored('opml_import', add_feeds_from_opml, uploaded_file)
-    return render_template('settings.html')
+    return render_template(template, feeds=get_all_feeds())
 
 @app.route('/add_feed', methods=['POST'])
 def feed():
+    template = "settings.html"
     feed_url = request.form["feed_url"]
     executor.submit_stored('feed_add',add_feed, feed_url)
-    return render_template('settings.html')
+    return render_template(template, feeds=get_all_feeds())
 
 @app.route('/delete_feed/<feed_id>')
 def delete_feed(feed_id):
@@ -73,6 +75,7 @@ def get_result():
         return render_template('button_refresh_active.html')
     future = executor.futures.pop('refresh')
     print("done!")
+    feeds()
     return render_template('button_refresh.html')
 
 @app.route('/entries/<feed_id>')

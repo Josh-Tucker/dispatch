@@ -4,13 +4,13 @@
 <div class="entry_content">
     <h2>Manage Feeds</h2>
     <h3>Add feed</h3>
-    <form id="add_feed_form" hx-post="/add_feed" hx-params="*">
+    <form id="add_feed_form" hx-post="/add_feed" hx-params="*" hx-target="#feed_entry_item">
         <label for="feed_url">Enter Feed URL:</label>
         <input type="text" id="feed_url" name="feed_url" >
         <button type="submit" >Add Feed</button>
     </form>
     <h3>Import from OPML</h3>
-    <form hx-post="/upload_opml" enctype="multipart/form-data">
+    <form hx-post="/upload_opml" enctype="multipart/form-data" hx-target="#feed_entry_item">
       <p><input type="file" name="opml_file" accept=".opml"></p>
       <p><input type="submit" value="Submit"></p>
     </form>
