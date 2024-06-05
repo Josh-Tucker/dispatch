@@ -169,7 +169,7 @@ input.feed_button {
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    font-size: 14px;
+    font-size: 18px;
 }
 
 .feed_card_left {
@@ -230,7 +230,7 @@ input.entry_button {
 
 .entry_card {
     text-overflow: ellipsis;
-    font-size: 14px;
+    font-size: 16px;
     border-radius: 2%;
     margin: 0.5rem;
     padding: 5px;
