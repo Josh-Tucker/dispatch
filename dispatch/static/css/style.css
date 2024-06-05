@@ -10,7 +10,7 @@
 }
 
 :root {
-    --primary-colour: hsl(0, 0%, 1%);
+    --primary-colour: hsl(0, 70%, 56%);
     --entry-content-colour: hsl(30, 3%, 14%);
     --text-colour: black;
     --border-colour: lightgray;
@@ -80,6 +80,9 @@ body {
     border-bottom: thin var(--border-colour) solid;
 }
 
+.refresh_button_active:hover {
+    background-color: var(--background-colour);
+}
 
 .refresh_button.htmx-request,
 .refresh_button_active,
