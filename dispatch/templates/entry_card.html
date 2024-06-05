@@ -1,6 +1,6 @@
 <label class="entry_label" id="entry_label_{{ entry.id }}" x-data="{ is_read: {{ entry.read|string|lower }} }">
     <input type="radio" name="entry" class="entry_button" hx-get="/entry/{{ entry.id }}"
-        hx-target="#feed_entry_item" hx-swap="scroll:top"
+        hx-target="#feed_entry_item" hx-swap="innerHTML show:top"
         x-on:htmx:after-request.camel="entry_list_show = (ismobile) ? false : true; entry_container_show = true; is_read = true;">
 
     {% if final_entry %}
