@@ -1,9 +1,9 @@
 <div class="entry_title_container">
     <div class="entry_feed_title">
-        {% if not feed.favicon_url %}
+        {% if not feed.favicon_path %}
         <span><img class="entry_icon" src="{{ url_for('static', filename='/svg/bx-rss.svg' ) }}"></span>
         {% else %}
-        <span><img class="entry_icon" src="{{ feed.favicon_url }}"></span>
+        <span><img class="entry_icon" src="{{ url_for('static', filename=feed.favicon_path ) }}"></span>
         {% endif %}
         <span>{{ feed.title }}</span>
     </div>
