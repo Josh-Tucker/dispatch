@@ -1,5 +1,5 @@
 <div class="entry_title_container">
-    <div class = entry_feed_title>
+    <div class=entry_feed_title>
         {% if not feed.favicon_url %}
         <span><img class="entry_icon" src="{{ url_for('static', filename='/svg/bx-rss.svg' ) }}"></span>
         {% else %}
@@ -12,14 +12,16 @@
     </a>
     <p class="entry_info"><small>{{ entry.author }}</small></p>
     <p class="entry_info"><small>{{ entry.published.strftime("%d %B %Y") }}</small></p>
-    <button class="header_button" hx-get="/fetch_content/{{ entry.id }}" hx-target="#feed_entry_item" hx-swap="innerHTML show:top" id="fetch_content_button">
+    <button class="header_button" hx-get="/fetch_content/{{ entry.id }}" hx-target="#feed_entry_item"
+        hx-swap="innerHTML show:top" id="fetch_content_button">
         <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-check-circle.svg') }}">
-</button>
+    </button>
 </div>
 <div class="entry_content">{{ entry.content|safe }}</div>
 <div id="feed_label_{{ feed.id }}" hx-swap-oob="true">
     {% include 'feed.html' %}
 </div>
-<button class="read_button header_button" hx-get="/entry_read/{{ entry.id }}/{{ entry.read }}" hx-target="#feed_list_items" id="mark_read_button_entry"hx-swap-oob="true">
-        <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-check-circle.svg') }}">
+<button class="read_button header_button" hx-get="/entry_read/{{ entry.id }}/{{ entry.read }}"
+    hx-target="#feed_list_items" id="mark_read_button_entry" hx-swap-oob="true">
+    <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-check-circle.svg') }}">
 </button>

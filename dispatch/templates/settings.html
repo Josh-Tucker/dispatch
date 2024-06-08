@@ -6,13 +6,13 @@
     <h3>Add feed</h3>
     <form id="add_feed_form" hx-post="/add_feed" hx-params="*" hx-target="#feed_entry_item">
         <label for="feed_url">Enter Feed URL:</label>
-        <input type="text" id="feed_url" name="feed_url" >
-        <button type="submit" >Add Feed</button>
+        <input type="text" id="feed_url" name="feed_url">
+        <button type="submit">Add Feed</button>
     </form>
     <h3>Import from OPML</h3>
     <form hx-post="/upload_opml" enctype="multipart/form-data" hx-target="#feed_entry_item">
-      <p><input type="file" name="opml_file" accept=".opml"></p>
-      <p><input type="submit" value="Submit"></p>
+        <p><input type="file" name="opml_file" accept=".opml"></p>
+        <p><input type="submit" value="Submit"></p>
     </form>
     <!-- This div will show the result of the form submission -->
     <div id="add_feed_result" hx-target="#add_feed_result">
@@ -38,7 +38,8 @@
                     </div>
                 </td>
                 <td>
-                    <button class="delete_button" hx-get="/delete_feed/{{ feed.id }}" data-feed-id="{{ feed.id }}">Delete</button>
+                    <button class="delete_button" hx-get="/delete_feed/{{ feed.id }}"
+                        data-feed-id="{{ feed.id }}">Delete</button>
                 </td>
             </tr>
             {% endfor %}

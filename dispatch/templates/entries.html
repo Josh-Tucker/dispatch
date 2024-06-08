@@ -1,10 +1,11 @@
 {% for entry in rss_entries[:-1] %}
-    {% include 'entry_card.html' %}
+{% include 'entry_card.html' %}
 {% endfor %}
 
 {% set entry = rss_entries[-1] %}
 {% set final_entry = true %}
 {% include 'entry_card.html' %}
-<button class="read_button header_button" hx-get="/feed_read/{{ feed.id }}" hx-target="#feed_list_items" id="mark_read_button"hx-swap-oob="true">
-        <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-check-circle.svg') }}">
+<button class="read_button header_button" hx-get="/feed_read/{{ feed.id }}" hx-target="#feed_list_items"
+    id="mark_read_button" hx-swap-oob="true">
+    <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-check-circle.svg') }}">
 </button>

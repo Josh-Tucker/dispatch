@@ -1,12 +1,11 @@
 <label class="entry_label" id="entry_label_{{ entry.id }}" x-data="{ is_read: {{ entry.read|string|lower }} }">
-    <input type="radio" name="entry" class="entry_button" hx-get="/entry/{{ entry.id }}"
-        hx-target="#feed_entry_item" hx-swap="innerHTML show:top"
+    <input type="radio" name="entry" class="entry_button" hx-get="/entry/{{ entry.id }}" hx-target="#feed_entry_item"
+        hx-swap="innerHTML show:top"
         x-on:htmx:after-request.camel="entry_list_show = (ismobile) ? false : true; entry_container_show = true; is_read = true;">
 
     {% if final_entry %}
-    <div class="entry_card" id="entry_card_{{ entry.id }}"
-        hx-get="/entries/{{ feed.id }}?page={{ next_page }}" hx-trigger="intersect once" hx-swap="beforeend"
-        hx-target="#entry_label_{{ entry.id }}">
+    <div class="entry_card" id="entry_card_{{ entry.id }}" hx-get="/entries/{{ feed.id }}?page={{ next_page }}"
+        hx-trigger="intersect once" hx-swap="beforeend" hx-target="#entry_label_{{ entry.id }}">
         {% else %}
         <div class="entry_card" id="entry_card_{{ entry.id }}">
             {% endif %}

@@ -8,12 +8,12 @@
       {% if not feed.favicon_path %}
       <span><img class="feed_icon" src="{{ url_for('static', filename='/svg/bx-rss.svg' ) }}"></span>
       {% else %}
-        <span><img class="feed_icon" src="{{ url_for('static', filename=feed.favicon_path ) }}"></span>
+      <span><img class="feed_icon" src="{{ url_for('static', filename=feed.favicon_path ) }}"></span>
       {% endif %}
       <span class="feed_card_title">{{ feed.title }}</span>
     </div>
 
-    <div class="feed_card_right"  x-data="{ unread_count: '{{ feed.unread_count }}' }">
+    <div class="feed_card_right" x-data="{ unread_count: '{{ feed.unread_count }}' }">
       <span class="unread_items_count" x-text="{{ feed.unread_count }}"></span>
     </div>
   </div>
