@@ -11,6 +11,7 @@ import dateutil.parser
 from datetime import datetime, timedelta
 from sqlalchemy import desc
 import hashlib
+from readabilipy import simple_json_from_html_string
 
 def add_feeds_from_opml(opml_file):
 
@@ -225,6 +226,73 @@ def get_feed_entry_by_id(entry_id):
     entry = session.query(RssEntry).filter_by(id=entry_id).first()
     return entry
 
+def update_entry(entry_id, article):
+    session = Session()
+    try:
+        # Fetch the RssEntry object for the given entry_id
+        entry = session.query(RssEntry).filter_by(id=entry_id).first()
+
+        # Update the RssEntry object with the fetched content
+        entry.content = article['content']
+        if not entry.published and 'published' in article:
+            entry.published = parser.parse(article['published'])
+        if not entry.author and 'author' in article:
+            entry.author = article['author']
+    
+
+        # Commit the changes to the database
+        session.commit()
+
+    finally:
+        session.close()
+
+def get_remote_content(url, entry_id):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        article = simple_json_from_html_string(response.text, use_readability=True)
+        # update_entry(entry_id, article)  # Call update_entry if entry_id is provided
+
+        entry = get_feed_entry_by_id(entry_id)
+
+        # Parse the HTML content with BeautifulSoup
+        soup = BeautifulSoup(article['content'], 'html.parser')
+
+        # Find all the hrefs in the content
+        for a in soup.find_all('a', href=True):
+            # If the href is a relative path, insert the entry.link URL
+            if not a['href'].startswith('http'):
+                a['href'] = urljoin(entry.link, a['href'])
+
+        # Update the article content with the modified HTML
+        article['content'] = str(soup)# Parse the HTML content with BeautifulSoup
+        soup = BeautifulSoup(article['content'], 'html.parser')
+
+        # Find all the hrefs in the content
+        for a in soup.find_all('a', href=True):
+            # If the href is a relative path, insert the entry.link URL
+            if not a['href'].startswith('http'):
+                a['href'] = urljoin(entry.link, a['href'])
+        
+        for img in soup.find_all('img', src=True):
+            # If the src is a relative path, insert the entry.link URL
+            if not img['src'].startswith('http'):
+                img['src'] = urljoin(entry.link, img['src'])
+
+        # Update the article content with the modified HTML
+        article['content'] = str(soup)
+
+        entry.content = article['content']
+        if not entry.published and 'published' in article:
+            entry.published = parser.parse(article['published'])
+        if not entry.author and 'author' in article:
+            entry.author = article['author']
+        
+        return entry
+
+    except requests.RequestException as e:
+        print(f"Error fetching remote content: {e}")
+        return None
 
 def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10):
     session = Session()

@@ -5,13 +5,16 @@
         {% else %}
         <span><img class="entry_icon" src="{{ feed.favicon_url }}"></span>
         {% endif %}
-        <span>{{ feed.title}}</span>
+        <span>{{ feed.title }}</span>
     </div>
     <a href="{{ entry.link }}" target="_blank" class="entry_title">
         <h1>{{ entry.title }}</h1>
     </a>
     <p class="entry_info"><small>{{ entry.author }}</small></p>
     <p class="entry_info"><small>{{ entry.published.strftime("%d %B %Y") }}</small></p>
+    <button class="header_button" hx-get="/fetch_content/{{ entry.id }}" hx-target="#feed_entry_item" hx-swap="innerHTML show:top" id="fetch_content_button">
+        <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-check-circle.svg') }}">
+</button>
 </div>
 <div class="entry_content">{{ entry.content|safe }}</div>
 <div id="feed_label_{{ feed.id }}" hx-swap-oob="true">

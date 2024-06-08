@@ -10,3 +10,4 @@ python-multipart==0.0.9
 flask==3.0.3
 gunicorn==22.0.0
 Flask-Executor==1.0.0
+readabilipy==0.2.0

@@ -112,6 +112,14 @@ def entry_read(entry_id, read_status):
     mark_entry_as_read(entry_id, read_status)
     return feeds()
 
+@app.route('/fetch_content/<entry_id>')
+def entry_remote_content(entry_id):
+    template="entry.html"
+    entry = get_feed_entry_by_id(entry_id)
+    article = get_remote_content(entry.link, entry_id)
+    feed = get_feed_by_id(entry.feed_id)
+    return render_template(template, entry=article, feed=feed)
+
 @app.route('/settings')
 def settings():
     template = "settings.html"

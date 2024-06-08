@@ -1,6 +1,7 @@
 FROM python:3.12-alpine
 
 # Set the working directory inside the container
+RUN apk add --update nodejs npm
 
 COPY ./dispatch/ .
 
