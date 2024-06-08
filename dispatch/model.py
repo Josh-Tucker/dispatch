@@ -1,4 +1,14 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey, Boolean, func
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    DateTime,
+    Text,
+    ForeignKey,
+    Boolean,
+    func,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import datetime
@@ -8,8 +18,9 @@ DATABASE_URL = "sqlite:///data/rss_database.db"
 
 Base = declarative_base()
 
+
 class RssFeed(Base):
-    __tablename__ = 'rss_feeds'
+    __tablename__ = "rss_feeds"
 
     id = Column(Integer, primary_key=True)
     url = Column(String, unique=True)
@@ -23,13 +34,18 @@ class RssFeed(Base):
     entries = relationship("RssEntry", back_populates="feed")
 
     def get_unread_count(self, session):
-        return session.query(func.count(RssEntry.id)).filter_by(feed_id=self.id, read=False).scalar()
+        return (
+            session.query(func.count(RssEntry.id))
+            .filter_by(feed_id=self.id, read=False)
+            .scalar()
+        )
+
 
 class RssEntry(Base):
-    __tablename__ = 'rss_entries'
+    __tablename__ = "rss_entries"
 
     id = Column(Integer, primary_key=True)
-    feed_id = Column(Integer, ForeignKey('rss_feeds.id'))
+    feed_id = Column(Integer, ForeignKey("rss_feeds.id"))
     title = Column(String)  # Title of the feed entry
     link = Column(String)  # URL of the feed entry
     description = Column(Text)  # Content or summary of the feed entry
@@ -40,6 +56,7 @@ class RssEntry(Base):
     read = Column(Boolean, default=False)
 
     feed = relationship("RssFeed", back_populates="entries")
+
 
 # Replace 'sqlite:///rss_database.db' with your database connection URL.
 engine = create_engine(DATABASE_URL)

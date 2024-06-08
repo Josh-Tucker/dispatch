@@ -4,9 +4,10 @@ from views import *
 
 app = Flask(__name__)
 executor = Executor(app)
-app.config['EXECUTOR_TYPE'] = 'thread'
+app.config["EXECUTOR_TYPE"] = "thread"
 
 DATABASE_URL = "sqlite:///data/rss_database.db"
+
 
 @app.template_filter()
 def entry_timedetla(input_datetime):
@@ -29,59 +30,66 @@ def entry_timedetla(input_datetime):
         return input_datetime.strftime("%Y-%m-%d")
 
 
-@app.route('/')
+@app.route("/")
 def index():
     template = "index.html"
     return render_template(template)
 
-@app.route('/feeds')
+
+@app.route("/feeds")
 def feeds():
     template = "feeds.html"
     return render_template(template, feeds=get_all_feeds())
 
-@app.route('/upload_opml', methods=['POST'])
+
+@app.route("/upload_opml", methods=["POST"])
 def upload_opml():
     template = "settings.html"
-    uploaded_file = request.files['opml_file']
-    executor.submit_stored('opml_import', add_feeds_from_opml, uploaded_file)
+    uploaded_file = request.files["opml_file"]
+    executor.submit_stored("opml_import", add_feeds_from_opml, uploaded_file)
     return render_template(template, feeds=get_all_feeds())
 
-@app.route('/add_feed', methods=['POST'])
+
+@app.route("/add_feed", methods=["POST"])
 def feed():
     template = "settings.html"
     feed_url = request.form["feed_url"]
-    executor.submit_stored('feed_add',add_feed, feed_url)
+    executor.submit_stored("feed_add", add_feed, feed_url)
     return render_template(template, feeds=get_all_feeds())
 
-@app.route('/delete_feed/<feed_id>')
+
+@app.route("/delete_feed/<feed_id>")
 def delete_feed(feed_id):
     remove_feed(feed_id)
-    return render_template('settings.html')
+    return render_template("settings.html")
 
-@app.route('/update_feed/<feed_id>')
+
+@app.route("/update_feed/<feed_id>")
 def update_feed(feed_id):
     template = "button_refresh_active.html"
     print(feed_id)
     if feed_id == "all":
-        executor.submit_stored('refresh', add_rss_entries_for_all_feeds)
+        executor.submit_stored("refresh", add_rss_entries_for_all_feeds)
     else:
-        executor.submit_stored('refresh', add_rss_entries_for_all_feeds, feed_id)
+        executor.submit_stored("refresh", add_rss_entries_for_all_feeds, feed_id)
     return render_template(template)
 
-@app.route('/get-result')
+
+@app.route("/get-result")
 def get_result():
-    if not executor.futures.done('refresh'):
+    if not executor.futures.done("refresh"):
         print("still going")
-        return render_template('button_refresh_active.html')
-    future = executor.futures.pop('refresh')
+        return render_template("button_refresh_active.html")
+    future = executor.futures.pop("refresh")
     print("done!")
     feeds()
-    return render_template('button_refresh.html')
+    return render_template("button_refresh.html")
 
-@app.route('/entries/<feed_id>')
-def entires(feed_id):    
+
+@app.route("/entries/<feed_id>")
+def entires(feed_id):
     template = "entries.html"
-    page = int(request.args.get('page', default=1))
+    page = int(request.args.get("page", default=1))
     next_page = page + 1
     entries = get_feed_entries_by_feed_id(feed_id, page)
     if len(entries) == 0:
@@ -90,43 +98,49 @@ def entires(feed_id):
         feed = {"title": "All Feeds", "id": "all"}
     else:
         feed = get_feed_by_id(feed_id)
-    return render_template(template, rss_entries=entries, feed=feed, next_page=next_page)
+    return render_template(
+        template, rss_entries=entries, feed=feed, next_page=next_page
+    )
 
-@app.route('/entry/<entry_id>')
+
+@app.route("/entry/<entry_id>")
 def entry(entry_id):
     template = "entry.html"
     entry = get_feed_entry_by_id(entry_id)
     feed = get_feed_by_id(entry.feed_id)
     return render_template(template, entry=entry, feed=feed)
 
-@app.route('/feed_read/<feed_id>')
+
+@app.route("/feed_read/<feed_id>")
 def feed_read(feed_id):
     template = "feeds.html"
     mark_feed_entries_as_read(feed_id)
     return feeds()
 
-@app.route('/entry_read/<entry_id>/<read_status>')
+
+@app.route("/entry_read/<entry_id>/<read_status>")
 def entry_read(entry_id, read_status):
     template = "feeds.html"
     read_status = not bool(read_status)
     mark_entry_as_read(entry_id, read_status)
     return feeds()
 
-@app.route('/fetch_content/<entry_id>')
+
+@app.route("/fetch_content/<entry_id>")
 def entry_remote_content(entry_id):
-    template="entry.html"
+    template = "entry.html"
     entry = get_feed_entry_by_id(entry_id)
     article = get_remote_content(entry.link, entry_id)
     feed = get_feed_by_id(entry.feed_id)
     return render_template(template, entry=article, feed=feed)
 
-@app.route('/settings')
+
+@app.route("/settings")
 def settings():
     template = "settings.html"
     return render_template(template, feeds=get_all_feeds())
 
 
-
 if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 5000))
-    app.run(debug=False, host='0.0.0.0', port=port)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=False, host="0.0.0.0", port=port)

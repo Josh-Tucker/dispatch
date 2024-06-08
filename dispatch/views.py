@@ -13,6 +13,7 @@ from sqlalchemy import desc
 import hashlib
 from readabilipy import simple_json_from_html_string
 
+
 def add_feeds_from_opml(opml_file):
 
     opml_data = opml.parse(opml_file)
@@ -24,6 +25,7 @@ def add_feeds_from_opml(opml_file):
         except Exception as e:
             print(f"An error occurred: {e}")
 
+
 def article_date_format(date: str) -> str:
     return dateutil.parser.parse(date).strftime("%d %b %Y")
 
@@ -33,8 +35,8 @@ def article_long_date_format(date: str) -> str:
 
 
 def get_favicon_url(feed_url):
-    if 'http' not in feed_url:
-        feed_url = 'http://' + feed_url
+    if "http" not in feed_url:
+        feed_url = "http://" + feed_url
 
     page = requests.get(feed_url)
     soup = BeautifulSoup(page.text, features="lxml")
@@ -44,10 +46,10 @@ def get_favicon_url(feed_url):
         icon_link = soup.find("link", rel="icon")
 
     if icon_link is None:
-        return urljoin(feed_url, '/favicon.ico')
+        return urljoin(feed_url, "/favicon.ico")
     else:
         icon_href = icon_link.get("href")
-        if not icon_href.startswith(('http://', 'https://')):
+        if not icon_href.startswith(("http://", "https://")):
             icon_href = urljoin(feed_url, icon_href)
         return icon_href
 
@@ -62,9 +64,11 @@ def add_feed(feed_url):
             session.close()
 
         feed = feedparser.parse(feed_url)
-        favicon_url = feed.feed.get("image", {}).get("url", get_favicon_url(feed.feed.get("link", feed_url)))
+        favicon_url = feed.feed.get("image", {}).get(
+            "url", get_favicon_url(feed.feed.get("link", feed_url))
+        )
 
-        is_svg_string = '<svg' in favicon_url
+        is_svg_string = "<svg" in favicon_url
 
         if is_svg_string:
             favicon_path = None
@@ -75,13 +79,15 @@ def add_feed(feed_url):
 
                 file_extension = os.path.splitext(urlparse(favicon_url).path)[1]
                 if not file_extension:
-                    file_extension = ".png" 
+                    file_extension = ".png"
 
-                filename = hashlib.md5(favicon_url.encode()).hexdigest() + file_extension
+                filename = (
+                    hashlib.md5(favicon_url.encode()).hexdigest() + file_extension
+                )
                 filepath = os.path.join("static", "img", filename)
                 favicon_path = "/img/" + filename
 
-                with open(filepath, 'wb') as file:
+                with open(filepath, "wb") as file:
                     for chunk in response.iter_content(chunk_size=8192):
                         file.write(chunk)
 
@@ -103,7 +109,7 @@ def add_feed(feed_url):
             link=feed.feed.get("link", ""),
             description=feed.feed.get("description", ""),
             published=published_date,
-            favicon_path=favicon_path
+            favicon_path=favicon_path,
         )
 
         session.add_all([new_feed])
@@ -122,7 +128,7 @@ def remove_feed(feed_id):
             session.query(RssEntry).filter_by(feed_id=feed_id).delete()
             session.delete(feed)
             session.commit()
-            
+
             return True, "Feed and associated entries have been successfully removed."
         else:
             return False, "Feed not found."
@@ -148,7 +154,9 @@ def add_rss_entries(feed_id):
         else:
             feed_data = feedparser.parse(feed.url)
             for entry in feed_data.entries:
-                existing_entry = session.query(RssEntry).filter_by(link=entry.link).first()
+                existing_entry = (
+                    session.query(RssEntry).filter_by(link=entry.link).first()
+                )
                 if not existing_entry:
                     if entry.get("content"):
                         content = entry.get("content")[0]["value"]
@@ -158,7 +166,11 @@ def add_rss_entries(feed_id):
                         content = entry.get("link")
 
                     published_str = entry.get("published", "")
-                    published_date = parser.parse(published_str) if published_str else datetime.utcnow()
+                    published_date = (
+                        parser.parse(published_str)
+                        if published_str
+                        else datetime.utcnow()
+                    )
 
                     new_entry = RssEntry(
                         feed_id=feed.id,
@@ -190,9 +202,11 @@ def add_rss_entries_for_all_feeds():
 
 def get_all_feeds():
     session = Session()
-    total_unread_count = session.query(func.count(RssEntry.id)).filter(RssEntry.read == False).scalar()
+    total_unread_count = (
+        session.query(func.count(RssEntry.id)).filter(RssEntry.read == False).scalar()
+    )
     print(total_unread_count)
-    all_feed = RssFeed(id='all', title='All Feeds')
+    all_feed = RssFeed(id="all", title="All Feeds")
     feeds = session.query(RssFeed).all()
     for feed in feeds:
         feed.unread_count = feed.get_unread_count(session)
@@ -216,6 +230,7 @@ def get_feed_by_id(feed_id):
     session.close()
     return feed
 
+
 def get_feed_entry_by_id(entry_id):
     session = Session()
 
@@ -226,6 +241,7 @@ def get_feed_entry_by_id(entry_id):
     entry = session.query(RssEntry).filter_by(id=entry_id).first()
     return entry
 
+
 def update_entry(entry_id, article):
     session = Session()
     try:
@@ -233,12 +249,11 @@ def update_entry(entry_id, article):
         entry = session.query(RssEntry).filter_by(id=entry_id).first()
 
         # Update the RssEntry object with the fetched content
-        entry.content = article['content']
-        if not entry.published and 'published' in article:
-            entry.published = parser.parse(article['published'])
-        if not entry.author and 'author' in article:
-            entry.author = article['author']
-    
+        entry.content = article["content"]
+        if not entry.published and "published" in article:
+            entry.published = parser.parse(article["published"])
+        if not entry.author and "author" in article:
+            entry.author = article["author"]
 
         # Commit the changes to the database
         session.commit()
@@ -246,53 +261,38 @@ def update_entry(entry_id, article):
     finally:
         session.close()
 
+
 def get_remote_content(url, entry_id):
     try:
         response = requests.get(url)
         response.raise_for_status()
         article = simple_json_from_html_string(response.text, use_readability=True)
-        # update_entry(entry_id, article)  # Call update_entry if entry_id is provided
-
         entry = get_feed_entry_by_id(entry_id)
 
-        # Parse the HTML content with BeautifulSoup
-        soup = BeautifulSoup(article['content'], 'html.parser')
+        soup = BeautifulSoup(article["content"], "html.parser")
 
-        # Find all the hrefs in the content
-        for a in soup.find_all('a', href=True):
-            # If the href is a relative path, insert the entry.link URL
-            if not a['href'].startswith('http'):
-                a['href'] = urljoin(entry.link, a['href'])
+        for a in soup.find_all("a", href=True):
+            if not a["href"].startswith("http"):
+                a["href"] = urljoin(entry.link, a["href"])
 
-        # Update the article content with the modified HTML
-        article['content'] = str(soup)# Parse the HTML content with BeautifulSoup
-        soup = BeautifulSoup(article['content'], 'html.parser')
+        for img in soup.find_all("img", src=True):
+            if not img["src"].startswith("http"):
+                img["src"] = urljoin(entry.link, img["src"])
 
-        # Find all the hrefs in the content
-        for a in soup.find_all('a', href=True):
-            # If the href is a relative path, insert the entry.link URL
-            if not a['href'].startswith('http'):
-                a['href'] = urljoin(entry.link, a['href'])
-        
-        for img in soup.find_all('img', src=True):
-            # If the src is a relative path, insert the entry.link URL
-            if not img['src'].startswith('http'):
-                img['src'] = urljoin(entry.link, img['src'])
+        article["content"] = str(soup)
 
-        # Update the article content with the modified HTML
-        article['content'] = str(soup)
+        entry.content = article["content"]
+        if not entry.published and "published" in article:
+            entry.published = parser.parse(article["published"])
+        if not entry.author and "author" in article:
+            entry.author = article["author"]
 
-        entry.content = article['content']
-        if not entry.published and 'published' in article:
-            entry.published = parser.parse(article['published'])
-        if not entry.author and 'author' in article:
-            entry.author = article['author']
-        
         return entry
 
     except requests.RequestException as e:
         print(f"Error fetching remote content: {e}")
         return None
+
 
 def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10):
     session = Session()
@@ -300,16 +300,24 @@ def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10):
     query = session.query(RssEntry)
 
     if feed_id == "all":
-        query = query.order_by(desc(RssEntry.published)).limit(entries_per_page).offset((page - 1) * entries_per_page)
+        query = (
+            query.order_by(desc(RssEntry.published))
+            .limit(entries_per_page)
+            .offset((page - 1) * entries_per_page)
+        )
 
     else:
-        query = query.filter_by(feed_id=feed_id).order_by(desc(RssEntry.published)).limit(entries_per_page).offset((page - 1) * entries_per_page)
+        query = (
+            query.filter_by(feed_id=feed_id)
+            .order_by(desc(RssEntry.published))
+            .limit(entries_per_page)
+            .offset((page - 1) * entries_per_page)
+        )
 
     entries = query.all()
 
     session.close()
     return entries
-
 
 
 def mark_entry_as_read(entry_id, read_status=True):
@@ -326,6 +334,7 @@ def mark_entry_as_read(entry_id, read_status=True):
     else:
         session.close()
         print(f"RSS Entry with ID {entry_id} not found in the database.")
+
 
 def mark_feed_entries_as_read(feed_id, read_status=True):
     session = Session()
@@ -344,5 +353,3 @@ def mark_feed_entries_as_read(feed_id, read_status=True):
         print(f"All entries in the feed {feed_id} marked as read.")
     else:
         print(f"All entries in the feed {feed_id} marked as unread.")
-
-
