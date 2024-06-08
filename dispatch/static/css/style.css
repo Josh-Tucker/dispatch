@@ -440,10 +440,9 @@ a {
     }
 
     .entry_content {
-        font-size: clamp(26px, 1.5vw, 30px);
+        font-size: 30px;
         padding-top: 20px;
         max-width: 90%;
-        line-height: 28px;
     }
 
     .entry_content p {
