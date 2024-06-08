@@ -1,7 +1,13 @@
 <div class="header feed_entry_header" x-show="entry_container_show" x-transition:enter.duration:20ms>
-    <button class="read_button header_button" hx-get="/feed_read" hx-target="#feed_list_items"
-        id="mark_read_button_entry">
-        <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-check-circle.svg') }}">
-    </button>
+    <div>
+        <button class="read_button header_button" hx-get="/feed_read" hx-target="#feed_list_items"
+            id="mark_read_button_entry">
+            <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-check-circle.svg') }}">
+        </button>
+        <button class="header_button" id="fetch_content_button" hx-get="/fetch_content/" hx-target="#feed_entry_item"
+            hx-swap="innerHTML show:top">
+            <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-book-open.svg') }}">
+        </button>
+    </div>
     {% include 'button_back.html' %}
 </div>

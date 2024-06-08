@@ -142,7 +142,8 @@ input.feed_button {
     min-width: 25ch;
 }
 
-.feed_list_container, .feed_list_header {
+.feed_list_container,
+.feed_list_header {
     min-width: 25ch;
     border-right: thin var(--border-colour) solid;
 }
@@ -217,7 +218,8 @@ input.entry_button {
     display: none;
 }
 
-.feed_entries_container, .feed_entries_header {
+.feed_entries_container,
+.feed_entries_header {
     min-width: 25ch;
     border-right: thin var(--border-colour) solid;
 }
@@ -302,11 +304,37 @@ input.entry_button {
     opacity: 0.75;
 }
 
+@keyframes widenHeader {
+    0% {
+        opacity: 0;
+        width: 0
+    }
+
+    to {
+        opacity: 1;
+        width: 25ch
+    }
+}
+
 .entry_title_container {
     max-width: 90ch;
     margin: 0 auto;
     margin-bottom: 24px;
 }
+
+.entry_title_container::after {
+    content: "";
+    display: block;
+    margin-top: 1.5em;
+    margin-bottom: 8px;
+    border-bottom: 0.5em var(--text-colour) solid;
+    width: 0;
+    animation-delay: .2s;
+    animation-name: widenHeader;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+}
+
 
 .entry_title {
     /* font-family: 'Merriweather', serif; */
@@ -451,31 +479,36 @@ a {
 }
 
 a span {
-  display:inline-block;
-  animation: wiggle 1s infinite;
-  animation-delay: calc(var(--animation-order) * 307ms);
-  transform-origin: center;
-  animation-timing-function: ease-in-out;
+    display: inline-block;
+    animation: wiggle 1s infinite;
+    animation-delay: calc(var(--animation-order) * 307ms);
+    transform-origin: center;
+    animation-timing-function: ease-in-out;
 }
 
 
 @keyframes wiggle {
-  0% {
-    transform: scale(1.0) translateY(0px) rotate(0deg);
-  }
-  20%{
-    transform: scale(1.0) translateY(-2px) rotate(-3deg);
-  }
-  40%{
-    transform: scale(1.1) translateY(-2px) rotate(3deg);
-  }
-  60%{
-    transform: scale(1.0) translateY(2px) rotate(-3deg);
-  }
-  80%{
-    transform: scale(0.95) translateY(-2px) rotate(3deg);
-  }
-  100% {
-    transform: scale(1.0) translateY(0px) rotate(0deg);
-  }
+    0% {
+        transform: scale(1.0) translateY(0px) rotate(0deg);
+    }
+
+    20% {
+        transform: scale(1.0) translateY(-2px) rotate(-3deg);
+    }
+
+    40% {
+        transform: scale(1.1) translateY(-2px) rotate(3deg);
+    }
+
+    60% {
+        transform: scale(1.0) translateY(2px) rotate(-3deg);
+    }
+
+    80% {
+        transform: scale(0.95) translateY(-2px) rotate(3deg);
+    }
+
+    100% {
+        transform: scale(1.0) translateY(0px) rotate(0deg);
+    }
 }
