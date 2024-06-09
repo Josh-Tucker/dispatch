@@ -9,20 +9,11 @@
     display: none !important;
 }
 
-.button_icon {
+.header_button > svg {
     fill: var(--text-colour);
     color: var(--text-colour);
-}
-
-.header_button > img {
-    fill: blue;
-}
-
-svg {
-    fill: var(--text-colour);
-    color: var(--text-colour);
-    min-height: 3.5rem;
-    min-width: 3.5rem;
+    min-height: 3rem;
+    min-width: 3rem;
 }
 
 body {
