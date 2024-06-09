@@ -9,11 +9,9 @@
     display: none !important;
 }
 
-.header_button > svg {
+.header_button>svg {
     fill: var(--text-colour);
     color: var(--text-colour);
-    min-height: 3rem;
-    min-width: 3rem;
 }
 
 body {
@@ -424,6 +422,11 @@ a {
         font-size: 1.2rem;
     }
 
+    .header_button>svg {
+        min-height: 3rem;
+        min-width: 3rem;
+    }
+
     .entry_feed_title {
         font-size: 16px;
     }
@@ -466,6 +469,15 @@ a {
 
 /* SETTINGS TABLE */
 
+.settings_container {
+    margin: 0 auto;
+    max-width: 72ch;
+    padding: 20px;
+    align-content: center;
+    align-self: center;
+}
+
+
 .settings_table_feed_card {
     margin-top: 2px;
     padding: 5px;
@@ -474,6 +486,7 @@ a {
     align-items: center;
     font-size: 14px;
 }
+
 /* 
 a span {
     display: inline-block;
@@ -508,4 +521,126 @@ a span {
     100% {
         transform: scale(1.0) translateY(0px) rotate(0deg);
     }
+}
+
+.settings_item {
+    font-size: 30px;
+    margin-bottom: 2rem;
+}
+
+.settings_item::after {
+    content: "";
+    display: block;
+    margin-top: 1.5em;
+    margin-bottom: 8px;
+    border: 0.1em var(--text-colour) solid;
+}
+
+input[type="file"]::file-selector-button, button[type="submit"], input[type="submit"], .delete_button {
+  border-radius: 4px;
+  padding: 0 16px;
+  height: 40px;
+  cursor: pointer;
+  color: var(--text-colour);
+  background-color: var(--background-colour);
+  border: 1px solid var(--border-colour);
+  box-shadow: 0px 1px 0px rgba(0, 0, 0, 0.05);
+  margin-right: 16px;
+  transition: background-color 200ms;
+}
+
+
+
+/* Forms
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="text"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+textarea,
+select {
+    height: 38px;
+    padding: 6px 10px;
+    /* The 6px vertically centers text on FF, ignored by Webkit */
+    background-color: #fff;
+    border: 1px solid #D1D1D1;
+    border-radius: 4px;
+    box-shadow: none;
+    box-sizing: border-box;
+}
+
+/* Removes awkward default styles on some inputs for iOS */
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="text"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+textarea {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+textarea {
+    min-height: 65px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+input[type="text"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+    border: 1px solid #33C3F0;
+    outline: 0;
+}
+
+label,
+legend {
+    display: block;
+    margin-bottom: .5rem;
+    font-weight: 600;
+}
+
+fieldset {
+    padding: 0;
+    border-width: 0;
+}
+
+label>.label-body {
+    display: inline-block;
+    margin-left: .5rem;
+    font-weight: normal;
+}
+
+
+th {
+    font-size: 2rem;
+}
+
+th,
+td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #E1E1E1;
+}
+
+th:first-child,
+td:first-child {
+    padding-left: 0;
+}
+
+th:last-child,
+td:last-child {
+    padding-right: 0;
 }
