@@ -605,7 +605,7 @@ select:focus {
     outline: 0;
 }
 
-label,
+
 legend {
     display: block;
     margin-bottom: .5rem;
@@ -616,12 +616,12 @@ fieldset {
     padding: 0;
     border-width: 0;
 }
-
+/* 
 label>.label-body {
     display: inline-block;
     margin-left: .5rem;
     font-weight: normal;
-}
+} */
 
 
 th {
