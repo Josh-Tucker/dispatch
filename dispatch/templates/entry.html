@@ -1,7 +1,7 @@
 <div class="entry_title_container">
     <div class="entry_feed_title">
         {% if not feed.favicon_path %}
-        <span><img class="entry_icon" src="{{ url_for('static', filename='/svg/bx-rss.svg' ) }}"></span>
+        {% include 'bx-rss.svg' %}
         {% else %}
         <span><img class="entry_icon" src="{{ url_for('static', filename=feed.favicon_path ) }}"></span>
         {% endif %}
@@ -19,9 +19,9 @@
 </div>
 <button class="read_button header_button" id="mark_read_button_entry"
     hx-get="/entry_read/{{ entry.id }}/{{ entry.read }}" hx-target="#feed_list_items" hx-swap-oob="true">
-    <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-check-circle.svg') }}">
+    {% include 'bx-check-circle.svg' %}
 </button>
 <button class="header_button" id="fetch_content_button" hx-get="/fetch_content/{{ entry.id }}"
     hx-target="#feed_entry_item" hx-swap="innerHTML show:top" hx-swap-oob="true">
-    <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-book-open.svg') }}">
+    {% include 'bx-book-open.svg'%}
 </button>

@@ -57,6 +57,23 @@ class RssEntry(Base):
 
     feed = relationship("RssFeed", back_populates="entries")
 
+class Settings(Base):
+    __tablename__ = "settings"
+
+    id = Column(Integer, primary_key=True)
+    key = Column(String, unique=True)
+    value = Column(String)
+
+    @staticmethod
+    def get_setting(session, key):
+        setting = session.query(Settings).filter_by(key=key).first()
+        return setting.value if setting else None
+
+    @staticmethod
+    def set_setting(session, key, value):
+        session.query(Settings).filter_by(key=key).delete()
+        session.add(Settings(key=key, value=value))
+
 
 # Replace 'sqlite:///rss_database.db' with your database connection URL.
 engine = create_engine(DATABASE_URL)

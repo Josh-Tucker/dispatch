@@ -30,7 +30,7 @@
                 <td class="settings_table_feed_card">
                     <div class="feed_card_left">
                         {% if not feed.favicon_path %}
-                        <span><img class="feed_icon" src="{{ url_for('static', filename='/svg/bx-rss.svg' ) }}"></span>
+                        <span>{% include 'bx-rss.svg' %}</span>
                         {% else %}
                         <span><img class="feed_icon" src="{{ url_for('static', filename=feed.favicon_path ) }}"></span>
                         {% endif %}
@@ -48,4 +48,14 @@
 
 
     <h2>Visuals</h2>
+    <h3>Theme</h3>
+    <form id="theme_form" hx-post="/set_default_theme" hx-target="#root_style" hx-swap="outerHTML">
+        <label for="theme">Select a theme:</label>
+        <select id="theme" name="theme">
+            <option hx-post="/set_theme" hx-target="#root_style" hx-swap="outerHTML" value="light">Light</option>
+            <option hx-post="/set_theme" hx-target="#root_style" hx-swap="outerHTML" value="dark">Dark</option>
+            <option hx-post="/set_theme" hx-target="#root_style" hx-swap="outerHTML" value="clean">Clean</option>
+        </select>
+        <button type="submit">Set Default</button>
+        </form>
 </div>

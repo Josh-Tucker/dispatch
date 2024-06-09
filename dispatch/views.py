@@ -353,3 +353,49 @@ def mark_feed_entries_as_read(feed_id, read_status=True):
         print(f"All entries in the feed {feed_id} marked as read.")
     else:
         print(f"All entries in the feed {feed_id} marked as unread.")
+
+def get_theme(theme_name):
+    themes = [
+        {
+            "name": "light",
+            "primary_colour": "#f582ae",
+            "text_colour": "#172c66",
+            "highlight_colour": "#8bd3dd",
+            "background_colour": "#fef6e4",
+        },
+        {
+            "name": "dark",
+            "primary_colour": "#ff5277",
+            "text_colour": "#ffffff",
+            "highlight_colour": "#43a9a3",
+            "background_colour": "#0e141b",
+        },
+        {
+            "name": "clean",
+            "primary_colour": "#ff335f",
+            "text_colour": "#373a3c",
+            "highlight_colour": "#43a9a3",
+            "background_colour": "#ffffff",
+        }
+    ]
+
+    if theme_name == "default":
+        session = Session()
+        theme_name = Settings.get_setting(session, "theme")
+        if not theme_name:
+            theme_name = "light"
+            Settings.set_setting(session, "theme", theme_name)
+
+        session.close()
+
+    for theme in themes:
+        if theme["name"] == theme_name:
+            return theme
+
+    return None  
+
+def set_default_theme(theme_name):
+    session = Session()
+    Settings.set_setting(session, "theme", theme_name)
+    session.commit()
+    session.close()

@@ -33,7 +33,7 @@ def entry_timedetla(input_datetime):
 @app.route("/")
 def index():
     template = "index.html"
-    return render_template(template)
+    return render_template(template, theme=get_theme("default"))
 
 
 @app.route("/feeds")
@@ -139,6 +139,22 @@ def entry_remote_content(entry_id):
 def settings():
     template = "settings.html"
     return render_template(template, feeds=get_all_feeds())
+
+@app.route("/set_theme", methods=["POST"])
+def set_theme():
+    theme_name = request.form["theme"]
+    theme = get_theme(theme_name)
+    template = "theme.html"
+    return render_template(template, theme=theme)
+
+
+@app.route("/set_default_theme", methods=["POST"])
+def route_set_default_theme():
+    theme_name = request.form["theme"]
+    set_default_theme(theme_name)
+    theme = get_theme(theme_name)
+    template = "theme.html"
+    return render_template(template, theme=theme)
 
 
 if __name__ == "__main__":

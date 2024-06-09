@@ -9,13 +9,18 @@
     display: none !important;
 }
 
-:root {
-    --primary-colour: hsl(0, 70%, 56%);
-    --entry-content-colour: hsl(30, 3%, 14%);
-    --text-colour: black;
-    --border-colour: lightgray;
-    --highlight-colour: lightblue;
-    --background-colour: white;
+.button_icon {
+    fill: var(--text-colour);
+    color: var(--text-colour);
+}
+
+.header_button > img {
+    fill: blue;
+}
+
+svg {
+    fill: var(--text-colour);
+    color: var(--text-colour);
 }
 
 body {
@@ -46,7 +51,7 @@ body {
 }
 
 .header_button:hover {
-    background-color: var(--border-colour);
+    background-color: var(--highlight-colour);
 }
 
 .header_button:active {
@@ -157,7 +162,7 @@ input.feed_button {
 .feed_list::-webkit-scrollbar-track,
 .feed_entries::-webkit-scrollbar-thumb,
 .feed_entries::-webkit-scrollbar-track {
-    background-color: var(--border-colour);
+    background-color: var(--highlight-colour);
 }
 
 .feed_icon {
@@ -196,7 +201,7 @@ input.feed_button {
 }
 
 .feed_card:hover {
-    background-color: var(--border-colour);
+    background-color: var(--highlight-colour);
 }
 
 @media screen and (max-width: 999px) {
@@ -230,7 +235,7 @@ input.entry_button {
 
 .feed_entries::-webkit-scrollbar-thumb,
 .feed_entries::-webkit-scrollbar-track {
-    background-color: var(--border-colour);
+    background-color: var(--highlight-colour);
 }
 
 .entry_card {
@@ -253,7 +258,7 @@ input.entry_button {
 }
 
 .entry_card:hover {
-    background-color: var(--border-colour);
+    background-color: var(--highlight-colour);
 }
 
 .entry_label input[type="radio"]:checked+.entry_card,
@@ -476,14 +481,14 @@ a {
     align-items: center;
     font-size: 14px;
 }
-
+/* 
 a span {
     display: inline-block;
     animation: wiggle 1s infinite;
     animation-delay: calc(var(--animation-order) * 307ms);
     transform-origin: center;
     animation-timing-function: ease-in-out;
-}
+} */
 
 
 @keyframes wiggle {
