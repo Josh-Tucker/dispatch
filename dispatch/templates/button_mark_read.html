@@ -1,3 +1,3 @@
 <button class="read_button header_button" hx-get="/feed_read" hx-target="#feed_list_items" id="mark_read_button">
-        <img class="button_icon" src="{{ url_for('static', filename='/svg/bx-check-circle.svg') }}">
+        {% include 'bx-check-circle.svg' %}
 </button>

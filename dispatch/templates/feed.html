@@ -6,7 +6,7 @@
   <div class="feed_card">
     <div class="feed_card_left">
       {% if not feed.favicon_path %}
-      <span><img class="feed_icon" src="{{ url_for('static', filename='/svg/bx-rss.svg' ) }}"></span>
+      <span>{% include 'bx-rss.svg' %}</span>
       {% else %}
       <span><img class="feed_icon" src="{{ url_for('static', filename=feed.favicon_path ) }}"></span>
       {% endif %}
