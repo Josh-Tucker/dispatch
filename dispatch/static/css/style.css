@@ -26,6 +26,7 @@ body {
 
 .header {
     display: grid;
+    height: 100%;
     align-items: center;
     border-right: thin var(--border-colour) solid;
     min-width: 25ch;
