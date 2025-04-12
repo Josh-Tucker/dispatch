@@ -13,7 +13,9 @@ header {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr;
-  margin: 16px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  gap: 10px;
 }
 
 .settings-button {
@@ -339,3 +341,97 @@ code {
 a {
     color: var(--primary-colour);
 }
+
+
+
+/* --- Styles for Header Buttons --- */
+
+header {
+  display: grid;
+  grid-template-columns: auto auto; /* Size columns based on content */
+  justify-content: space-between; /* Push buttons to opposite ends */
+  align-items: center; /* Vertically align items if heights differ */
+  margin-top: 16px;
+  margin-bottom: 24px;
+  gap: 10px; /* Add some space between buttons */
+}
+
+/* Remove the old text-align rule */
+.settings-button {
+  /* text-align: right; */ /* No longer needed */
+}
+
+/* Style both header links like cards */
+header a.refresh-link,
+header a.settings-button {
+  /* Core card visual styles */
+  display: inline-block; /* Needed for padding, transform etc. */
+  background-color: var(--background-colour);
+  color: var(--text-colour);
+  border: solid .0625rem var(--border-colour);
+  border-radius: .25rem; /* Match card border-radius */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Match card base shadow */
+  text-decoration: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Match card transition */
+
+  /* Button-specific adjustments */
+  padding: 0.5rem 1rem; /* Give them some padding */
+  text-align: center;
+  margin: 0; /* Remove default margins if any */
+  cursor: pointer;
+}
+
+/* Apply hover effect similar to cards */
+header a.refresh-link:hover,
+header a.settings-button:hover {
+  transform: translateY(-3px); /* Slightly less lift than cards? Adjust as needed */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Slightly adjusted hover shadow */
+}
+
+/* --- End Styles for Header Buttons --- */
+
+/* --- Rest of your existing CSS --- */
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: Arial, sans-serif;
+  overflow-wrap: anywhere;
+  display: flex;
+  justify-content: center;
+}
+
+/* ... keep all your other existing styles below ... */
+
+.settings_item {
+    font-size: 30px;
+    margin-bottom: 2rem;
+}
+
+/* ... etc ... */
+
+.card {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 16px;
+  /* Use theme variable for card background */
+  background-color: var(--background-colour);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-decoration: none;
+   /* Use theme variable for card text */
+  color: var(--text-colour);
+   /* Use theme variable for card border */
+  border: solid .0625rem var(--border-colour);
+  border-radius: .25rem;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* ... rest of your CSS ... */
