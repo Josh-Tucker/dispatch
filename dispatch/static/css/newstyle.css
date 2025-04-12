@@ -3,20 +3,24 @@ html {
   margin: 0;
   padding: 0;
   height: 100%;
+  background-color: var(--background-colour);
   font-family: Arial, sans-serif;
   overflow-wrap: anywhere;
   display: flex;
   justify-content: center;
+  color: var(--text-colour);
 }
 
-header {
+/* header {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr;
   margin-top: 16px;
   margin-bottom: 16px;
   gap: 10px;
-}
+} */
+
+
 
 .settings-button {
   text-align: right;
@@ -43,7 +47,7 @@ input[type="file"]::file-selector-button, button[type="submit"], input[type="sub
   cursor: pointer;
   color: var(--text-colour);
   background-color: var(--background-colour);
-  border: 1px solid var(--border-colour);
+  border: 1px solid var(--text-colour);
   box-shadow: 0px 1px 0px rgba(0, 0, 0, 0.05);
   margin-right: 16px;
   transition: background-color 200ms;
@@ -65,8 +69,8 @@ select {
     height: 38px;
     padding: 6px 10px;
     /* The 6px vertically centers text on FF, ignored by Webkit */
-    background-color: #fff;
-    border: 1px solid #D1D1D1;
+    background-color: var(--background-colour);
+    border: 1px solid var(--text-colour);
     border-radius: 4px;
     box-shadow: none;
     box-sizing: border-box;
@@ -170,11 +174,11 @@ td:last-child {
 
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin: 16px;
-  background-color: #fff;
+  background-color: var(--background-colour);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   text-decoration: none;
   color: inherit;
-  border: solid .0625rem black;
+  border: solid .0625rem var(--text-colour);
   border-radius: .25rem;
 }
 
@@ -191,7 +195,7 @@ td:last-child {
 
 .card-unread {
   text-align: right;
-  border-left: solid .0625rem black;
+  border-left: solid .0625rem var(--text-colour);
   padding: 0.3rem;
   padding-right: 1rem;
 }
@@ -202,7 +206,7 @@ td:last-child {
   grid-template-rows: 1fr;
 
   align-items: center;
-  border-bottom: solid .0625rem black;
+  border-bottom: solid .0625rem var(--text-colour);
   padding: 0.3rem;
 }
 
@@ -217,7 +221,7 @@ td:last-child {
 .card-title {
   font-size: 18px;
   font-weight: bold;
-  color: #333;
+  color: var(--text-colour);
   flex: 1;
 }
 
@@ -228,7 +232,7 @@ td:last-child {
 .card-excerpt {
   font-size: 14px;
   line-height: 1.5;
-  color: #555;
+  color: var(--text-colour);
 }
 
 .entry_feed_title {
@@ -348,8 +352,9 @@ a {
 
 header {
   display: grid;
-  grid-template-columns: auto auto; /* Size columns based on content */
-  justify-content: space-between; /* Push buttons to opposite ends */
+  /* Change grid-template-columns from 'auto auto' to 'auto auto auto' */
+  grid-template-columns: auto auto; /* Accommodate three buttons */
+  justify-content: space-between; /* Push buttons to opposite ends, middle one centers */
   align-items: center; /* Vertically align items if heights differ */
   margin-top: 16px;
   margin-bottom: 24px;
@@ -363,7 +368,7 @@ header {
 
 /* Style both header links like cards */
 header a.refresh-link,
-header a.settings-button {
+header a.menu-button {
   /* Core card visual styles */
   display: inline-block; /* Needed for padding, transform etc. */
   background-color: var(--background-colour);
@@ -383,7 +388,7 @@ header a.settings-button {
 
 /* Apply hover effect similar to cards */
 header a.refresh-link:hover,
-header a.settings-button:hover {
+header a.menu-button:hover {
   transform: translateY(-3px); /* Slightly less lift than cards? Adjust as needed */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Slightly adjusted hover shadow */
 }
