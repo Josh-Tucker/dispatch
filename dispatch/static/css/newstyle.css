@@ -1,3 +1,7 @@
+/* @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap'); */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+
 body,
 html {
   margin: 0;
@@ -9,6 +13,12 @@ html {
   display: flex;
   justify-content: center;
   color: var(--text-colour);
+  font-family: "Open Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  font-variation-settings:
+    "wdth" 100;
 }
 
 /* header {
@@ -160,7 +170,7 @@ td:last-child {
 
 
 .main {
-  width: 100%;
+  width: 95%;
 }
 
 .card {
@@ -178,7 +188,7 @@ td:last-child {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   text-decoration: none;
   color: inherit;
-  border: solid .0625rem var(--text-colour);
+  border: solid thin var(--text-colour);
   border-radius: .25rem;
 }
 
@@ -195,7 +205,7 @@ td:last-child {
 
 .card-unread {
   text-align: right;
-  border-left: solid .0625rem var(--text-colour);
+  border-left: solid thin var(--text-colour);
   padding: 0.3rem;
   padding-right: 1rem;
 }
@@ -206,7 +216,7 @@ td:last-child {
   grid-template-rows: 1fr;
 
   align-items: center;
-  border-bottom: solid .0625rem var(--text-colour);
+  border-bottom: solid thin var(--text-colour);
   padding: 0.3rem;
 }
 
@@ -264,6 +274,9 @@ td:last-child {
 .entry_title {
     /* font-family: 'Merriweather', serif; */
     font-family: "Neuton", serif;
+    font-family: "IBM Plex Serif", serif;
+  font-weight: 400;
+  font-style: normal;
     font-weight: bold;
     font-size: 1.6rem;
     line-height: 1.05;
@@ -286,6 +299,9 @@ td:last-child {
 .entry_content {
     /* font-family: 'Spectral', serif; */
     font-family: "Neuton", serif;
+    font-family: "IBM Plex Serif", serif;
+  font-weight: 400;
+  font-style: normal;
     font-size: clamp(18px, 1.5vw, 20px);
     padding-top: 20px;
     max-width: 72ch;
@@ -373,7 +389,7 @@ header a.menu-button {
   display: inline-block; /* Needed for padding, transform etc. */
   background-color: var(--background-colour);
   color: var(--text-colour);
-  border: solid .0625rem var(--border-colour);
+  border: solid thin var(--border-colour);
   border-radius: .25rem; /* Match card border-radius */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Match card base shadow */
   text-decoration: none;
@@ -402,7 +418,7 @@ html {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: Arial, sans-serif;
+  /* font-family: Arial, sans-serif; */
   overflow-wrap: anywhere;
   display: flex;
   justify-content: center;
@@ -430,7 +446,7 @@ html {
    /* Use theme variable for card text */
   color: var(--text-colour);
    /* Use theme variable for card border */
-  border: solid .0625rem var(--border-colour);
+  border: solid thin var(--border-colour);
   border-radius: .25rem;
 }
 
