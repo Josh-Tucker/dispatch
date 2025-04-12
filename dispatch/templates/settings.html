@@ -1,3 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+
 <div class="settings_container">
 
     <div class="settings_item">
@@ -52,7 +55,7 @@
                             {% if not feed.favicon_path %}
                             <span>{% include 'bx-rss.svg' %}</span>
                             {% else %}
-                            <span><img class="feed_icon"
+                            <span><img class="card-favicon"
                                     src="{{ url_for('static', filename=feed.favicon_path ) }}"></span>
                             {% endif %}
                             <span class="feed_card_title">{{ feed.title }}</span>
@@ -70,3 +73,5 @@
 
 
 </div>
+
+{% endblock %}

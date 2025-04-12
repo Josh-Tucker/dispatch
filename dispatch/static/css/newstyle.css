@@ -1,0 +1,341 @@
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: Arial, sans-serif;
+  overflow-wrap: anywhere;
+  display: flex;
+  justify-content: center;
+}
+
+header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+  margin: 16px;
+}
+
+.settings-button {
+  text-align: right;
+}
+
+
+.settings_item {
+    font-size: 30px;
+    margin-bottom: 2rem;
+}
+
+.settings_item::after {
+    content: "";
+    display: block;
+    margin-top: 1.5em;
+    margin-bottom: 8px;
+    /* border: 0.1em var(--text-colour) solid; */
+}
+
+input[type="file"]::file-selector-button, button[type="submit"], input[type="submit"], .delete_button {
+  border-radius: 4px;
+  padding: 0 16px;
+  height: 40px;
+  cursor: pointer;
+  color: var(--text-colour);
+  background-color: var(--background-colour);
+  border: 1px solid var(--border-colour);
+  box-shadow: 0px 1px 0px rgba(0, 0, 0, 0.05);
+  margin-right: 16px;
+  transition: background-color 200ms;
+}
+
+
+
+/* Forms
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="text"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+textarea,
+select {
+    height: 38px;
+    padding: 6px 10px;
+    /* The 6px vertically centers text on FF, ignored by Webkit */
+    background-color: #fff;
+    border: 1px solid #D1D1D1;
+    border-radius: 4px;
+    box-shadow: none;
+    box-sizing: border-box;
+}
+
+/* Removes awkward default styles on some inputs for iOS */
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="text"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+textarea {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+textarea {
+    min-height: 65px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+input[type="text"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+    border: 1px solid #33C3F0;
+    outline: 0;
+}
+
+
+legend {
+    display: block;
+    margin-bottom: .5rem;
+    font-weight: 600;
+}
+
+fieldset {
+    padding: 0;
+    border-width: 0;
+}
+/* 
+label>.label-body {
+    display: inline-block;
+    margin-left: .5rem;
+    font-weight: normal;
+} */
+
+
+th {
+    font-size: 2rem;
+}
+
+th,
+td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #E1E1E1;
+    min-width: 10rem;
+}
+
+th:first-child,
+td:first-child {
+    padding-left: 0;
+}
+
+th:last-child,
+td:last-child {
+    padding-right: 0;
+}
+
+.content {
+  min-height: 100vh;
+  padding-top: 2rem;
+  margin-top: 1rem;
+  width: clamp(900px, 80%, 1000px );
+  max-width: 100%;
+}
+
+
+.main {
+  width: 100%;
+}
+
+.card {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+
+  /* width: 300px; */
+  /* overflow: hidden; */
+
+  position: relative;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 16px;
+  background-color: #fff;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+  border: solid .0625rem black;
+  border-radius: .25rem;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.card-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+}
+
+.card-unread {
+  text-align: right;
+  border-left: solid .0625rem black;
+  padding: 0.3rem;
+  padding-right: 1rem;
+}
+
+.card-header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr;
+
+  align-items: center;
+  border-bottom: solid .0625rem black;
+  padding: 0.3rem;
+}
+
+.card-favicon {
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  flex: 1;
+}
+
+.card-latest {
+  padding: 0.3rem;
+}
+
+.card-excerpt {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #555;
+}
+
+.entry_feed_title {
+    font-size: 14px;
+    opacity: 0.75;
+}
+
+.entry_title_container {
+    max-width: 90ch;
+    margin: 0 auto;
+    margin-top: 2rem;
+    margin-bottom: 24px;
+}
+
+.entry_title_container::after {
+    content: "";
+    display: block;
+    margin-top: 1.5em;
+    margin-bottom: 8px;
+    border-bottom: 0.5em var(--text-colour) solid;
+    width: 0;
+    animation-delay: .2s;
+    animation-name: widenHeader;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+}
+
+
+.entry_title {
+    /* font-family: 'Merriweather', serif; */
+    font-family: "Neuton", serif;
+    font-weight: bold;
+    font-size: 1.6rem;
+    line-height: 1.05;
+    text-decoration: none;
+    color: inherit;
+}
+
+.entry_title h1 {
+    margin-bottom: 8px;
+    margin-top: 4px;
+}
+
+.entry_info {
+    opacity: 0.75;
+    font-weight: bold;
+    margin-top: 0;
+    margin-bottom: 1px;
+}
+
+.entry_content {
+    /* font-family: 'Spectral', serif; */
+    font-family: "Neuton", serif;
+    font-size: clamp(18px, 1.5vw, 20px);
+    padding-top: 20px;
+    max-width: 72ch;
+    margin: 0 auto;
+    text-align: left;
+    line-height: 1.6;
+}
+
+.entry_content p {
+    margin-bottom: 20px;
+}
+
+.entry_content img,
+figure {
+    text-align: center;
+    margin: 0 auto;
+    max-width: 80%;
+    height: auto;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 1%;
+}
+
+.entry_content figcaption {
+    font-size: small;
+    line-height: 1.4rem;
+    margin-top: 4px;
+}
+
+.entry_content code {
+    font-size: small;
+}
+
+pre {
+    background-color: var(--background-colour);
+}
+
+pre code {
+    display: block;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+pre code::before {
+    content: attr(data-line) "\00a0";
+    display: inline-block;
+    margin-right: 10px;
+}
+
+code {
+    padding: 2px 5px;
+    font-family: 'Courier New', monospace;
+}
+
+a {
+    color: var(--primary-colour);
+}

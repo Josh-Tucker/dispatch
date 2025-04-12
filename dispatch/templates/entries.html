@@ -1,11 +1,7 @@
-{% for entry in rss_entries[:-1] %}
-{% include 'entry_card.html' %}
-{% endfor %}
+{% extends "base.html" %}
 
-{% set entry = rss_entries[-1] %}
-{% set final_entry = true %}
-{% include 'entry_card.html' %}
-<button class="read_button header_button" hx-get="/feed_read/{{ feed.id }}" hx-target="#feed_list_items"
-    id="mark_read_button" hx-swap-oob="true">
-        {% include 'bx-check-circle.svg' %}
-</button>
+{% block content %}
+{% for entry in entries %}
+{% include 'entry-card.html' %}
+{% endfor %}
+{% endblock %}

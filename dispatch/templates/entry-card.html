@@ -1,0 +1,18 @@
+<a class="card" href="{{ url_for('entry', entry_id=entry.id) }}">
+
+
+<div class="card-header">
+    <h2 class="card-title">{{ entry.title }}</h2>
+</div>
+
+<div class="card-content">
+    <div class="card-latest">{{ entry.published|entry_timedetla }}</div>
+    <div class="card-unread">
+        {% if entry.read %}
+        <small>◯&nbsp;</small>
+        {% else %}
+        <small>⬤&nbsp;</small>
+        {% endif %}
+    </div>
+</div>
+</a>

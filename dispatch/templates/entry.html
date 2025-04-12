@@ -1,9 +1,12 @@
-<div class="entry_title_container">
+{% extends "base.html" %}
+
+{% block content %}
+
     <div class="entry_feed_title">
         {% if not feed.favicon_path %}
         {% include 'bx-rss.svg' %}
         {% else %}
-        <span><img class="entry_icon" src="{{ url_for('static', filename=feed.favicon_path ) }}"></span>
+        <span><img class="card-favicon" src="{{ url_for('static', filename=feed.favicon_path ) }}"></span>
         {% endif %}
         <span>{{ feed.title }}</span>
     </div>
@@ -14,14 +17,5 @@
     <p class="entry_info"><small>{{ entry.published.strftime("%d %B %Y") }}</small></p>
 </div>
 <div class="entry_content">{{ entry.content|safe }}</div>
-<div class="feed_label" id="feed_label_{{ feed.id }}" hx-swap-oob="true">
-    {% include 'feed.html' %}
-</div>
-<button class="read_button header_button" id="mark_read_button_entry"
-    hx-get="/entry_read/{{ entry.id }}/{{ entry.read }}" hx-target="#feed_list_items" hx-swap-oob="true">
-    {% include 'bx-check-circle.svg' %}
-</button>
-<button class="header_button" id="fetch_content_button" hx-get="/fetch_content/{{ entry.id }}"
-    hx-target="#feed_entry_item" hx-swap="innerHTML show:top" hx-swap-oob="true">
-    {% include 'bx-book-open.svg'%}
-</button>
+
+{% endblock %}
