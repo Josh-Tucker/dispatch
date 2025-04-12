@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Dispatch</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+  <script src="https://unpkg.com/htmx.org/dist/htmx.js"></script>
+  <script src="//unpkg.com/alpinejs" defer></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='/css/newstyle.css') }}">
+  {% include "theme.html" %}
+</head>
+
+<body class="content">
+
+  <div class="main">
+    <header>
+      <div>
+      <a href="/" class="menu-button">home</a>
+      <a href="#" id="refreshAllLink" data-feed-id="all" class="refresh-link">refresh</a>
+      </div>
+      
+      <a class="menu-button settings-button" href="{{ url_for('settings')}}" method="POST">settings</a>
+
+    </header>
+    {% block content %}
+    {% endblock %}
+  </div>
+
+</body>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Handle click events on refresh links
+    const refreshLinks = document.querySelectorAll('.refresh-link');
+
+    refreshLinks.forEach(link => {
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        const feedId = this.getAttribute('data-feed-id');
+        const originalText = this.textContent;
+
+        // Show loading state
+        this.textContent = 'Refreshing...';
+        this.style.pointerEvents = 'none';
+        this.style.opacity = '0.7';
+
+        // Submit the request using fetch API
+        fetch(`/refresh/${feedId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          }
+        })
+          .then(response => {
+            if (response.ok) {
+              // After successful submission, reload the current page
+              window.location.reload();
+            } else {
+              alert('Error refreshing feed');
+              this.textContent = originalText;
+              this.style.pointerEvents = 'auto';
+              this.style.opacity = '1';
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            this.textContent = originalText;
+            this.style.pointerEvents = 'auto';
+            this.style.opacity = '1';
+          });
+      });
+    });
+  });
+</script>
+
+</html>

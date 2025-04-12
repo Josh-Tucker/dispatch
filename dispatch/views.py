@@ -376,6 +376,13 @@ def get_theme(theme_name):
             "text_colour": "#373a3c",
             "highlight_colour": "#43a9a3",
             "background_colour": "#ffffff",
+        },
+        {
+            "name": "new",
+            "primary_colour": "#ff335f",
+            "text_colour": "#1e1e1e",
+            "highlight_colour": "#43a9a3",
+            "background_colour": "#fffcf2",
         }
     ]
 

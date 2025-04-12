@@ -34,8 +34,6 @@ docker run -d \
 
 ### Docker Compose
 
-
-
 ```yaml
 version: '3.7'
 services:
