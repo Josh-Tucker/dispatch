@@ -13,6 +13,12 @@ from sqlalchemy import desc
 import hashlib
 from readabilipy import simple_json_from_html_string
 
+import logging
+from sqlalchemy.exc import SQLAlchemyError
+import mimetypes
+
+log = logging.getLogger(__name__)
+
 
 def add_feeds_from_opml(opml_file):
 
@@ -38,7 +44,7 @@ def get_favicon_url(feed_url):
     if "http" not in feed_url:
         feed_url = "http://" + feed_url
 
-    page = requests.get(feed_url)
+    page = requests.get(feed_url, timeout=10)
     soup = BeautifulSoup(page.text, features="lxml")
 
     icon_link = soup.find("link", rel="shortcut icon")
@@ -54,14 +60,32 @@ def get_favicon_url(feed_url):
         return icon_href
 
 
-def add_feed(feed_url):
-    print(feed_url)
+def add_feed(feed_url) -> None:
+    """
+    Adds a new RSS feed to the database after parsing its URL.
+
+    Args:
+        feed_url (str): The URL of the RSS feed to add.
+
+    Returns:
+        None. Logs success or errors.
+    """
+    log = logging.getLogger(__name__)
     session = Session()
     try:
+        feed_url = feed_url.strip()
+        if not feed_url:
+            log.warning("Attempted to add an empty feed URL.")
+            return
+        if not urlparse(feed_url).scheme:
+            feed_url = "http://" + feed_url
+        log.info(f"Attempting to add feed: {feed_url}")
+
         existing_feed = session.query(RssFeed).filter_by(url=feed_url).first()
 
         if existing_feed:
             session.close()
+            return
 
         feed = feedparser.parse(feed_url)
         favicon_url = feed.feed.get("image", {}).get(
@@ -143,14 +167,16 @@ def remove_feed(feed_id):
 
 
 def add_rss_entries(feed_id):
+    session = Session()
+    feed = None
     try:
-        session = Session()
         feed = session.query(RssFeed).filter_by(id=feed_id).first()
 
         if not feed:
             print(
                 "RSS feed not found in the database. Please add the feed to the database first."
             )
+            return
         else:
             feed_data = feedparser.parse(feed.url)
             for entry in feed_data.entries:
@@ -196,24 +222,91 @@ def add_rss_entries_for_all_feeds():
     feeds = session.query(RssFeed).all()
 
     for feed in feeds:
+        message = f"Adding entries for {feed.title}"
         print("adding entries for" + feed.title)
+        self.update_state(state="PROGRESS", meta={"status": message})
         add_rss_entries(feed.id)
+    return {"status": "Task completed"}
 
 
-def get_all_feeds():
+def get_all_feeds() -> list[dict]:
+    """
+    Retrieves all feeds with their unread counts and a summary "All Feeds" entry.
+
+    Calculates unread counts efficiently using a single query with a subquery.
+
+    Returns:
+        list[dict]: A list of dictionaries. The first dictionary represents
+                    "All Feeds" with the total unread count. Subsequent
+                    dictionaries represent individual feeds, ordered alphabetically,
+                    each including its specific unread count. Returns an empty
+                    list (or just the 'All Feeds' entry if calculation succeeds)
+                    on database error.
+    """
     session = Session()
-    total_unread_count = (
-        session.query(func.count(RssEntry.id)).filter(RssEntry.read == False).scalar()
-    )
-    print(total_unread_count)
-    all_feed = RssFeed(id="all", title="All Feeds")
-    feeds = session.query(RssFeed).all()
-    for feed in feeds:
-        feed.unread_count = feed.get_unread_count(session)
-    all_feed.unread_count = total_unread_count
-    feeds = [all_feed] + feeds
-    session.close()
-    return feeds
+
+    try:
+        total_unread_count = (
+            session.query(func.count(RssEntry.id))
+            .filter(RssEntry.read == False)
+            .scalar()
+            or 0
+        )
+        log.debug(f"Total unread count across all feeds: {total_unread_count}")
+
+        all_feed_pseudo = {
+            "id": "all",
+            "title": "All Feeds",
+            "url": None,
+            "link": None,
+            "favicon_path": None,
+            "unread_count": total_unread_count,
+        }
+
+        unread_subquery = (
+            session.query(
+                RssEntry.feed_id, func.count(RssEntry.id).label("unread_count")
+            )
+            .filter(RssEntry.read == False)
+            .group_by(RssEntry.feed_id)
+            .subquery()
+        )
+
+        feeds_query = (
+            session.query(
+                RssFeed,
+                func.coalesce(unread_subquery.c.unread_count, 0).label("unread_count"),
+            )
+            .outerjoin(unread_subquery, RssFeed.id == unread_subquery.c.feed_id)
+            .order_by(func.lower(RssFeed.title))
+        )
+
+        results = feeds_query.all()
+
+        feeds_list = []
+        for feed_obj, unread_count in results:
+            feeds_list.append(
+                {
+                    "id": feed_obj.id,
+                    "title": feed_obj.title,
+                    "url": feed_obj.url,
+                    "link": feed_obj.link,
+                    "favicon_path": feed_obj.favicon_path,
+                    "unread_count": unread_count,
+                }
+            )
+
+        all_feeds_data = [all_feed_pseudo] + feeds_list
+        return all_feeds_data
+
+    except SQLAlchemyError as e:
+        log.error(f"Database error retrieving feeds: {e}", exc_info=True)
+        return []
+
+    finally:
+        if session:
+            session.close()
+            log.debug("Database session closed for get_all_feeds.")
 
 
 def get_all_feed_entries():
@@ -354,6 +447,7 @@ def mark_feed_entries_as_read(feed_id, read_status=True):
     else:
         print(f"All entries in the feed {feed_id} marked as unread.")
 
+
 def get_theme(theme_name):
     themes = [
         {
@@ -383,7 +477,7 @@ def get_theme(theme_name):
             "text_colour": "#1e1e1e",
             "highlight_colour": "#43a9a3",
             "background_colour": "#fffcf2",
-        }
+        },
     ]
 
     if theme_name == "default":
@@ -399,7 +493,8 @@ def get_theme(theme_name):
         if theme["name"] == theme_name:
             return theme
 
-    return None  
+    return None
+
 
 def set_default_theme(theme_name):
     session = Session()

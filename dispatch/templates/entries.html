@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% for entry in entries %}
-{% include 'entry-card.html' %}
-{% endfor %}
+<div id="entry-list-container">
+
+{% include "entries-partial.html" %}
+
+</div>
 {% endblock %}

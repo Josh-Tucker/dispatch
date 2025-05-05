@@ -1,0 +1,7 @@
+{% for entry in entries[:-1] %}
+{% include 'entry-card.html' %}
+{% endfor %}
+
+{% set entry = entries[-1] %}
+{% set final_entry = true %}
+{% include 'entry-card.html' %}

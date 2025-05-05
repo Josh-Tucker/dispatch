@@ -1,18 +1,22 @@
-<a class="card" href="{{ url_for('entry', entry_id=entry.id) }}">
-
-
-<div class="card-header">
-    <h2 class="card-title">{{ entry.title }}</h2>
-</div>
-
-<div class="card-content">
-    <div class="card-latest">{{ entry.published|entry_timedetla }}</div>
-    <div class="card-unread">
-        {% if entry.read %}
-        <small>◯&nbsp;</small>
-        {% else %}
-        <small>⬤&nbsp;</small>
+{% if final_entry and has_more_pages %}
+<a class="card" id="entry-card_{{ entry.id }}"
+    hx-get="{{ url_for('entries_page_partial', feed_id=feed_id, page=next_page) }}" hx-trigger="revealed"
+    hx-swap="afterend" hx-indicator="#loading-indicator-{{ entry.id }}">
+    {% else %}
+    <a class="card" id="entry-card_{{ entry.id }}">
         {% endif %}
-    </div>
-</div>
-</a>
+        <div class="card-header">
+            <h2 class="card-title">{{ entry.title }}</h2>
+        </div>
+
+        <div class="card-content">
+            <div class="card-latest">{{ entry.published|entry_timedetla }}</div>
+            <div class="card-unread">
+                {% if entry.read %}
+                <small>◯&nbsp;</small>
+                {% else %}
+                <small>⬤&nbsp;</small>
+                {% endif %}
+            </div>
+        </div>
+    </a>
