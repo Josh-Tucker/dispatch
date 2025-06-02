@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 from sqlalchemy import desc
 import hashlib
 from readabilipy import simple_json_from_html_string
+import concurrent.futures
+from functools import partial
 
 
 def add_feeds_from_opml(opml_file):
@@ -141,63 +143,195 @@ def remove_feed(feed_id):
     finally:
         session.close()
 
-
 def add_rss_entries(feed_id):
+    """
+    Fetches and adds RSS entries for a specific feed to the database.
+    Attempts to process feeds even if parsing exceptions occur.
+
+    Args:
+        feed_id: The ID of the RSS feed to process
+
+    Returns:
+        tuple: (success_flag, message)
+    """
+    session = None
+
     try:
+        # Create a new database session
         session = Session()
+
+        # Fetch the feed with the specified ID
         feed = session.query(RssFeed).filter_by(id=feed_id).first()
 
+        # Return early if feed doesn't exist
         if not feed:
-            print(
-                "RSS feed not found in the database. Please add the feed to the database first."
-            )
-        else:
-            feed_data = feedparser.parse(feed.url)
-            for entry in feed_data.entries:
-                existing_entry = (
-                    session.query(RssEntry).filter_by(link=entry.link).first()
-                )
-                if not existing_entry:
-                    if entry.get("content"):
-                        content = entry.get("content")[0]["value"]
-                    elif entry.get("summary"):
-                        content = entry.get("summary")
-                    elif entry.get("link"):
-                        content = entry.get("link")
+            session.close()
+            return False, f"Feed with ID {feed_id} not found in database"
 
-                    published_str = entry.get("published", "")
-                    published_date = (
-                        parser.parse(published_str)
-                        if published_str
-                        else datetime.utcnow()
-                    )
+        # Update timestamp for last fetch attempt
+        feed.last_fetch_attempt = datetime.utcnow()
+        session.commit()
 
-                    new_entry = RssEntry(
-                        feed_id=feed.id,
-                        title=entry.get("title", ""),
-                        link=entry.get("link", ""),
-                        description=entry.get("summary", ""),
-                        content=content,
-                        published=published_date,
-                        author=entry.get("author", ""),
-                        guid=entry.get("guid", ""),
-                    )
-                    session.add(new_entry)
-                    feed.last_updated = datetime.utcnow()
+        # Parse the feed data
+        feed_data = feedparser.parse(feed.url)
+
+        # Note the bozo exception but continue processing
+        bozo_message = ""
+        if hasattr(feed_data, 'bozo_exception') and feed_data.bozo_exception:
+            bozo_message = f"Warning: Feed has parse errors ({str(feed_data.bozo_exception)[:100]}...)"
+            feed.last_fetch_error = str(feed_data.bozo_exception)[:255]
             session.commit()
-        session.close()
+            # Continue processing instead of returning early
+
+        # Track how many entries were added
+        entries_added = 0
+
+        # Process each entry in the feed if entries exist
+        if hasattr(feed_data, 'entries') and feed_data.entries:
+            for entry in feed_data.entries:
+                # Skip entries without links since we use the link as a unique identifier
+                if not entry.get('link'):
+                    continue
+
+                # Check if entry already exists
+                existing_entry = session.query(RssEntry).filter_by(link=entry.link).first()
+                if existing_entry:
+                    continue
+
+                # Determine content based on available fields
+                content = ""
+                if entry.get("content"):
+                    if isinstance(entry.content, list) and len(entry.content) > 0:
+                        content = entry.content[0].value
+                    else:
+                        content = str(entry.content)
+                elif entry.get("summary"):
+                    content = entry.summary
+                elif entry.get("description"):
+                    content = entry.description
+
+                # Parse publication date
+                published_date = datetime.utcnow()  # Default to current time
+                for date_field in ['published', 'updated', 'pubDate', 'created']:
+                    if entry.get(date_field):
+                        try:
+                            published_date = parser.parse(entry[date_field])
+                            break
+                        except (ValueError, TypeError):
+                            continue
+
+                # Create new entry
+                new_entry = RssEntry(
+                    feed_id=feed.id,
+                    title=entry.get("title", "Untitled"),
+                    link=entry.get("link", ""),
+                    description=entry.get("summary", ""),
+                    content=content,
+                    published=published_date,
+                    author=entry.get("author", ""),
+                    guid=entry.get("id", entry.get("link", "")),
+                    read=False
+                )
+
+                session.add(new_entry)
+                entries_added += 1
+
+            # Update feed metadata only if we succeeded in adding entries or there were no new entries
+            feed.last_updated = datetime.utcnow()
+
+            # Only clear error if we didn't encounter a bozo exception
+            if not bozo_message:
+                feed.last_fetch_error = None
+
+            # Commit all changes
+            session.commit()
+
+            success_message = f"Successfully added {entries_added} new entries to feed '{feed.title}'"
+            if bozo_message:
+                return True, f"{success_message} ({bozo_message})"
+            return True, success_message
+        else:
+            # No entries found but we still update the last_updated timestamp
+            feed.last_updated = datetime.utcnow()
+            session.commit()
+
+            if bozo_message:
+                return True, f"No new entries found. {bozo_message}"
+            return True, "No new entries found in feed"
+
+    except requests.RequestException as e:
+        # Handle network-related errors
+        if session and 'feed' in locals() and feed:
+            feed.last_fetch_error = f"Network error: {str(e)[:255]}"
+            session.commit()
+        return False, f"Network error while fetching feed: {str(e)}"
+
     except Exception as e:
-        print(f"An error occurred: {e}")
+        # Handle all other errors
+        if session:
+            session.rollback()
+            if 'feed' in locals() and feed:
+                try:
+                    feed.last_fetch_error = str(e)[:255]
+                    session.commit()
+                except:
+                    pass
+        return False, f"Error processing feed: {str(e)}"
+
+    finally:
+        # Ensure session is closed even if exceptions occur
+        if session:
+            session.close()
 
 
-def add_rss_entries_for_all_feeds():
-    print("adding feed items")
+def add_rss_entries_for_all_feeds(max_workers=10):
+    """
+    Process all RSS feeds in parallel, adding new entries to the database.
+
+    Args:
+        max_workers: Maximum number of worker threads to use for parallel processing
+
+    Returns:
+        list: Results of processing each feed (success/failure status and messages)
+    """
+    print("Adding feed items in parallel")
     session = Session()
-    feeds = session.query(RssFeed).all()
 
-    for feed in feeds:
-        print("adding entries for" + feed.title)
-        add_rss_entries(feed.id)
+    try:
+        # Get all feeds from the database
+        feeds = session.query(RssFeed).all()
+        feed_ids = [feed.id for feed in feeds]
+        feed_titles = {feed.id: feed.title for feed in feeds}
+    finally:
+        # Make sure to close the session after getting the feeds
+        session.close()
+
+    results = []
+
+    # Use a ThreadPoolExecutor to process feeds in parallel
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Start the load operations and mark each future with its feed_id
+        future_to_feed = {
+            executor.submit(add_rss_entries, feed_id): feed_id
+            for feed_id in feed_ids
+        }
+
+        # Process results as they complete
+        for future in concurrent.futures.as_completed(future_to_feed):
+            feed_id = future_to_feed[future]
+            try:
+                success, message = future.result()
+                print(f"Feed '{feed_titles.get(feed_id, feed_id)}': {message}")
+                results.append((feed_id, success, message))
+            except Exception as exc:
+                print(f"Feed '{feed_titles.get(feed_id, feed_id)}' generated an exception: {exc}")
+                results.append((feed_id, False, f"Exception occurred: {exc}"))
+
+    # Count and report results
+    successful_feeds = sum(1 for _, success, _ in results if success)
+    print(f"Completed processing {len(results)} feeds. {successful_feeds} successful, {len(results) - successful_feeds} failed.")
+
+    return results
 
 
 def get_all_feeds():
@@ -399,7 +533,7 @@ def get_theme(theme_name):
         if theme["name"] == theme_name:
             return theme
 
-    return None  
+    return None
 
 def set_default_theme(theme_name):
     session = Session()
