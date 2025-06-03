@@ -284,6 +284,21 @@ def add_rss_entries(feed_id):
             session.close()
 
 
+def add_rss_entries_for_feed(feed_id):
+    """
+    Fetches and adds RSS entries for a specific feed to the database.
+    
+    Args:
+        feed_id: The ID of the RSS feed to process
+
+    Returns:
+        tuple: (success_flag, message)
+    """
+    print(f"Refreshing feed with ID: {feed_id}")
+    result = add_rss_entries(feed_id)
+    return result
+
+
 def add_rss_entries_for_all_feeds(max_workers=10):
     """
     Process all RSS feeds in parallel, adding new entries to the database.

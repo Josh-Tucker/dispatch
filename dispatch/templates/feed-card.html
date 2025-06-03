@@ -11,7 +11,11 @@
     </div>
 
     <div class="card-content">
-        <div class="card-latest"></div>
+        <div class="card-latest">
+            {% if feed.last_updated %}
+            <small>Updated: {{ feed.last_updated|entry_timedetla }}</small>
+            {% endif %}
+        </div>
         <div class="card-unread">{{ feed.unread_count }}</div>
     </div>
 </a>
