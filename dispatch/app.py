@@ -1,5 +1,6 @@
 import os
-from flask import Flask, request, render_template, redirect, url_for
+import json
+from flask import Flask, request, render_template, redirect, url_for, jsonify
 from flask_executor import Executor
 from views import * # Assuming views.py contains all necessary db/logic functions like get_theme, get_all_feeds, etc.
 from datetime import datetime # Make sure datetime is imported
@@ -69,18 +70,76 @@ def entry(entry_id):
 # Renamed from newrefresh, route changed from /newrefresh/<feed_id>
 @app.route("/refresh/<feed_id>", methods=["POST"])
 def refresh(feed_id):
-    if feed_id == "all":
-        executor.submit_stored("refresh_all", add_rss_entries_for_all_feeds)
-        # Redirect back to the index page after submitting the task
-        return redirect(url_for('index'))
-    else:
-        # Ensure feed_id is passed correctly if the function expects it
-        executor.submit_stored(f"refresh_{feed_id}", add_rss_entries_for_feed, feed_id) # Assuming add_rss_entries_for_feed exists
-        # Redirect back to the entries page for that feed
-        return redirect(url_for('entries', feed_id=feed_id))
-    # Note: The original newrefresh returned rendered templates, which isn't ideal
-    # for a POST request triggering a background task. Redirecting is usually better.
-    # The JS in the template handles the 'Refreshing...' state and page reload.
+    # Get the referrer URL to determine where to redirect back to
+    referrer = request.referrer if request.referrer else "/"
+    
+    # Run a cleanup to remove any completed tasks before starting new ones
+    try:
+        cleanup_tasks()
+    except Exception as e:
+        print(f"Error cleaning up tasks before refresh: {e}")
+    
+    # Store the timestamp when the refresh was requested
+    refresh_timestamp = datetime.now().isoformat()
+    
+    # Helper function to determine where to redirect based on referrer
+    def get_redirect_url():
+        if 'entry/' in referrer:
+            try:
+                # Extract entry_id from referrer URL
+                entry_id = referrer.split('entry/')[-1].split('?')[0].split('#')[0]
+                return redirect(url_for('entry', entry_id=entry_id))
+            except Exception:
+                # If something goes wrong with entry parsing, fall back to feed page
+                return redirect(url_for('entries', feed_id=feed_id))
+        elif feed_id == "all":
+            return redirect(url_for('index'))
+        else:
+            return redirect(url_for('entries', feed_id=feed_id))
+    
+    try:
+        if feed_id == "all":
+            # Check if task is already running
+            if f"refresh_all" in executor.futures._futures:
+                print(f"Task refresh_all is already running")
+                return get_redirect_url()
+                
+            executor.submit_stored("refresh_all", add_rss_entries_for_all_feeds)
+            print(f"Started task refresh_all")
+            return redirect(url_for('index'))
+        else:
+            # Validate feed_id exists
+            try:
+                feed_id_int = int(feed_id)  # Make sure it's a valid integer if numeric
+            except ValueError:
+                print(f"Invalid feed_id format: {feed_id}")
+                return get_redirect_url()
+                
+            # Check if task is already running
+            if f"refresh_{feed_id}" in executor.futures._futures:
+                print(f"Task refresh_{feed_id} is already running")
+                return get_redirect_url()
+            
+            # Ensure feed_id is passed correctly if the function expects it
+            try:
+                executor.submit_stored(f"refresh_{feed_id}", add_rss_entries_for_feed, feed_id)
+                print(f"Started task refresh_{feed_id}")
+            except Exception as e:
+                print(f"Error starting refresh task for feed {feed_id}: {str(e)}")
+            
+            # Redirect back to appropriate page
+            return get_redirect_url()
+            
+    except ValueError as e:
+        # This occurs when a task with the same key already exists
+        print(f"ValueError in refresh route: {str(e)}")
+        return get_redirect_url()
+    except Exception as e:
+        # Catch any other exceptions
+        print(f"Unexpected error in refresh route: {str(e)}")
+        return get_redirect_url()
+    # Note: We're using redirects which will cause a full page refresh
+    # and show the updated content after the background task is queued.
 
 # Renamed from newsettings, route changed from /newsettings
 @app.route("/settings")
@@ -142,6 +201,103 @@ def route_set_default_theme():
     theme = get_theme(theme_name)
     template = "theme.html" # Keep this as it targets the style block
     return render_template(template, theme=theme)
+
+# Helper function to clean up tasks
+def cleanup_tasks():
+    """Clean up completed tasks from the executor."""
+    try:
+        # Get all done futures and remove them
+        for key in list(executor.futures._futures.keys()):
+            try:
+                future = executor.futures._futures[key]
+                if future and future.done():
+                    executor.futures._futures.pop(key, None)
+                    print(f"Cleaned up completed task: {key}")
+            except Exception as e:
+                print(f"Error cleaning up task {key}: {e}")
+    except Exception as e:
+        print(f"Error in task cleanup: {e}")
+
+# Register a cleanup handler for completed tasks
+@app.after_request
+def cleanup_completed_tasks(response):
+    """Global after_request handler to clean up completed tasks."""
+    try:
+        # Only run cleanup occasionally to avoid overhead on every request
+        if hasattr(app, 'cleanup_counter'):
+            app.cleanup_counter += 1
+            if app.cleanup_counter % 5 != 0:  # Only clean up every 5 requests
+                return response
+        else:
+            app.cleanup_counter = 1
+            
+        cleanup_tasks()
+    except Exception as e:
+        print(f"Error in task cleanup: {e}")
+    return response
+
+@app.route("/task_status", methods=["GET"])
+def task_status():
+    """
+    Returns the status of all running background tasks.
+    Used for UI feedback on refresh operations.
+    """
+    # Run a cleanup before checking status to remove completed tasks
+    try:
+        cleanup_tasks()
+    except Exception as e:
+        print(f"Error cleaning up tasks before status check: {e}")
+        
+    tasks = {}
+    
+    # Check for all feeds refresh
+    all_feeds_key = "refresh_all"
+    if all_feeds_key in executor.futures._futures:
+        future = executor.futures._futures[all_feeds_key]
+        tasks[all_feeds_key] = {
+            "running": not future.done(),
+            "completed": future.done(),
+            "success": future.done() and not future.exception(),
+            "error": str(future.exception()) if future.done() and future.exception() else None,
+            "feed_id": "all",
+            "start_time": datetime.now().isoformat(),
+            "task_type": "refresh_all"
+        }
+    
+    # Check for individual feed refreshes
+    for key in list(executor.futures._futures.keys()):
+        if key.startswith("refresh_") and key != "refresh_all":
+            future = executor.futures._futures[key]
+            feed_id = key.split("refresh_")[1]
+            
+            # Attempt to get feed title
+            feed_title = None
+            try:
+                session = Session()
+                feed = session.query(RssFeed).filter_by(id=feed_id).first()
+                if feed:
+                    feed_title = feed.title
+                session.close()
+            except Exception:
+                pass
+            
+            tasks[key] = {
+                "feed_id": feed_id,
+                "feed_title": feed_title,
+                "running": not future.done(),
+                "completed": future.done(),
+                "success": future.done() and not future.exception(),
+                "error": str(future.exception()) if future.done() and future.exception() else None,
+                "start_time": datetime.now().isoformat(),
+                "task_type": "refresh_feed"
+            }
+    
+    return jsonify({
+        "tasks": tasks,
+        "timestamp": datetime.now().isoformat(),
+        "active_task_count": len([t for t in tasks.values() if t["running"]]),
+        "completed_task_count": len([t for t in tasks.values() if t["completed"]])
+    })
 
 # --- Removed old routes ---
 # /

@@ -38,29 +38,51 @@ html {
 
 
 .settings_item {
-    font-size: 30px;
+    font-size: 24px;
     margin-bottom: 2rem;
 }
 
 .settings_item::after {
     content: "";
     display: block;
-    margin-top: 1.5em;
-    margin-bottom: 8px;
-    /* border: 0.1em var(--text-colour) solid; */
+    margin-top: 1em;
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-input[type="file"]::file-selector-button, button[type="submit"], input[type="submit"], .delete_button {
-  border-radius: 4px;
+input[type="file"]::file-selector-button, button[type="submit"], input[type="submit"] {
+  border-radius: 0.5rem;
   padding: 0 16px;
-  height: 40px;
+  height: 36px;
   cursor: pointer;
   color: var(--text-colour);
   background-color: var(--background-colour);
-  border: 1px solid var(--text-colour);
-  box-shadow: 0px 1px 0px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
   margin-right: 16px;
-  transition: background-color 200ms;
+  transition: all 200ms ease;
+  font-size: 0.9rem;
+}
+
+input[type="file"]::file-selector-button:hover, button[type="submit"]:hover, input[type="submit"]:hover {
+  background-color: rgba(0, 0, 0, 0.01);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  border-color: var(--primary-colour);
+}
+
+.delete_button {
+  border-radius: 0.5rem;
+  padding: 0 16px;
+  height: 36px;
+  cursor: pointer;
+  color: #f44336;
+  background-color: rgba(244, 67, 54, 0.05);
+  border: 1px solid rgba(244, 67, 54, 0.2);
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+  margin-right: 16px;
+  transition: all 200ms ease;
+  font-size: 0.85rem;
 }
 
 
@@ -77,13 +99,14 @@ input[type="password"],
 textarea,
 select {
     height: 38px;
-    padding: 6px 10px;
+    padding: 6px 12px;
     /* The 6px vertically centers text on FF, ignored by Webkit */
     background-color: var(--background-colour);
-    border: 1px solid var(--text-colour);
-    border-radius: 4px;
-    box-shadow: none;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
     box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* Removes awkward default styles on some inputs for iOS */
@@ -94,7 +117,8 @@ input[type="text"],
 input[type="tel"],
 input[type="url"],
 input[type="password"],
-textarea {
+textarea,
+select {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
@@ -115,8 +139,9 @@ input[type="url"]:focus,
 input[type="password"]:focus,
 textarea:focus,
 select:focus {
-    border: 1px solid #33C3F0;
+    border-color: var(--primary-colour);
     outline: 0;
+    box-shadow: 0 0 0 3px rgba(255, 82, 174, 0.1);
 }
 
 
@@ -139,33 +164,56 @@ label>.label-body {
 
 
 th {
-    font-size: 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-colour);
+    opacity: 0.7;
 }
 
 th,
 td {
     padding: 12px 15px;
     text-align: left;
-    border-bottom: 1px solid #E1E1E1;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     min-width: 10rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    background-color: var(--background-colour);
+    margin-bottom: 2rem;
 }
 
 th:first-child,
 td:first-child {
-    padding-left: 0;
+    padding-left: 1rem;
 }
 
 th:last-child,
 td:last-child {
-    padding-right: 0;
+    padding-right: 1rem;
 }
 
 .content {
   min-height: 100vh;
   padding-top: 2rem;
   margin-top: 1rem;
-  width: clamp(900px, 80%, 1000px );
+  width: clamp(900px, 80%, 1000px);
   max-width: 100%;
+}
+
+.settings_container {
+  width: clamp(320px, 80%, 900px);
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 
@@ -182,25 +230,28 @@ td:last-child {
 
   position: relative;
 
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   margin: 16px;
   background-color: var(--background-colour);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   text-decoration: none;
   color: inherit;
-  border: solid thin var(--text-colour);
-  border-radius: .25rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.75rem;
+  overflow: hidden;
 }
 
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  border-color: var(--primary-colour);
 }
 
 .card-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr;
+  padding: 0.5rem 1rem;
 }
 
 .card-unread {
@@ -216,16 +267,21 @@ td:last-child {
   grid-template-rows: 1fr;
 
   align-items: center;
-  border-bottom: solid thin var(--text-colour);
-  padding: 0.3rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0.75rem 1rem;
+  border-top-left-radius: 0.75rem;
+  border-top-right-radius: 0.75rem;
+  background-color: rgba(0, 0, 0, 0.01);
 }
 
 .card-favicon {
   width: 24px;
   height: 24px;
   margin-right: 12px;
-  border-radius: 4px;
+  border-radius: 6px;
   object-fit: cover;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .card-title {
@@ -389,24 +445,27 @@ header a.menu-button {
   display: inline-block; /* Needed for padding, transform etc. */
   background-color: var(--background-colour);
   color: var(--text-colour);
-  border: solid thin var(--border-colour);
-  border-radius: .25rem; /* Match card border-radius */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Match card base shadow */
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   text-decoration: none;
-  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Match card transition */
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
 
   /* Button-specific adjustments */
-  padding: 0.5rem 1rem; /* Give them some padding */
+  padding: 0.5rem 1.2rem; /* Give them some padding */
   text-align: center;
   margin: 0; /* Remove default margins if any */
   cursor: pointer;
+  font-weight: 500;
 }
 
 /* Apply hover effect similar to cards */
 header a.refresh-link:hover,
 header a.menu-button:hover {
-  transform: translateY(-3px); /* Slightly less lift than cards? Adjust as needed */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Slightly adjusted hover shadow */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  border-color: var(--primary-colour);
+  background-color: rgba(0, 0, 0, 0.01);
 }
 
 /* --- End Styles for Header Buttons --- */

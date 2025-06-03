@@ -6,18 +6,182 @@
   <title>Dispatch</title>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
   <script src="https://unpkg.com/htmx.org/dist/htmx.js"></script>
+  <script src="https://unpkg.com/htmx.org/dist/ext/response-targets.js"></script>
   <script src="//unpkg.com/alpinejs" defer></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='/css/newstyle.css') }}">
   {% include "theme.html" %}
 </head>
 
-<body class="content">
+<body class="content" hx-ext="response-targets" x-data="{ 
+  activeTasks: {},
+  taskCheckInterval: null,
+  taskErrorCount: 0,
+  refreshButtonStates: {}, // Track state of refresh buttons
+  
+  // Update the text of a refresh button based on feed ID
+  updateRefreshButton(feedId, text, isRunning = false) {
+    const buttonId = feedId === 'all' ? 'refreshAllLink' : `refreshFeedLink-${feedId}`;
+    const button = document.getElementById(buttonId);
+    if (button) {
+      // Find or create the text element within the button
+      let textSpan = button.querySelector('.status-text');
+      if (!textSpan) {
+        textSpan = document.createElement('span');
+        textSpan.className = 'status-text';
+        button.querySelector('.default-text').style.display = 'none';
+        button.appendChild(textSpan);
+      }
+      
+      // Update the text and running state
+      textSpan.textContent = text;
+      this.refreshButtonStates[feedId] = { 
+        text: text, 
+        isRunning: isRunning 
+      };
+      
+      // Add or remove running class
+      if (isRunning) {
+        button.classList.add('running');
+      } else {
+        button.classList.remove('running');
+        // Restore default text after a delay
+        setTimeout(() => {
+          if (button) {
+            textSpan.textContent = '';
+            textSpan.style.display = 'none';
+            button.querySelector('.default-text').style.display = '';
+          }
+        }, 3000);
+      }
+    }
+  },
+  
+  // Reset all refresh buttons to their default state
+  resetAllRefreshButtons() {
+    Object.keys(this.refreshButtonStates).forEach(feedId => {
+      this.updateRefreshButton(feedId, '', false);
+    });
+    this.refreshButtonStates = {};
+  },
+  
+  startTaskPolling() {
+    if (this.taskCheckInterval) return; // Already polling
+    
+    // Reset error count when starting polling
+    this.taskErrorCount = 0;
+    
+    // Do an immediate check
+    this.checkTaskStatus();
+    
+    // Check for task status every 2 seconds
+    this.taskCheckInterval = setInterval(() => {
+      this.checkTaskStatus();
+    }, 2000);
+  },
+  
+  stopTaskPolling() {
+    if (this.taskCheckInterval) {
+      clearInterval(this.taskCheckInterval);
+      this.taskCheckInterval = null;
+      this.taskErrorCount = 0;
+    }
+  },
+  
+  checkTaskStatus() {
+    fetch('/task_status')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Reset error count on successful response
+        this.taskErrorCount = 0;
+        
+        // Check if there are no tasks
+        if (Object.keys(data.tasks).length === 0 && Object.keys(this.activeTasks).length > 0) {
+          // All tasks were removed from server, meaning they're done
+          // Only show completion notification if we had active tasks before
+          if (Object.values(this.activeTasks).some(t => t.running)) {
+            this.updateRefreshButton('all', 'All tasks complete!', false);
+          }
+          this.stopTaskPolling();
+          this.activeTasks = {};
+          return;
+        }
+        
+        // Update active tasks
+        this.activeTasks = data.tasks;
+        
+        // Update button states based on task status
+        Object.entries(this.activeTasks).forEach(([key, task]) => {
+          const feedId = task.feed_id;
+          
+          if (task.running) {
+            // Update running tasks
+            const feedName = key === 'refresh_all' ? 'all feeds' : (task.feed_title || `feed #${feedId}`);
+            this.updateRefreshButton(feedId, `Refreshing ${feedName === 'all feeds' ? 'all' : ''}...`, true);
+          } else if (task.completed && !task.notified) {
+            // Mark as notified
+            this.activeTasks[key].notified = true;
+            
+            // Update button for completed task
+            if (task.success) {
+              this.updateRefreshButton(feedId, 'Updated!', false);
+            } else {
+              this.updateRefreshButton(feedId, 'Error!', false);
+            }
+          }
+        });
+            
+        // If all tasks are complete, stop polling
+        const anyRunning = Object.values(this.activeTasks).some(t => t.running);
+        if (!anyRunning && Object.keys(this.activeTasks).length > 0) {
+          this.stopTaskPolling();
+        }
+      })
+      .catch(error => {
+        console.error('Error checking task status:', error);
+        
+        // On error, increment error count
+        this.taskErrorCount = (this.taskErrorCount || 0) + 1;
+        
+        // After 3 consecutive errors, stop polling
+        if (this.taskErrorCount > 3) {
+          this.updateRefreshButton('all', 'Connection lost', false);
+          this.stopTaskPolling();
+        }
+      });
+  }
+}">
+
+  <!-- No notification system or task status indicator needed -->
 
   <div class="main">
     <header>
       <div>
       <a href="/" class="menu-button">home</a>
-      <a href="#" id="refreshAllLink" data-feed-id="all" class="refresh-link">refresh</a>
+      {% if feed is defined and feed.id != 'all' %}
+      <a href="#" id="refreshFeedLink-{{ feed.id }}" data-feed-id="{{ feed.id }}" data-feed-title="{{ feed.title|default('this feed', true) }}" class="refresh-link" 
+         hx-post="/refresh/{{ feed.id }}" 
+         hx-target="body" 
+         hx-swap="outerHTML"
+         hx-indicator="#refresh-indicator"
+         @click="updateRefreshButton('{{ feed.id }}', 'Queuing...', true); startTaskPolling()">
+        <span class="default-text">refresh</span>
+      </a>
+      {% else %}
+      <a href="#" id="refreshAllLink" data-feed-id="all" class="refresh-link" 
+         hx-post="/refresh/all" 
+         hx-target="body" 
+         hx-swap="outerHTML"
+         hx-indicator="#refresh-indicator"
+         @click="updateRefreshButton('all', 'Queuing all feeds...', true); startTaskPolling()">
+        <span class="default-text">refresh</span>
+      </a>
+      {% endif %}
+      <span id="refresh-indicator" class="htmx-indicator"></span>
       </div>
       
       <a class="menu-button settings-button" href="{{ url_for('settings')}}" method="POST">settings</a>
@@ -29,48 +193,190 @@
 
 </body>
 
+<style>
+  .htmx-indicator {
+    display: none;
+  }
+  .htmx-request.refresh-link {
+    pointer-events: none !important;
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  .disabled-temporarily {
+    pointer-events: none !important;
+    opacity: 0.7;
+  }
+  
+  /* Refresh button states */
+  .refresh-link {
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  
+  .refresh-link.running {
+    pointer-events: none !important;
+    background-color: var(--highlight-colour);
+    opacity: 0.8;
+    cursor: wait;
+  }
+  
+  .refresh-link .status-text {
+    font-style: italic;
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+  }
+  
+  .refresh-link.running .status-text {
+    animation: pulse 1.5s infinite;
+  }
+  
+  /* No notification system styles needed */
+</style>
+
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    // Handle click events on refresh links
-    const refreshLinks = document.querySelectorAll('.refresh-link');
+    // Add htmx attributes to any refresh links that don't already have them
+    const refreshLinks = document.querySelectorAll('.refresh-link:not([hx-post])');
 
     refreshLinks.forEach(link => {
-      link.addEventListener('click', function (e) {
-        e.preventDefault();
-
-        const feedId = this.getAttribute('data-feed-id');
-        const originalText = this.textContent;
-
-        // Show loading state
-        this.textContent = 'Refreshing...';
-        this.style.pointerEvents = 'none';
-        this.style.opacity = '0.7';
-
-        // Submit the request using fetch API
-        fetch(`/refresh/${feedId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          }
-        })
-          .then(response => {
-            if (response.ok) {
-              // After successful submission, reload the current page
-              window.location.reload();
-            } else {
-              alert('Error refreshing feed');
-              this.textContent = originalText;
-              this.style.pointerEvents = 'auto';
-              this.style.opacity = '1';
+      const feedId = link.getAttribute('data-feed-id');
+      
+      // Add HTMX attributes
+      link.setAttribute('hx-post', `/refresh/${feedId}`);
+      link.setAttribute('hx-target', 'body');
+      link.setAttribute('hx-swap', 'outerHTML');
+      link.setAttribute('hx-indicator', '#refresh-indicator');
+      
+      // Add text spans for state change if they don't exist
+      if (!link.querySelector('.default-text') && !link.querySelector('.htmx-indicator-text')) {
+        const defaultText = document.createElement('span');
+        defaultText.className = 'default-text';
+        defaultText.textContent = link.textContent.trim();
+        
+        const loadingText = document.createElement('span');
+        loadingText.className = 'htmx-indicator-text';
+        loadingText.textContent = 'refreshing...';
+        
+        // Clear existing text and add spans
+        link.textContent = '';
+        link.appendChild(defaultText);
+        link.appendChild(loadingText);
+      }
+    });
+    
+    // Configure HTMX to handle errors
+    htmx.on('htmx:responseError', function(event) {
+      // Access Alpine.js data
+      const alpine = document.querySelector('body').__x;
+      
+      if (!alpine || !alpine.$data) {
+        console.error('Could not access Alpine.js data');
+        return;
+      }
+      
+      // Get the feed ID from the element
+      const feedId = event.detail.elt.getAttribute('data-feed-id') || 'all';
+      
+      // Check status code - 500 typically means task already running
+      if (event.detail.xhr.status === 500) {
+        // Update button text to show error
+        alpine.$data.updateRefreshButton(feedId, 'Error: Already running', false);
+        
+        // Refresh the page after a short delay
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        // For other errors, update button text
+        alpine.$data.updateRefreshButton(feedId, 'Error!', false);
+      }
+    });
+    
+    // Handle successful response
+    htmx.on('htmx:afterOnLoad', function(event) {
+      if (event.detail.elt && event.detail.elt.classList && event.detail.elt.classList.contains('refresh-link')) {
+        // This will execute before the page refreshes, but we'll use it to
+        // set a flag in localStorage that we can check on the next page load
+        localStorage.setItem('refreshJustCompleted', 'true');
+      
+        // Store the feed ID and title for more context
+        try {
+          const feedId = event.detail.elt.getAttribute('data-feed-id') || 'all';
+          const feedTitle = event.detail.elt.getAttribute('data-feed-title') || '';
+          localStorage.setItem('refreshFeedId', feedId);
+          localStorage.setItem('refreshFeedTitle', feedTitle);
+        } catch (e) {
+          console.error('Error storing feed info:', e);
+          localStorage.setItem('refreshFeedId', 'all');
+        }
+      }
+    });
+    
+    // Check if we just came back from a refresh
+    if (localStorage.getItem('refreshJustCompleted') === 'true') {
+      // Access Alpine.js data
+      const alpine = document.querySelector('body').__x;
+      if (alpine && alpine.$data) {
+        const feedId = localStorage.getItem('refreshFeedId') || 'all';
+        const storedFeedTitle = localStorage.getItem('refreshFeedTitle') || '';
+        
+        // Try to get feed title from the page if available
+        let feedTitle = storedFeedTitle;
+        if (!feedTitle) {
+          try {
+            if (feedId !== 'all') {
+              const feedElem = document.querySelector(`a[data-feed-id="${feedId}"]`);
+              if (feedElem) {
+                feedTitle = feedElem.getAttribute('data-feed-title') || '';
+              }
             }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            this.textContent = originalText;
-            this.style.pointerEvents = 'auto';
-            this.style.opacity = '1';
+          } catch (e) {
+            console.error("Error getting feed title:", e);
+          }
+        }
+        
+        // Update button text and start polling
+        alpine.$data.updateRefreshButton(feedId, 'Processing...', true);
+        alpine.$data.startTaskPolling();
+      }
+      
+      localStorage.removeItem('refreshJustCompleted');
+      localStorage.removeItem('refreshFeedId');
+      localStorage.removeItem('refreshFeedTitle');
+    }
+    
+    // Add a delay to prevent rapid clicking
+    htmx.on('htmx:beforeRequest', function(event) {
+      const elt = event.detail.elt;
+      if (elt.classList.contains('refresh-link')) {
+        const alpine = document.querySelector('body').__x;
+        if (alpine && alpine.$data) {
+          // Mark all buttons as running in Alpine.js
+          const feedId = elt.getAttribute('data-feed-id') || 'all';
+          
+          // Disable all refresh links for 2 seconds to prevent multiple clicks
+          document.querySelectorAll('.refresh-link').forEach(link => {
+            link.classList.add('htmx-request');
+            if (link !== elt) {
+              link.style.pointerEvents = 'none';
+            }
           });
-      });
+          
+          // Re-enable other buttons after 2 seconds
+          setTimeout(function() {
+            if (!htmx.isInternalRequest()) {
+              document.querySelectorAll('.refresh-link').forEach(link => {
+                if (link !== elt) {
+                  link.classList.remove('htmx-request');
+                  link.style.pointerEvents = 'auto';
+                }
+              });
+            }
+          }, 2000);
+        }
+      }
     });
   });
 </script>
