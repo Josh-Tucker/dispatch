@@ -4,7 +4,7 @@ FROM python:3.12-alpine
 WORKDIR /app
 
 # Install system dependencies
-RUN apk add --update nodejs npm
+RUN apk add --update nodejs npm bash
 
 # Copy application files
 COPY ./dispatch/ .
