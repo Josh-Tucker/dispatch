@@ -3,6 +3,7 @@ import json
 from flask import Flask, request, render_template, redirect, url_for, jsonify
 from flask_executor import Executor
 from views import * # Assuming views.py contains all necessary db/logic functions like get_theme, get_all_feeds, etc.
+from views import add_feed as add_feed_function  # Import with alias to avoid name conflict
 from datetime import datetime # Make sure datetime is imported
 
 app = Flask(__name__)
@@ -45,23 +46,43 @@ def index():
 # Renamed from newentries, route changed from /newentries/<feed_id>
 @app.route("/entries/<feed_id>")
 def entries(feed_id):
-    template = "entries.html" # Renamed from new-entries.html
-    # Note: Pagination logic might need adding back if desired, the original newentries didn't have it
-    # page = int(request.args.get("page", default=1))
-    # next_page = page + 1
-    # For now, get all entries for the feed
-    entries = get_feed_entries_by_feed_id(feed_id) # Removed page argument
+    page = int(request.args.get("page", default=1))
+    entries_per_page = 20
+    entries = get_feed_entries_by_feed_id(feed_id, page, entries_per_page)
+    
     if feed_id == "all":
-        feed = {"title": "All Feeds", "id": "all", "favicon_path": None} # Added favicon_path for consistency
+        feed = {"title": "All Feeds", "id": "all", "favicon_path": None}
     else:
         feed = get_feed_by_id(feed_id)
-    return render_template(template, entries=entries, feed=feed, theme=get_theme("default")) # Renamed fee=feed
+    
+    # Check if this is an HTMX request for infinite scroll
+    if request.headers.get('HX-Request'):
+        # Return just the entry cards for HTMX requests
+        if entries:
+            # Check if there might be more entries by seeing if we got a full page
+            has_more = len(entries) == entries_per_page
+            next_page = page + 1 if has_more else None
+            return render_template('entry-cards-partial.html', 
+                                 entries=entries, 
+                                 feed=feed, 
+                                 next_page=next_page)
+        else:
+            # No more entries - return empty content
+            return ""
+    
+    # Regular page load - return full page
+    has_more = len(entries) == entries_per_page
+    next_page = page + 1 if has_more else None
+    return render_template("entries.html", entries=entries, feed=feed, 
+                         theme=get_theme("default"), next_page=next_page)
 
 # Renamed from newentry, route changed from /newentry/<entry_id>
 @app.route("/entry/<entry_id>")
 def entry(entry_id):
     template = "entry.html" # Renamed from new-entry.html
     entry = get_feed_entry_by_id(entry_id)
+    if not entry:
+        return "Entry not found", 404
     feed = get_feed_by_id(entry.feed_id)
     read_status = True
     mark_entry_as_read(entry_id, read_status) # Mark as read when viewed
@@ -151,27 +172,51 @@ def settings():
 
 @app.route("/upload_opml", methods=["POST"])
 def upload_opml():
-    template = "settings.html" # Use the renamed settings template
+    if 'opml_file' not in request.files:
+        return "<div class='feedback-message error'>No file selected</div>"
+    
     uploaded_file = request.files["opml_file"]
-    if uploaded_file and uploaded_file.filename != '':
-        # Consider adding error handling for file processing
+    
+    if not uploaded_file.filename or uploaded_file.filename == '':
+        return "<div class='feedback-message error'>No file selected</div>"
+    
+    if not uploaded_file.filename.endswith('.opml'):
+        return "<div class='feedback-message error'>Please select an OPML file</div>"
+    
+    try:
+        # Submit background task to process OPML
         executor.submit_stored("opml_import", add_feeds_from_opml, uploaded_file)
-        # Give background task time to start, then refresh settings page
-        # A better approach might involve HTMX swapping or JS polling
-        # For simplicity now, just re-render the settings page
-        # Ideally, wait for the executor task or provide feedback
-    return render_template(template, feeds=get_all_feeds(), theme=get_theme("default"))
+        return "<div class='feedback-message success'>Processing OPML file... <em>Please refresh the page in a few moments to see the new feeds.</em></div>"
+    except Exception as e:
+        return f"<div class='feedback-message error'>Error processing OPML file: {str(e)}</div>"
 
 
 @app.route("/add_feed", methods=["POST"])
-def add_feed():
-    template = "settings.html" # Use the renamed settings template
-    feed_url = request.form["feed_url"]
-    if feed_url:
-        # Consider adding error handling/validation for the URL
-        executor.submit_stored("feed_add", add_feed, feed_url)
-        # Re-render settings page after submitting task (similar caveat as upload_opml)
-    return render_template(template, feeds=get_all_feeds(), theme=get_theme("default"))
+def add_feed_route():
+    feed_url = request.form.get("feed_url", "").strip()
+    
+    if not feed_url:
+        return "<div class='feedback-message error'>Please enter a feed URL</div>"
+    
+    # Basic URL validation
+    if not (feed_url.startswith('http://') or feed_url.startswith('https://')):
+        feed_url = 'https://' + feed_url
+    
+    try:
+        # Check if feed already exists
+        session = Session()
+        existing_feed = session.query(RssFeed).filter_by(url=feed_url).first()
+        session.close()
+        
+        if existing_feed:
+            return f"<div class='feedback-message warning'>Feed already exists: {existing_feed.title}</div>"
+        
+        # Submit background task to add the feed
+        executor.submit_stored(f"feed_add_{feed_url}", add_feed_function, feed_url)
+        return f"<div class='feedback-message success'>Adding feed: {feed_url}... <em>Please refresh the page in a few moments to see the new feed.</em></div>"
+        
+    except Exception as e:
+        return f"<div class='feedback-message error'>Error adding feed: {str(e)}</div>"
 
 
 @app.route("/delete_feed/<feed_id>") # Changed to DELETE method for RESTfulness, requires JS/HTMX change

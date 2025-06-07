@@ -234,7 +234,40 @@
     animation: pulse 1.5s infinite;
   }
   
-  /* No notification system styles needed */
+  /* Feedback message styles */
+  .feedback-message {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .feedback-message.success {
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+  }
+  
+  .feedback-message.error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+  }
+  
+  .feedback-message.warning {
+    color: #856404;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+  }
+  
+  /* Infinite scroll loading indicator */
+  #loading-indicator {
+    display: none;
+  }
+  
+  .htmx-request #loading-indicator {
+    display: block;
+  }
 </style>
 
 <script>
