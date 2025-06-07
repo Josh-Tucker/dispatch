@@ -1,9 +1,10 @@
 import os
 import json
-from flask import Flask, request, render_template, redirect, url_for, jsonify
+from flask import Flask, request, render_template, redirect, url_for, jsonify, make_response
 from flask_executor import Executor
-from views import * # Assuming views.py contains all necessary db/logic functions like get_theme, get_all_feeds, etc.
-from views import add_feed as add_feed_function  # Import with alias to avoid name conflict
+from services import * # Import all service functions
+from services import add_feed as add_feed_function  # Import with alias to avoid name conflict
+from model import Session, RssFeed  # Import Session and RssFeed for test compatibility
 from datetime import datetime # Make sure datetime is imported
 
 app = Flask(__name__)
@@ -12,29 +13,11 @@ app.config["EXECUTOR_TYPE"] = "thread"
 
 DATABASE_URL = "sqlite:///data/rss_database.db" # Keep if needed by views.py, otherwise remove
 
-# Keep the template filter as it's used in new-entry-card.html (soon to be entry-card.html)
+# Template filter for time delta - uses the service function for consistency
 @app.template_filter()
 def entry_timedetla(input_datetime):
-    now = datetime.now()
-    delta = now - input_datetime
-
-    if delta.total_seconds() < 59 * 30:  # Less than 30 minutes
-        minutes = int(delta.total_seconds() / 60) # Corrected calculation
-        return f"{minutes} min{'s' if minutes != 1 else ''} ago"
-    elif delta.total_seconds() < 59 * 60:  # Less than 1 hour
-        return "0 hours ago" # Or perhaps "< 1 hour ago"
-    elif delta.total_seconds() < 59 * 60 * 24:  # Less than 24 hours
-        hours = int(delta.total_seconds() / 3600) # Corrected calculation
-        return f"{hours} hour{'s' if hours != 1 else ''} ago"
-    elif delta.total_seconds() < 59 * 60 * 24 * 30:  # Less than 30 days
-        days = int(delta.total_seconds() / (3600 * 24)) # Corrected calculation
-        return f"{days} day{'s' if days != 1 else ''} ago"
-    elif delta.total_seconds() < 59 * 60 * 24 * 365:  # Less than 1 year
-        months = int(delta.total_seconds() / (3600 * 24 * 30)) # Corrected calculation
-        return f"{months} month{'s' if months != 1 else ''} ago"
-    else:
-        years = int(delta.total_seconds() / (3600 * 24 * 365)) # Added years
-        return f"{years} year{'s' if years != 1 else ''} ago" # Or use strftime as before: input_datetime.strftime("%Y-%m-%d")
+    from services.content_service import entry_timedetla as service_timedetla
+    return service_timedetla(input_datetime)
 
 
 # Renamed from newindex, route changed from /new to /
@@ -94,12 +77,6 @@ def refresh(feed_id):
     # Get the referrer URL to determine where to redirect back to
     referrer = request.referrer if request.referrer else "/"
     
-    # Run a cleanup to remove any completed tasks before starting new ones
-    try:
-        cleanup_tasks()
-    except Exception as e:
-        print(f"Error cleaning up tasks before refresh: {e}")
-    
     # Store the timestamp when the refresh was requested
     refresh_timestamp = datetime.now().isoformat()
     
@@ -118,15 +95,28 @@ def refresh(feed_id):
         else:
             return redirect(url_for('entries', feed_id=feed_id))
     
+    # Check if this is an HTMX request
+    is_htmx = request.headers.get('HX-Request')
+    
     try:
         if feed_id == "all":
             # Check if task is already running
             if f"refresh_all" in executor.futures._futures:
                 print(f"Task refresh_all is already running")
+                if is_htmx:
+                    # For HTMX, return a response that triggers a client-side redirect
+                    response = make_response("")
+                    response.headers['HX-Redirect'] = url_for('index')
+                    return response
                 return get_redirect_url()
                 
             executor.submit_stored("refresh_all", add_rss_entries_for_all_feeds)
             print(f"Started task refresh_all")
+            if is_htmx:
+                # For HTMX, return a response that triggers a client-side redirect
+                response = make_response("")
+                response.headers['HX-Redirect'] = url_for('index')
+                return response
             return redirect(url_for('index'))
         else:
             # Validate feed_id exists
@@ -134,11 +124,24 @@ def refresh(feed_id):
                 feed_id_int = int(feed_id)  # Make sure it's a valid integer if numeric
             except ValueError:
                 print(f"Invalid feed_id format: {feed_id}")
+                if is_htmx:
+                    # For HTMX, return a response that triggers a client-side redirect
+                    response = make_response("")
+                    if feed_id == "all":
+                        response.headers['HX-Redirect'] = url_for('index')
+                    else:
+                        response.headers['HX-Redirect'] = url_for('entries', feed_id=feed_id)
+                    return response
                 return get_redirect_url()
                 
             # Check if task is already running
             if f"refresh_{feed_id}" in executor.futures._futures:
                 print(f"Task refresh_{feed_id} is already running")
+                if is_htmx:
+                    # For HTMX, return a response that triggers a client-side redirect
+                    response = make_response("")
+                    response.headers['HX-Redirect'] = url_for('entries', feed_id=feed_id)
+                    return response
                 return get_redirect_url()
             
             # Ensure feed_id is passed correctly if the function expects it
@@ -148,16 +151,38 @@ def refresh(feed_id):
             except Exception as e:
                 print(f"Error starting refresh task for feed {feed_id}: {str(e)}")
             
+            # Handle response based on request type
+            if is_htmx:
+                # For HTMX, return a response that triggers a client-side redirect
+                response = make_response("")
+                response.headers['HX-Redirect'] = url_for('entries', feed_id=feed_id)
+                return response
             # Redirect back to appropriate page
             return get_redirect_url()
             
     except ValueError as e:
         # This occurs when a task with the same key already exists
         print(f"ValueError in refresh route: {str(e)}")
+        if is_htmx:
+            # For HTMX, return a response that triggers a client-side redirect
+            response = make_response("")
+            if feed_id == "all":
+                response.headers['HX-Redirect'] = url_for('index')
+            else:
+                response.headers['HX-Redirect'] = url_for('entries', feed_id=feed_id)
+            return response
         return get_redirect_url()
     except Exception as e:
         # Catch any other exceptions
         print(f"Unexpected error in refresh route: {str(e)}")
+        if is_htmx:
+            # For HTMX, return a response that triggers a client-side redirect
+            response = make_response("")
+            if feed_id == "all":
+                response.headers['HX-Redirect'] = url_for('index')
+            else:
+                response.headers['HX-Redirect'] = url_for('entries', feed_id=feed_id)
+            return response
         return get_redirect_url()
     # Note: We're using redirects which will cause a full page refresh
     # and show the updated content after the background task is queued.
@@ -249,15 +274,25 @@ def route_set_default_theme():
 
 # Helper function to clean up tasks
 def cleanup_tasks():
-    """Clean up completed tasks from the executor."""
+    """Clean up completed tasks from the executor after they've been displayed."""
     try:
-        # Get all done futures and remove them
+        current_time = datetime.now()
+        # Get all done futures and remove them if they've been complete for more than 30 seconds
         for key in list(executor.futures._futures.keys()):
             try:
                 future = executor.futures._futures[key]
                 if future and future.done():
-                    executor.futures._futures.pop(key, None)
-                    print(f"Cleaned up completed task: {key}")
+                    # Check if this task has a completion timestamp
+                    if not hasattr(future, '_completion_time'):
+                        # Set completion time when we first detect it's done
+                        future._completion_time = current_time
+                        print(f"Task {key} completed, marking completion time")
+                    else:
+                        # Check if enough time has passed since completion
+                        time_since_completion = (current_time - future._completion_time).total_seconds()
+                        if time_since_completion > 30:  # 30 seconds grace period
+                            executor.futures._futures.pop(key, None)
+                            print(f"Cleaned up completed task: {key} (completed {time_since_completion:.1f}s ago)")
             except Exception as e:
                 print(f"Error cleaning up task {key}: {e}")
     except Exception as e:
@@ -271,7 +306,7 @@ def cleanup_completed_tasks(response):
         # Only run cleanup occasionally to avoid overhead on every request
         if hasattr(app, 'cleanup_counter'):
             app.cleanup_counter += 1
-            if app.cleanup_counter % 5 != 0:  # Only clean up every 5 requests
+            if app.cleanup_counter % 50 != 0:  # Only clean up every 50 requests
                 return response
         else:
             app.cleanup_counter = 1
@@ -287,12 +322,6 @@ def task_status():
     Returns the status of all running background tasks.
     Used for UI feedback on refresh operations.
     """
-    # Run a cleanup before checking status to remove completed tasks
-    try:
-        cleanup_tasks()
-    except Exception as e:
-        print(f"Error cleaning up tasks before status check: {e}")
-        
     tasks = {}
     
     # Check for all feeds refresh

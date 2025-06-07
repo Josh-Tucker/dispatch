@@ -12,8 +12,8 @@
 
     <div class="card-content">
         <div class="card-latest">
-            {% if feed.last_updated %}
-            <small>Updated: {{ feed.last_updated|entry_timedetla }}</small>
+            {% if feed.last_new_article_found and feed.id != "all" %}
+            <small>Latest article: {{ feed.last_new_article_found|entry_timedetla }}</small>
             {% endif %}
         </div>
         <div class="card-unread">{{ feed.unread_count }}</div>

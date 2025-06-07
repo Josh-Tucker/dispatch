@@ -30,6 +30,7 @@ class RssFeed(Base):
     published = Column(DateTime)  # The publication date of the feed
     favicon_path = Column(String)  # URL of the feed's favicon
     last_updated = Column(DateTime, default=datetime.datetime.utcnow)
+    last_new_article_found = Column(DateTime)  # When new articles were last found
 
     entries = relationship("RssEntry", back_populates="feed")
 
@@ -75,8 +76,11 @@ class Settings(Base):
         session.add(Settings(key=key, value=value))
 
 
-# Replace 'sqlite:///rss_database.db' with your database connection URL.
+# Create engine but don't create tables at import time
 engine = create_engine(DATABASE_URL)
-Base.metadata.create_all(engine)
+
+def init_database():
+    """Initialize the database by creating all tables."""
+    Base.metadata.create_all(engine)
 
 Session = sessionmaker(bind=engine)
