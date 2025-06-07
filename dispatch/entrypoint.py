@@ -32,8 +32,8 @@ def main():
         print(f"Could not list directory contents: {e}")
     
     # Ensure data directory exists
-    data_dir = Path("data")
-    data_dir.mkdir(exist_ok=True)
+    data_dir = Path("/data")
+    data_dir.mkdir(parents=True, exist_ok=True)
     print(f"📁 Data directory ensured at: {data_dir.absolute()}")
     
     # Check if migration script exists
@@ -55,7 +55,7 @@ def main():
         print("✅ Migration script found")
     
     # Check if database exists and has required tables
-    db_path = "data/rss_database.db"
+    db_path = "/data/rss_database.db"
     required_tables = ['settings', 'rss_feeds', 'rss_entries']
     
     if os.path.exists(db_path):
