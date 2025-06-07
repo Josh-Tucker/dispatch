@@ -21,23 +21,23 @@
     </div>
 
     <div class="settings_item">
-        <form id="add_feed_form" hx-post="/add_feed" hx-params="*" hx-target="#feed_entry_item">
+        <form id="add_feed_form" hx-post="/add_feed" hx-params="*" hx-target="#add_feed_result" hx-swap="innerHTML">
             <h3>Add feed</h3>
-            <input type="text" id="feed_url" name="feed_url">
+            <input type="text" id="feed_url" name="feed_url" placeholder="https://example.com/feed.xml" required>
             <button type="submit">Add Feed</button>
         </form>
+        <div id="add_feed_result"></div>
     </div>
 
     <div class="settings_item">
-        <form hx-post="/upload_opml" enctype="multipart/form-data" hx-target="#feed_entry_item">
+        <form hx-post="/upload_opml" enctype="multipart/form-data" hx-target="#opml_upload_result" hx-swap="innerHTML">
             <h3>Import from OPML</h3>
             <div>
                 <input type="file" name="opml_file" accept=".opml">
                 <input type="submit" value="Submit">
             </div>
         </form>
-        <div id="add_feed_result" hx-target="#add_feed_result">
-        </div>
+        <div id="opml_upload_result"></div>
     </div>
 
     <div class="settings_item">
