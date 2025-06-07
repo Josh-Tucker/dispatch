@@ -384,6 +384,9 @@ td:last-child {
 .card-latest {
   padding: 0.3rem;
   font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 @media (max-width: 768px) {
