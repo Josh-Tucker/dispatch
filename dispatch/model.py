@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 import datetime
 
 
-DATABASE_URL = "sqlite:///data/rss_database.db"
+DATABASE_URL = "sqlite:////data/rss_database.db"
 
 Base = declarative_base()
 

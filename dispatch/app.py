@@ -11,7 +11,7 @@ app = Flask(__name__)
 executor = Executor(app)
 app.config["EXECUTOR_TYPE"] = "thread"
 
-DATABASE_URL = "sqlite:///data/rss_database.db" # Keep if needed by views.py, otherwise remove
+DATABASE_URL = "sqlite:////data/rss_database.db" # Keep if needed by views.py, otherwise remove
 
 # Template filter for time delta - uses the service function for consistency
 @app.template_filter()
