@@ -7,6 +7,7 @@ from sqlalchemy import func, desc, case
 import hashlib
 import os
 import mimetypes
+from datetime import datetime
 
 
 def get_favicon_url(feed_url):
@@ -214,13 +215,8 @@ def get_all_feeds(sort_by="title"):
             desc(RssFeed.pinned),
             RssFeed.title
         ).all()
-    elif sort_by == "last_updated":
-        feeds = session.query(RssFeed).order_by(
-            desc(RssFeed.pinned),
-            desc(RssFeed.last_updated)
-        ).all()
-    elif sort_by == "frequency_read":
-        # This will be calculated in Python since it requires complex aggregation
+    elif sort_by == "last_updated" or sort_by == "frequency_read":
+        # These will be calculated in Python since they require complex aggregation
         feeds = session.query(RssFeed).order_by(desc(RssFeed.pinned)).all()
     else:
         feeds = session.query(RssFeed).order_by(
@@ -236,7 +232,7 @@ def get_all_feeds(sort_by="title"):
         # Calculate read frequency for sorting
         feed.read_frequency = feed.get_read_frequency(session)
     
-    # If sorting by frequency, do the final sort in Python
+    # If sorting by frequency or last updated, do the final sort in Python
     if sort_by == "frequency_read":
         # Separate pinned and unpinned feeds
         pinned_feeds = [f for f in feeds if f.pinned]
@@ -244,6 +240,14 @@ def get_all_feeds(sort_by="title"):
         # Sort each group by read frequency
         pinned_feeds.sort(key=lambda x: x.read_frequency, reverse=True)
         unpinned_feeds.sort(key=lambda x: x.read_frequency, reverse=True)
+        feeds = pinned_feeds + unpinned_feeds
+    elif sort_by == "last_updated":
+        # Separate pinned and unpinned feeds
+        pinned_feeds = [f for f in feeds if f.pinned]
+        unpinned_feeds = [f for f in feeds if not f.pinned]
+        # Sort each group by most recent article published date (None values last)
+        pinned_feeds.sort(key=lambda x: x.last_new_article_found or datetime.min, reverse=True)
+        unpinned_feeds.sort(key=lambda x: x.last_new_article_found or datetime.min, reverse=True)
         feeds = pinned_feeds + unpinned_feeds
     
     all_feed.unread_count = total_unread_count
