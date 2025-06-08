@@ -10,11 +10,192 @@
         {% endif %}
         <span>{{ feed.title }}</span>
     </div>
-    <a class="entry_title" href="{{ entry.link }}" target="_blank">
-        <h1>{{ entry.title }}</h1>
-    </a>
-    <p class="entry_info"><small>{{ entry.author }}</small></p>
-    <p class="entry_info"><small>{{ entry.published.strftime("%d %B %Y") }}</small></p>
-<div class="entry_content">{{ entry.content|safe }}</div>
+    
+    <div class="entry_header">
+        <div class="entry_title_section">
+            <a class="entry_title" href="{{ entry.link }}" target="_blank">
+                <h1>{{ entry.title }}</h1>
+            </a>
+            <p class="entry_info"><small>{{ entry.author }}</small></p>
+            <p class="entry_info"><small>{{ entry.published.strftime("%d %B %Y") }}</small></p>
+        </div>
+        
+        <div class="entry_actions">
+            {% if entry.link %}
+            {% set content_length = entry.content|length if entry.content else 0 %}
+            {% set seems_truncated = content_length < 500 or (entry.content and ('...' in entry.content or '[...]' in entry.content or 'Read more' in entry.content)) %}
+            
+            <button class="fetch-article-button {% if not seems_truncated %}subtle{% endif %}"
+                    hx-post="/fetch_full_article/{{ entry.id }}" 
+                    hx-target="#entry-content-container" 
+                    hx-swap="outerHTML"
+                    hx-target-error="#fetch-error-area"
+                    hx-swap-error="innerHTML"
+                    hx-on:click="this.disabled=true; this.innerHTML='<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><circle cx=\'12\' cy=\'12\' r=\'10\'></circle><path d=\'M12 6v6l4 2\'></path></svg>Fetching...'"
+                    hx-on:htmx:after-request="this.disabled=false; this.innerHTML='<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><path d=\'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\'></path></svg>Fetch Full Article'"
+                    title="{% if seems_truncated %}This content appears incomplete - fetch the full article{% else %}Fetch the full article content from the original website{% endif %}">
+                <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'>
+                    <path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'></path>
+                </svg>
+                {% if seems_truncated %}Fetch Full Article{% else %}Fetch Full Article{% endif %}
+            </button>
+            
+            {% if seems_truncated %}
+            <small class="content-hint">Content appears incomplete</small>
+            {% endif %}
+            
+            <div id="fetch-error-area"></div>
+            {% endif %}
+
+        </div>
+    </div>
+
+<div id="entry-content-container" class="entry_content">{{ entry.content|safe }}</div>
+
+<style>
+.entry_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.entry_title_section {
+    flex: 1;
+    min-width: 300px;
+}
+
+.entry_actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    min-width: 200px;
+}
+
+.fetch-article-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background-color: var(--background-colour);
+    color: var(--text-colour);
+    border: 1px solid var(--border-colour);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    white-space: nowrap;
+}
+
+.fetch-article-button:hover {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.fetch-article-button:hover svg {
+    stroke: white;
+}
+
+.fetch-article-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+    transform: none;
+}
+
+.fetch-article-button:disabled svg {
+    stroke: white;
+}
+
+.fetch-article-button.subtle {
+    opacity: 0.7;
+    border-style: dashed;
+    font-size: 12px;
+    padding: 6px 12px;
+}
+
+.fetch-article-button.subtle:hover {
+    opacity: 1;
+}
+
+.fetch-article-button svg {
+    width: 16px;
+    height: 16px;
+    stroke: var(--text-colour);
+    transition: stroke 0.2s ease;
+}
+
+.content-hint {
+    color: #856404;
+    font-size: 12px;
+    font-style: italic;
+    text-align: right;
+    margin-top: 4px;
+}
+
+#fetch-error-area {
+    margin-top: 10px;
+    max-width: 250px;
+}
+
+#fetch-error-area .fetch-error-message {
+    padding: 8px;
+    margin: 0;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 12px;
+    animation: fadeIn 0.3s ease-in;
+}
+
+#fetch-error-area .fetch-error-message small {
+    display: block;
+    margin-top: 3px;
+    opacity: 0.8;
+    font-size: 11px;
+}
+
+#fetch-result {
+    font-size: 14px;
+    margin-top: 8px;
+    transition: opacity 0.3s ease;
+    text-align: right;
+}
+
+@media (max-width: 768px) {
+    .entry_header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .entry_title_section {
+        min-width: auto;
+    }
+    
+    .entry_actions {
+        align-items: stretch;
+        min-width: auto;
+    }
+    
+    .fetch-article-button {
+        justify-content: center;
+    }
+    
+    #fetch-result {
+        text-align: center;
+    }
+}
+</style>
 
 {% endblock %}

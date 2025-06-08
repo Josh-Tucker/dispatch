@@ -8,9 +8,113 @@
         {% endif %}
         {{ feed.title }}
     </h1>
+    
+    <div class="page-actions">
+        <button class="action-button mark-read-button"
+                hx-post="/mark_all_read/{{ feed.id }}" 
+                hx-target="#mark-read-result" 
+                hx-swap="innerHTML"
+                hx-on:click="this.disabled=true; this.innerHTML='<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><circle cx=\'12\' cy=\'12\' r=\'10\'></circle><path d=\'M12 6v6l4 2\'></path></svg>Processing...'"
+                hx-on:htmx:after-request="setTimeout(() => { this.disabled=false; this.innerHTML='<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><polyline points=\'20,6 9,17 4,12\'></polyline></svg>Mark All Read'; }, 2000)"
+                title="{% if feed.id == 'all' %}Mark all entries in all feeds as read{% else %}Mark all entries in this feed as read{% endif %}">
+            <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'>
+                <polyline points="20,6 9,17 4,12"></polyline>
+            </svg>
+            Mark All Read
+        </button>
+        
+        {% if feed.id != "all" %}
+        {% include 'pin-status-partial.html' %}
+        {% endif %}
+        
+        <div id="mark-read-result"></div>
+    </div>
 </div>
 
 <style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.page-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.action-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background-color: var(--background-colour);
+    color: var(--text-colour);
+    border: 1px solid var(--border-colour);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.action-button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-button svg {
+    width: 16px;
+    height: 16px;
+    stroke: var(--text-colour);
+}
+
+.pin-button-entries.pinned {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.pin-button-entries.pinned svg {
+    fill: white;
+    stroke: white;
+}
+
+.mark-read-button:hover {
+    background-color: #28a745;
+    color: white;
+    border-color: #28a745;
+}
+
+.mark-read-button:hover svg {
+    stroke: white;
+}
+
+.mark-read-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.mark-read-button:disabled svg {
+    stroke: white;
+}
+
+#mark-read-result {
+    font-size: 14px;
+    margin-left: 8px;
+    transition: opacity 0.3s ease;
+}
+
 .feed-favicon {
     width: 26px;
     height: 26px;
@@ -23,10 +127,25 @@
 }
 
 @media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .page-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
     .feed-favicon {
         width: 22px;
         height: 22px;
         margin-right: 10px;
+    }
+    
+    .action-button {
+        font-size: 13px;
+        padding: 6px 12px;
     }
 }
 </style>
