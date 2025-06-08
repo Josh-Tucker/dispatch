@@ -42,7 +42,7 @@ class TestUtilityFunctions:
         mock_get.return_value.text = '<html><head><link rel="icon" href="/favicon.ico"></head><body></body></html>'
         base_url = "https://example.com/some/path"
         result = get_favicon_url(base_url)
-        assert result == "/favicon.ico"
+        assert result == "https://example.com/favicon.ico"
     
     @patch('requests.get')
     def test_get_favicon_url_with_root_url(self, mock_get):
@@ -51,7 +51,7 @@ class TestUtilityFunctions:
         mock_get.return_value.text = '<html><head><link rel="shortcut icon" href="/favicon.ico"></head><body></body></html>'
         base_url = "https://example.com"
         result = get_favicon_url(base_url)
-        assert result == "/favicon.ico"
+        assert result == "https://example.com/favicon.ico"
     
     @patch('requests.get')
     def test_get_favicon_url_with_subdomain(self, mock_get):

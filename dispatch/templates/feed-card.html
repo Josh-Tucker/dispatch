@@ -2,10 +2,10 @@
 
 
     <div class="card-header">
-        {% if not feed.favicon_path %}
+        {% if not feed.favicon_data %}
         {% include 'bx-rss.svg' %}
         {% else %}
-        <img class="card-favicon" src="{{ url_for('static', filename=feed.favicon_path ) }}" alt="Feed Logo">
+        <img class="card-favicon" src="{{ url_for('serve_favicon', feed_id=feed.id) }}" alt="Feed Logo">
         {% endif %}
         <h2 class="card-title">{{ feed.title }}</h2>
     </div>
