@@ -67,7 +67,7 @@ input[type="file"]::file-selector-button, button[type="submit"], input[type="sub
   cursor: pointer;
   color: var(--text-colour);
   background-color: var(--background-colour);
-  border:  thin solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-colour);
   box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
   margin-right: 16px;
   transition: all 200ms ease;
@@ -89,7 +89,7 @@ input[type="file"]::file-selector-button:hover, button[type="submit"]:hover, inp
   cursor: pointer;
   color: #f44336;
   background-color: rgba(244, 67, 54, 0.05);
-  border:  thin solid rgba(244, 67, 54, 0.2);
+  border: 1px solid var(--border-colour);
   box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
   margin-right: 16px;
   transition: all 200ms ease;
@@ -613,7 +613,7 @@ header a.menu-button {
   display: inline-block; /* Needed for padding, transform etc. */
   background-color: var(--background-colour);
   color: var(--text-colour);
-  border:  thin solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-colour);
   border-radius: 0.75rem;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   text-decoration: none;

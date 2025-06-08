@@ -197,8 +197,6 @@ def get_feed_entry_by_id(entry_id):
 
     entry = session.query(RssEntry).filter_by(id=entry_id).first()
     if entry:
-        entry.read = True
-        session.commit()
         # Ensure attributes are loaded before session close
         _ = entry.id, entry.title, entry.read
         session.expunge(entry)
