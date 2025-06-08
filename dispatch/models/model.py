@@ -35,6 +35,7 @@ class RssFeed(Base):
     favicon_mime_type = Column(String(50))  # MIME type of the favicon
     last_updated = Column(DateTime, default=datetime.datetime.utcnow)
     last_new_article_found = Column(DateTime)  # When new articles were last found
+    pinned = Column(Boolean, default=False)  # Whether the feed is pinned to the top
 
     entries = relationship("RssEntry", back_populates="feed")
 
@@ -44,6 +45,14 @@ class RssFeed(Base):
             .filter_by(feed_id=self.id, read=False)
             .scalar()
         )
+
+    def get_read_frequency(self, session):
+        """Calculate the frequency of read articles (read count / total count)"""
+        total_count = session.query(func.count(RssEntry.id)).filter_by(feed_id=self.id).scalar()
+        if total_count == 0:
+            return 0.0
+        read_count = session.query(func.count(RssEntry.id)).filter_by(feed_id=self.id, read=True).scalar()
+        return read_count / total_count
 
 
 class RssEntry(Base):

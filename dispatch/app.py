@@ -25,7 +25,8 @@ def entry_timedetla(input_datetime):
 @app.route("/")
 def index():
     template = "index.html" # Renamed from new-index.html
-    return render_template(template, theme=get_theme("default"), feeds=get_all_feeds())
+    sort_by = get_feed_sort_preference()
+    return render_template(template, theme=get_theme("default"), feeds=get_all_feeds(sort_by), current_sort=sort_by)
 
 # Renamed from newentries, route changed from /newentries/<feed_id>
 @app.route("/entries/<feed_id>")
@@ -272,6 +273,27 @@ def route_set_default_theme():
     theme = get_theme(theme_name)
     template = "theme.html" # Keep this as it targets the style block
     return render_template(template, theme=theme)
+
+
+@app.route("/set_feed_sort", methods=["POST"])
+def set_feed_sort():
+    """Set the feed sorting preference and return updated feed list."""
+    sort_by = request.form.get("sort_by", "title")
+    set_feed_sort_preference(sort_by)
+    feeds = get_all_feeds(sort_by)
+    return render_template("feed-list-partial.html", feeds=feeds, current_sort=sort_by)
+
+
+@app.route("/toggle_feed_pin/<int:feed_id>", methods=["POST"])
+def toggle_feed_pin_route(feed_id):
+    """Toggle the pinned status of a feed."""
+    pinned = toggle_feed_pin(feed_id)
+    if pinned is not None:
+        sort_by = get_feed_sort_preference()
+        feeds = get_all_feeds(sort_by)
+        return render_template("feed-list-partial.html", feeds=feeds, current_sort=sort_by)
+    else:
+        return "Error toggling pin status", 500
 
 
 @app.route("/favicon/<int:feed_id>")

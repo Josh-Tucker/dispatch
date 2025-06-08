@@ -1,6 +1,60 @@
 {% extends "base.html" %}
 {% block content %}
-{% for feed in feeds|sort(attribute='title') %}
-        {% include 'feed-card.html' %}
-        {% endfor %}
+<div id="feed-list" class="feed-list">
+    {% include 'feed-list-partial.html' %}
+</div>
+
+<style>
+.feed-item {
+    position: relative;
+}
+
+.card.pinned {
+    border-left: 4px solid #007bff;
+    background: linear-gradient(135deg, var(--card-bg) 0%, rgba(0, 123, 255, 0.05) 100%);
+}
+
+.pin-button {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    z-index: 10;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pin-button:hover {
+    opacity: 1;
+}
+
+.pin-button svg {
+    width: 16px;
+    height: 16px;
+    fill: var(--text-color);
+}
+
+.pin-button.pinned svg {
+    fill: #007bff;
+}
+
+.card-header {
+    position: relative;
+}
+
+.card-latest {
+    padding: 0.3rem;
+    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+</style>
 {% endblock %}
