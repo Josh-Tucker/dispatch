@@ -3,8 +3,8 @@
 {% block content %}
 <div class="page-header">
     <h1>
-        {% if feed.favicon_path %}
-        <img src="{{ url_for('static', filename=feed.favicon_path) }}" alt="" class="feed-favicon" onerror="this.style.display='none';">
+        {% if feed.favicon_data %}
+        <img src="{{ url_for('serve_favicon', feed_id=feed.id) }}" alt="" class="feed-favicon" onerror="this.style.display='none';">
         {% endif %}
         {{ feed.title }}
     </h1>

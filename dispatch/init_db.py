@@ -18,7 +18,7 @@ def main():
     """Initialize the database."""
     print(f"Initializing database at: {DATABASE_URL}")
     
-    # Ensure data directory exists
+    # Ensure database directory exists if using SQLite
     if "sqlite:///" in DATABASE_URL:
         db_path = DATABASE_URL.split("///")[1]
         db_dir = os.path.dirname(db_path)

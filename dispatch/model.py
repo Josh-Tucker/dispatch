@@ -8,13 +8,15 @@ from sqlalchemy import (
     ForeignKey,
     Boolean,
     func,
+    LargeBinary,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import datetime
+import os
 
 
-DATABASE_URL = "sqlite:////data/rss_database.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/rss_database.db")
 
 Base = declarative_base()
 
@@ -28,7 +30,9 @@ class RssFeed(Base):
     link = Column(String)  # URL of the feed's website
     description = Column(Text)  # A brief description of the feed
     published = Column(DateTime)  # The publication date of the feed
-    favicon_path = Column(String)  # URL of the feed's favicon
+    favicon_path = Column(String)  # URL of the feed's favicon (deprecated, use favicon_data)
+    favicon_data = Column(LargeBinary)  # Binary data of the favicon
+    favicon_mime_type = Column(String(50))  # MIME type of the favicon
     last_updated = Column(DateTime, default=datetime.datetime.utcnow)
     last_new_article_found = Column(DateTime)  # When new articles were last found
 

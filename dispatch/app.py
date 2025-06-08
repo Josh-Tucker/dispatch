@@ -1,9 +1,10 @@
 import os
 import json
-from flask import Flask, request, render_template, redirect, url_for, jsonify, make_response
+from flask import Flask, request, render_template, redirect, url_for, jsonify, make_response, Response
 from flask_executor import Executor
 from services import * # Import all service functions
 from services import add_feed as add_feed_function  # Import with alias to avoid name conflict
+from services.feed_service import refresh_all_feed_favicons  # Import refresh function
 from model import Session, RssFeed  # Import Session and RssFeed for test compatibility
 from datetime import datetime # Make sure datetime is imported
 
@@ -11,7 +12,7 @@ app = Flask(__name__)
 executor = Executor(app)
 app.config["EXECUTOR_TYPE"] = "thread"
 
-DATABASE_URL = "sqlite:////data/rss_database.db" # Keep if needed by views.py, otherwise remove
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/rss_database.db")
 
 # Template filter for time delta - uses the service function for consistency
 @app.template_filter()
@@ -32,12 +33,12 @@ def entries(feed_id):
     page = int(request.args.get("page", default=1))
     entries_per_page = 20
     entries = get_feed_entries_by_feed_id(feed_id, page, entries_per_page)
-    
+
     if feed_id == "all":
         feed = {"title": "All Feeds", "id": "all", "favicon_path": None}
     else:
         feed = get_feed_by_id(feed_id)
-    
+
     # Check if this is an HTMX request for infinite scroll
     if request.headers.get('HX-Request'):
         # Return just the entry cards for HTMX requests
@@ -45,18 +46,18 @@ def entries(feed_id):
             # Check if there might be more entries by seeing if we got a full page
             has_more = len(entries) == entries_per_page
             next_page = page + 1 if has_more else None
-            return render_template('entry-cards-partial.html', 
-                                 entries=entries, 
-                                 feed=feed, 
+            return render_template('entry-cards-partial.html',
+                                 entries=entries,
+                                 feed=feed,
                                  next_page=next_page)
         else:
             # No more entries - return empty content
             return ""
-    
+
     # Regular page load - return full page
     has_more = len(entries) == entries_per_page
     next_page = page + 1 if has_more else None
-    return render_template("entries.html", entries=entries, feed=feed, 
+    return render_template("entries.html", entries=entries, feed=feed,
                          theme=get_theme("default"), next_page=next_page)
 
 # Renamed from newentry, route changed from /newentry/<entry_id>
@@ -76,10 +77,10 @@ def entry(entry_id):
 def refresh(feed_id):
     # Get the referrer URL to determine where to redirect back to
     referrer = request.referrer if request.referrer else "/"
-    
+
     # Store the timestamp when the refresh was requested
     refresh_timestamp = datetime.now().isoformat()
-    
+
     # Helper function to determine where to redirect based on referrer
     def get_redirect_url():
         if 'entry/' in referrer:
@@ -94,10 +95,10 @@ def refresh(feed_id):
             return redirect(url_for('index'))
         else:
             return redirect(url_for('entries', feed_id=feed_id))
-    
+
     # Check if this is an HTMX request
     is_htmx = request.headers.get('HX-Request')
-    
+
     try:
         if feed_id == "all":
             # Check if task is already running
@@ -109,7 +110,7 @@ def refresh(feed_id):
                     response.headers['HX-Redirect'] = url_for('index')
                     return response
                 return get_redirect_url()
-                
+
             executor.submit_stored("refresh_all", add_rss_entries_for_all_feeds)
             print(f"Started task refresh_all")
             if is_htmx:
@@ -133,7 +134,7 @@ def refresh(feed_id):
                         response.headers['HX-Redirect'] = url_for('entries', feed_id=feed_id)
                     return response
                 return get_redirect_url()
-                
+
             # Check if task is already running
             if f"refresh_{feed_id}" in executor.futures._futures:
                 print(f"Task refresh_{feed_id} is already running")
@@ -143,14 +144,14 @@ def refresh(feed_id):
                     response.headers['HX-Redirect'] = url_for('entries', feed_id=feed_id)
                     return response
                 return get_redirect_url()
-            
+
             # Ensure feed_id is passed correctly if the function expects it
             try:
                 executor.submit_stored(f"refresh_{feed_id}", add_rss_entries_for_feed, feed_id)
                 print(f"Started task refresh_{feed_id}")
             except Exception as e:
                 print(f"Error starting refresh task for feed {feed_id}: {str(e)}")
-            
+
             # Handle response based on request type
             if is_htmx:
                 # For HTMX, return a response that triggers a client-side redirect
@@ -159,7 +160,7 @@ def refresh(feed_id):
                 return response
             # Redirect back to appropriate page
             return get_redirect_url()
-            
+
     except ValueError as e:
         # This occurs when a task with the same key already exists
         print(f"ValueError in refresh route: {str(e)}")
@@ -199,15 +200,15 @@ def settings():
 def upload_opml():
     if 'opml_file' not in request.files:
         return "<div class='feedback-message error'>No file selected</div>"
-    
+
     uploaded_file = request.files["opml_file"]
-    
+
     if not uploaded_file.filename or uploaded_file.filename == '':
         return "<div class='feedback-message error'>No file selected</div>"
-    
+
     if not uploaded_file.filename.endswith('.opml'):
         return "<div class='feedback-message error'>Please select an OPML file</div>"
-    
+
     try:
         # Submit background task to process OPML
         executor.submit_stored("opml_import", add_feeds_from_opml, uploaded_file)
@@ -219,27 +220,27 @@ def upload_opml():
 @app.route("/add_feed", methods=["POST"])
 def add_feed_route():
     feed_url = request.form.get("feed_url", "").strip()
-    
+
     if not feed_url:
         return "<div class='feedback-message error'>Please enter a feed URL</div>"
-    
+
     # Basic URL validation
     if not (feed_url.startswith('http://') or feed_url.startswith('https://')):
         feed_url = 'https://' + feed_url
-    
+
     try:
         # Check if feed already exists
         session = Session()
         existing_feed = session.query(RssFeed).filter_by(url=feed_url).first()
         session.close()
-        
+
         if existing_feed:
             return f"<div class='feedback-message warning'>Feed already exists: {existing_feed.title}</div>"
-        
+
         # Submit background task to add the feed
         executor.submit_stored(f"feed_add_{feed_url}", add_feed_function, feed_url)
         return f"<div class='feedback-message success'>Adding feed: {feed_url}... <em>Please refresh the page in a few moments to see the new feed.</em></div>"
-        
+
     except Exception as e:
         return f"<div class='feedback-message error'>Error adding feed: {str(e)}</div>"
 
@@ -271,6 +272,94 @@ def route_set_default_theme():
     theme = get_theme(theme_name)
     template = "theme.html" # Keep this as it targets the style block
     return render_template(template, theme=theme)
+
+
+@app.route("/favicon/<int:feed_id>")
+def serve_favicon(feed_id):
+    """Serve favicon from database."""
+    session = Session()
+    try:
+        feed = session.query(RssFeed).filter_by(id=feed_id).first()
+        if feed and feed.favicon_data:
+            response = Response(
+                feed.favicon_data,
+                mimetype=feed.favicon_mime_type or 'image/x-icon'
+            )
+            # Cache for 1 hour
+            response.headers['Cache-Control'] = 'public, max-age=3600'
+            return response
+        else:
+            # Return 404 if no favicon found
+            return '', 404
+    finally:
+        session.close()
+
+
+@app.route("/refresh_favicons", methods=["POST"])
+def refresh_favicons():
+    """Refresh all feed favicons."""
+    try:
+        # Run the refresh in background
+        future = executor.submit(refresh_all_feed_favicons)
+        task_id = f"refresh_favicons_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        executor.futures._futures[task_id] = future
+        
+        return f"""
+        <div class="refresh_status success">
+            <p><strong>✓ Favicon refresh started!</strong></p>
+            <p>Task ID: {task_id}</p>
+            <p>This may take a few moments to complete...</p>
+            <div id="status_check" hx-get="/refresh_status/{task_id}" hx-trigger="every 2s" hx-swap="innerHTML"></div>
+        </div>
+        """
+    except Exception as e:
+        return f"""
+        <div class="refresh_status error">
+            <p><strong>✗ Failed to start favicon refresh</strong></p>
+            <p>Error: {str(e)}</p>
+        </div>
+        """, 500
+
+
+@app.route("/refresh_status/<task_id>")
+def refresh_status(task_id):
+    """Check the status of a favicon refresh task."""
+    try:
+        if task_id not in executor.futures._futures:
+            return '<p>Task not found</p>'
+        
+        future = executor.futures._futures[task_id]
+        
+        if future.done():
+            try:
+                result = future.result()
+                if isinstance(result, tuple) and len(result) == 2:
+                    success_count, total_count = result
+                    return f"""
+                    <div class="refresh_status success">
+                        <p><strong>✓ Refresh completed!</strong></p>
+                        <p>Successfully updated {success_count} out of {total_count} feeds</p>
+                    </div>
+                    """
+                else:
+                    return f"""
+                    <div class="refresh_status success">
+                        <p><strong>✓ Refresh completed!</strong></p>
+                        <p>Result: {result}</p>
+                    </div>
+                    """
+            except Exception as e:
+                return f"""
+                <div class="refresh_status error">
+                    <p><strong>✗ Refresh failed</strong></p>
+                    <p>Error: {str(e)}</p>
+                </div>
+                """
+        else:
+            return '<p>⏳ Refresh in progress...</p>'
+            
+    except Exception as e:
+        return f'<p>Error checking status: {str(e)}</p>'
 
 # Helper function to clean up tasks
 def cleanup_tasks():
@@ -310,7 +399,7 @@ def cleanup_completed_tasks(response):
                 return response
         else:
             app.cleanup_counter = 1
-            
+
         cleanup_tasks()
     except Exception as e:
         print(f"Error in task cleanup: {e}")
@@ -323,7 +412,7 @@ def task_status():
     Used for UI feedback on refresh operations.
     """
     tasks = {}
-    
+
     # Check for all feeds refresh
     all_feeds_key = "refresh_all"
     if all_feeds_key in executor.futures._futures:
@@ -337,13 +426,13 @@ def task_status():
             "start_time": datetime.now().isoformat(),
             "task_type": "refresh_all"
         }
-    
+
     # Check for individual feed refreshes
     for key in list(executor.futures._futures.keys()):
         if key.startswith("refresh_") and key != "refresh_all":
             future = executor.futures._futures[key]
             feed_id = key.split("refresh_")[1]
-            
+
             # Attempt to get feed title
             feed_title = None
             try:
@@ -354,7 +443,7 @@ def task_status():
                 session.close()
             except Exception:
                 pass
-            
+
             tasks[key] = {
                 "feed_id": feed_id,
                 "feed_title": feed_title,
@@ -365,7 +454,7 @@ def task_status():
                 "start_time": datetime.now().isoformat(),
                 "task_type": "refresh_feed"
             }
-    
+
     return jsonify({
         "tasks": tasks,
         "timestamp": datetime.now().isoformat(),
@@ -387,11 +476,12 @@ def task_status():
 
 if __name__ == "__main__":
     # Ensure the 'data' directory exists if using SQLite default path
-    # if "sqlite:///" in DATABASE_URL:
-    #     db_path = DATABASE_URL.split("///")[1]
-    #     db_dir = os.path.dirname(db_path)
-    #     if db_dir and not os.path.exists(db_dir):
-    #         os.makedirs(db_dir)
+    # Ensure the database directory exists if using SQLite
+    if "sqlite:///" in DATABASE_URL:
+        db_path = DATABASE_URL.split("///")[1]
+        db_dir = os.path.dirname(db_path)
+        if db_dir and not os.path.exists(db_dir):
+            os.makedirs(db_dir)
 
     port = int(os.environ.get("PORT", 5000))
     # Set debug=True for development, False for production
