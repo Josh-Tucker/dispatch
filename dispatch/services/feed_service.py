@@ -2,8 +2,8 @@ import feedparser
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
-from models import RssFeed, RssEntry, Session
-from sqlalchemy import func, desc
+from models import RssFeed, RssEntry, Session, Settings
+from sqlalchemy import func, desc, case
 import hashlib
 import os
 import mimetypes
@@ -200,19 +200,52 @@ def remove_feed(feed_id):
         session.close()
 
 
-def get_all_feeds():
+def get_all_feeds(sort_by="title"):
     session = Session()
     total_unread_count = (
         session.query(func.count(RssEntry.id)).filter(RssEntry.read == False).scalar()
     )
     print(total_unread_count)
     all_feed = RssFeed(id="all", title="All Feeds")
-    feeds = session.query(RssFeed).all()
+    
+    # Get feeds with sorting logic - pinned feeds always first
+    if sort_by == "title":
+        feeds = session.query(RssFeed).order_by(
+            desc(RssFeed.pinned),
+            RssFeed.title
+        ).all()
+    elif sort_by == "last_updated":
+        feeds = session.query(RssFeed).order_by(
+            desc(RssFeed.pinned),
+            desc(RssFeed.last_updated)
+        ).all()
+    elif sort_by == "frequency_read":
+        # This will be calculated in Python since it requires complex aggregation
+        feeds = session.query(RssFeed).order_by(desc(RssFeed.pinned)).all()
+    else:
+        feeds = session.query(RssFeed).order_by(
+            desc(RssFeed.pinned),
+            RssFeed.title
+        ).all()
+    
     for feed in feeds:
         feed.unread_count = feed.get_unread_count(session)
         # Calculate the latest published date from entries for this feed
         latest_entry = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).first()
         feed.last_new_article_found = latest_entry.published if latest_entry else None
+        # Calculate read frequency for sorting
+        feed.read_frequency = feed.get_read_frequency(session)
+    
+    # If sorting by frequency, do the final sort in Python
+    if sort_by == "frequency_read":
+        # Separate pinned and unpinned feeds
+        pinned_feeds = [f for f in feeds if f.pinned]
+        unpinned_feeds = [f for f in feeds if not f.pinned]
+        # Sort each group by read frequency
+        pinned_feeds.sort(key=lambda x: x.read_frequency, reverse=True)
+        unpinned_feeds.sort(key=lambda x: x.read_frequency, reverse=True)
+        feeds = pinned_feeds + unpinned_feeds
+    
     all_feed.unread_count = total_unread_count
     session.close()
     return [all_feed] + feeds
@@ -226,5 +259,53 @@ def get_feed_by_id(feed_id):
         # Calculate the latest published date from entries for this feed
         latest_entry = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).first()
         feed.last_new_article_found = latest_entry.published if latest_entry else None
+        feed.read_frequency = feed.get_read_frequency(session)
     session.close()
     return feed
+
+
+def toggle_feed_pin(feed_id):
+    """Toggle the pinned status of a feed."""
+    session = Session()
+    try:
+        feed = session.query(RssFeed).filter_by(id=feed_id).first()
+        if feed:
+            feed.pinned = not feed.pinned
+            session.commit()
+            print(f"Feed '{feed.title}' {'pinned' if feed.pinned else 'unpinned'}")
+            return feed.pinned
+        else:
+            print(f"Feed with ID {feed_id} not found.")
+            return None
+    except Exception as e:
+        session.rollback()
+        print(f"Error toggling feed pin: {e}")
+        return None
+    finally:
+        session.close()
+
+
+def get_feed_sort_preference():
+    """Get the current feed sorting preference from settings."""
+    session = Session()
+    try:
+        setting = Settings.get_setting(session, "feed_sort_by")
+        return setting if setting else "title"
+    finally:
+        session.close()
+
+
+def set_feed_sort_preference(sort_by):
+    """Set the feed sorting preference in settings."""
+    session = Session()
+    try:
+        Settings.set_setting(session, "feed_sort_by", sort_by)
+        session.commit()
+        print(f"Feed sort preference set to: {sort_by}")
+        return True
+    except Exception as e:
+        session.rollback()
+        print(f"Error setting feed sort preference: {e}")
+        return False
+    finally:
+        session.close()

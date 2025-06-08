@@ -1,5 +1,6 @@
 import os
 import json
+import requests
 from flask import Flask, request, render_template, redirect, url_for, jsonify, make_response, Response
 from flask_executor import Executor
 from services import * # Import all service functions
@@ -25,7 +26,8 @@ def entry_timedetla(input_datetime):
 @app.route("/")
 def index():
     template = "index.html" # Renamed from new-index.html
-    return render_template(template, theme=get_theme("default"), feeds=get_all_feeds())
+    sort_by = get_feed_sort_preference()
+    return render_template(template, theme=get_theme("default"), feeds=get_all_feeds(sort_by), current_sort=sort_by)
 
 # Renamed from newentries, route changed from /newentries/<feed_id>
 @app.route("/entries/<feed_id>")
@@ -272,6 +274,98 @@ def route_set_default_theme():
     theme = get_theme(theme_name)
     template = "theme.html" # Keep this as it targets the style block
     return render_template(template, theme=theme)
+
+
+@app.route("/set_feed_sort", methods=["POST"])
+def set_feed_sort():
+    """Set the feed sorting preference and return updated feed list."""
+    sort_by = request.form.get("sort_by", "title")
+    set_feed_sort_preference(sort_by)
+    feeds = get_all_feeds(sort_by)
+    return render_template("feed-list-partial.html", feeds=feeds, current_sort=sort_by)
+
+
+@app.route("/toggle_feed_pin/<int:feed_id>", methods=["POST"])
+def toggle_feed_pin_route(feed_id):
+    """Toggle the pinned status of a feed."""
+    pinned = toggle_feed_pin(feed_id)
+    if pinned is not None:
+        sort_by = get_feed_sort_preference()
+        feeds = get_all_feeds(sort_by)
+        return render_template("feed-list-partial.html", feeds=feeds, current_sort=sort_by)
+    else:
+        return "Error toggling pin status", 500
+
+
+@app.route("/mark_all_read/<feed_id>", methods=["POST"])
+def mark_all_read_route(feed_id):
+    """Mark all entries in a feed as read."""
+    try:
+        # Convert feed_id to int if it's not "all"
+        if feed_id != "all":
+            feed_id = int(feed_id)
+        
+        mark_feed_entries_as_read(feed_id, True)
+        
+        # Get feed name for better feedback
+        if feed_id == "all":
+            feed_name = "All Feeds"
+        else:
+            feed = get_feed_by_id(feed_id)
+            feed_name = feed.title if feed else "Unknown Feed"
+        
+        return f'<span style="color: #28a745;">✓ All entries in "{feed_name}" marked as read</span>'
+    except Exception as e:
+        print(f"Error marking entries as read: {e}")
+        return '<span style="color: #dc3545;">✗ Error marking entries as read</span>', 500
+
+
+@app.route("/toggle_feed_pin_entries/<int:feed_id>", methods=["POST"])
+def toggle_feed_pin_entries_route(feed_id):
+    """Toggle the pinned status of a feed from entries page."""
+    try:
+        pinned = toggle_feed_pin(feed_id)
+        if pinned is not None:
+            feed = get_feed_by_id(feed_id)
+            if feed:
+                return render_template("pin-status-partial.html", feed=feed)
+            else:
+                return "Feed not found", 404
+        else:
+            return "Error toggling pin status", 500
+    except Exception as e:
+        print(f"Error toggling pin status: {e}")
+        return "Error toggling pin status", 500
+
+
+@app.route("/fetch_full_article/<int:entry_id>", methods=["POST"])
+def fetch_full_article_route(entry_id):
+    """Fetch the full article content from the original URL."""
+    try:
+        entry = get_feed_entry_by_id(entry_id)
+        if not entry:
+            return '<div class="fetch-error-message"><span style="color: #dc3545;">✗ Entry not found</span></div>', 404
+        
+        if not entry.link:
+            return '<div class="fetch-error-message"><span style="color: #dc3545;">✗ No link available for this entry</span></div>', 400
+        
+        # Fetch the remote content
+        article = get_remote_content(entry.link, entry_id)
+        
+        if article:
+            # Get updated entry with new content
+            updated_entry = get_feed_entry_by_id(entry_id)
+            return render_template("entry-content-partial.html", entry=updated_entry)
+        else:
+            return f'<div class="fetch-error-message"><span style="color: #dc3545;">✗ Failed to fetch content from {entry.link}</span><br><small>The website may be blocking requests or the content may not be accessible.</small></div>', 500
+            
+    except requests.exceptions.Timeout:
+        return '<div class="fetch-error-message"><span style="color: #dc3545;">✗ Request timed out</span><br><small>The website took too long to respond.</small></div>', 500
+    except requests.exceptions.ConnectionError:
+        return '<div class="fetch-error-message"><span style="color: #dc3545;">✗ Connection failed</span><br><small>Could not connect to the website.</small></div>', 500
+    except Exception as e:
+        print(f"Error fetching full article: {e}")
+        return '<div class="fetch-error-message"><span style="color: #dc3545;">✗ Error fetching article content</span><br><small>An unexpected error occurred.</small></div>', 500
 
 
 @app.route("/favicon/<int:feed_id>")

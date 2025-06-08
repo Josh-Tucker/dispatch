@@ -22,7 +22,10 @@ from services.feed_service import (
     remove_feed,
     get_all_feeds,
     get_feed_by_id,
-    get_favicon_url
+    get_favicon_url,
+    toggle_feed_pin,
+    get_feed_sort_preference,
+    set_feed_sort_preference
 )
 
 from services.entry_service import (

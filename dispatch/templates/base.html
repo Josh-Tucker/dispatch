@@ -17,6 +17,8 @@
   taskCheckInterval: null,
   taskErrorCount: 0,
   refreshButtonStates: {}, // Track state of refresh buttons
+  sortBy: '{{ current_sort if current_sort else "title" }}',
+  showSortDropdown: false,
   
   // Update the text of a refresh button based on feed ID
   updateRefreshButton(feedId, text, isRunning = false) {
@@ -160,28 +162,58 @@
 
   <div class="main">
     <header>
-      <div>
-      <a href="/" class="menu-button">home</a>
-      {% if feed is defined and feed.id != 'all' %}
-      <a href="#" id="refreshFeedLink-{{ feed.id }}" data-feed-id="{{ feed.id }}" data-feed-title="{{ feed.title|default('this feed', true) }}" class="refresh-link" 
-         hx-post="/refresh/{{ feed.id }}" 
-         hx-target="body" 
-         hx-swap="outerHTML"
-         hx-indicator="#refresh-indicator"
-         @click="updateRefreshButton('{{ feed.id }}', 'Queuing...', true); startTaskPolling()">
-        <span class="default-text">refresh</span>
-      </a>
-      {% else %}
-      <a href="#" id="refreshAllLink" data-feed-id="all" class="refresh-link" 
-         hx-post="/refresh/all" 
-         hx-target="body" 
-         hx-swap="outerHTML"
-         hx-indicator="#refresh-indicator"
-         @click="updateRefreshButton('all', 'Queuing all feeds...', true); startTaskPolling()">
-        <span class="default-text">refresh</span>
-      </a>
-      {% endif %}
-      <span id="refresh-indicator" class="htmx-indicator"></span>
+      <div class="header-left">
+        <a href="/" class="menu-button">home</a>
+        {% if feed is defined and feed.id != 'all' %}
+        <a href="#" id="refreshFeedLink-{{ feed.id }}" data-feed-id="{{ feed.id }}" data-feed-title="{{ feed.title|default('this feed', true) }}" class="refresh-link" 
+           hx-post="/refresh/{{ feed.id }}" 
+           hx-target="body" 
+           hx-swap="outerHTML"
+           hx-indicator="#refresh-indicator"
+           @click="updateRefreshButton('{{ feed.id }}', 'Queuing...', true); startTaskPolling()">
+          <span class="default-text">refresh</span>
+        </a>
+        {% else %}
+        <a href="#" id="refreshAllLink" data-feed-id="all" class="refresh-link" 
+           hx-post="/refresh/all" 
+           hx-target="body" 
+           hx-swap="outerHTML"
+           hx-indicator="#refresh-indicator"
+           @click="updateRefreshButton('all', 'Queuing all feeds...', true); startTaskPolling()">
+          <span class="default-text">refresh</span>
+        </a>
+        {% endif %}
+        
+        <!-- Sort dropdown for index page only -->
+        {% if request.endpoint == 'index' %}
+        <div class="sort-dropdown" x-data="{ open: false }" @click.away="open = false">
+          <button @click="open = !open" class="menu-button sort-button">
+            <span x-text="sortBy === 'title' ? 'sort: title' : sortBy === 'last_updated' ? 'sort: updated' : 'sort: frequency'"></span> ▼
+          </button>
+          <div x-show="open" x-transition class="dropdown-menu">
+            <a href="#" @click="open = false; sortBy = 'title'" 
+               hx-post="/set_feed_sort" 
+               hx-vals='{"sort_by": "title"}'
+               hx-target="#feed-list" 
+               hx-swap="outerHTML"
+               :class="sortBy === 'title' ? 'active' : ''">Title (A-Z)</a>
+            <a href="#" @click="open = false; sortBy = 'last_updated'"
+               hx-post="/set_feed_sort" 
+               hx-vals='{"sort_by": "last_updated"}'
+               hx-target="#feed-list" 
+               hx-swap="outerHTML"
+               :class="sortBy === 'last_updated' ? 'active' : ''">Last Updated</a>
+            <a href="#" @click="open = false; sortBy = 'frequency_read'"
+               hx-post="/set_feed_sort" 
+               hx-vals='{"sort_by": "frequency_read"}'
+               hx-target="#feed-list" 
+               hx-swap="outerHTML"
+               :class="sortBy === 'frequency_read' ? 'active' : ''">Read Frequency</a>
+          </div>
+        </div>
+        {% endif %}
+        
+        <span id="refresh-indicator" class="htmx-indicator"></span>
       </div>
       
       <a class="menu-button settings-button" href="{{ url_for('settings')}}" method="POST">settings</a>
@@ -268,6 +300,68 @@
   .htmx-request #loading-indicator {
     display: block;
   }
+  
+  /* Header layout */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  /* Sort dropdown styles */
+  .sort-dropdown {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .sort-button {
+    background: var(--background-colour);
+    border: none;
+    color: var(--text-colour);
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 140px;
+    background: var(--background-colour);
+    border: 1px solid var(--border-colour);
+    border-radius: 4px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    margin-top: 2px;
+  }
+  
+  .dropdown-menu a {
+    display: block;
+    padding: 8px 12px;
+    color: var(--text-colour);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border-colour);
+    transition: background-color 0.2s;
+  }
+  
+  .dropdown-menu a:last-child {
+    border-bottom: none;
+  }
+  
+  .dropdown-menu a:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .dropdown-menu a.active {
+    background-color: #007bff;
+    color: white;
+  }
 </style>
 
 <script>
@@ -324,6 +418,29 @@
       } else {
         // For other errors, update button text
         alpine.$data.updateRefreshButton(feedId, 'Error!', false);
+      }
+    });
+
+    // Handle successful sort requests to update Alpine.js state
+    htmx.on('htmx:afterSwap', function(event) {
+      // Check if this was a sort operation
+      if (event.detail.target && event.detail.target.id === 'feed-list') {
+        // Get the sort preference from the request that was just made
+        const triggerElement = event.detail.elt;
+        if (triggerElement && triggerElement.hasAttribute('hx-vals')) {
+          try {
+            const vals = JSON.parse(triggerElement.getAttribute('hx-vals'));
+            if (vals.sort_by) {
+              // Update Alpine.js state
+              const alpine = document.querySelector('body').__x;
+              if (alpine && alpine.$data) {
+                alpine.$data.sortBy = vals.sort_by;
+              }
+            }
+          } catch (e) {
+            console.log('Could not parse hx-vals:', e);
+          }
+        }
       }
     });
     
