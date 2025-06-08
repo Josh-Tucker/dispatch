@@ -101,7 +101,7 @@ def export_feeds_to_opml():
     Returns:
         str: OPML XML content as string
     """
-    from model import RssFeed, Session
+    from models import RssFeed, Session
     
     session = Session()
     try:

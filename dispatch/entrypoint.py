@@ -44,23 +44,15 @@ def main():
             data_dir.mkdir(parents=True, exist_ok=True)
             print(f"📁 Database directory ensured at: {data_dir.absolute()}")
 
-    # Check if migration script exists
-    migration_script = "migrate_add_last_new_article_found.py"
-
-    if not os.path.isfile(migration_script):
-        print("⚠️  Migration script not found in current directory")
-        print("📁 Looking for migration script...")
-
-        # Search for migration script
-        found_scripts = glob.glob(f"**/{migration_script}", recursive=True)
-        if found_scripts:
-            print(f"Found migration script at: {found_scripts[0]}")
-            migration_script = found_scripts[0]
-        else:
-            print("Migration script not found anywhere")
-            # Continue anyway - migration might not be needed
-    else:
-        print("✅ Migration script found")
+    # Import migration system
+    try:
+        sys.path.insert(0, os.path.join(os.getcwd(), 'migrations'))
+        from migrations import run_migrations
+        migration_system_available = True
+        print("✅ Migration system loaded")
+    except ImportError as e:
+        print(f"⚠️  Migration system not available: {e}")
+        migration_system_available = False
 
     # Check if database exists and has required tables
     if "sqlite:///" in database_url:
@@ -91,7 +83,7 @@ def main():
 
                 # Run database initialization
                 try:
-                    result = subprocess.run([sys.executable, "init_db.py"],
+                    result = subprocess.run([sys.executable, "models/init_db.py"],
                                           check=True,
                                           capture_output=True,
                                           text=True)
@@ -138,29 +130,20 @@ def main():
         print("📊 Using external database - skipping local file checks")
 
     # Run database migrations
-    if os.path.isfile(migration_script):
+    if migration_system_available:
         print("📊 Running database migrations...")
         try:
-            result = subprocess.run([sys.executable, migration_script],
-                                  check=True,
-                                  capture_output=True,
-                                  text=True)
-            print("✅ Database migrations completed successfully")
-            if result.stdout:
-                print("Migration output:", result.stdout)
-        except subprocess.CalledProcessError as e:
-            print("❌ Database migration failed")
-            print(f"Error: {e}")
-            if e.stdout:
-                print(f"STDOUT: {e.stdout}")
-            if e.stderr:
-                print(f"STDERR: {e.stderr}")
-            sys.exit(1)
+            success = run_migrations()
+            if success:
+                print("✅ Database migrations completed successfully")
+            else:
+                print("❌ Database migrations failed")
+                sys.exit(1)
         except Exception as e:
             print(f"❌ Unexpected error during migration: {e}")
             sys.exit(1)
     else:
-        print("⚠️  Skipping migration - script not found")
+        print("⚠️  Skipping migrations - migration system not available")
 
     # Start the main application
     print("🌐 Starting web server...")

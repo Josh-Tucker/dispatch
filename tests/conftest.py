@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'dispatch'))
 
-from model import Base, RssFeed, RssEntry, Settings
+from models import Base, RssFeed, RssEntry, Settings
 from app import app as flask_app
 from views import Session
 

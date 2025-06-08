@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Migration script to add last_new_article_found column to rss_feeds table.
+Migration 001: Add last_new_article_found column to rss_feeds table.
 This handles existing databases that don't have the new column.
 Designed to be run safely multiple times and work in Docker environments.
 """
@@ -9,6 +9,11 @@ import sqlite3
 import os
 import sys
 from datetime import datetime
+
+# Migration metadata
+MIGRATION_ID = "001"
+MIGRATION_NAME = "add_last_new_article_found"
+MIGRATION_DESCRIPTION = "Add last_new_article_found column to rss_feeds table"
 
 def migrate_database():
     """Add last_new_article_found column to existing rss_feeds table if it doesn't exist."""

@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime, timedelta
 from sqlalchemy.exc import IntegrityError
 
-from model import RssFeed, RssEntry, Settings
+from models import RssFeed, RssEntry, Settings
 
 
 @pytest.mark.unit

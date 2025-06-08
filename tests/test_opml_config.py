@@ -5,7 +5,7 @@ from io import BytesIO
 from unittest.mock import patch, MagicMock
 from xml.etree import ElementTree as ET
 
-from model import RssFeed, Settings
+from models import RssFeed, Settings
 
 
 @pytest.mark.unit
@@ -277,7 +277,7 @@ class TestConfigurationManagement:
     
     def test_database_url_configuration(self):
         """Test database URL configuration."""
-        from model import DATABASE_URL
+        from models import DATABASE_URL
         
         assert DATABASE_URL is not None
         assert isinstance(DATABASE_URL, str)

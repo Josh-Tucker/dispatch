@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Migration script to move favicons from files to database.
+Migration 002: Move favicons from files to database.
 
 This script:
 1. Adds a new favicon_data column to store favicon content as BLOB
@@ -15,10 +15,15 @@ import mimetypes
 from sqlalchemy import text, Column, LargeBinary, String
 from sqlalchemy.exc import OperationalError
 
-# Add the current directory to the path so we can import our modules
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add the parent directory to the path so we can import our modules
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from model import Session, RssFeed, engine, Base, DATABASE_URL
+from models import Session, RssFeed, engine, Base, DATABASE_URL
+
+# Migration metadata
+MIGRATION_ID = "002"
+MIGRATION_NAME = "migrate_favicon_to_db"
+MIGRATION_DESCRIPTION = "Move favicons from files to database storage"
 
 def add_favicon_columns():
     """Add favicon_data and favicon_mime_type columns to rss_feeds table."""
@@ -121,8 +126,8 @@ def update_model_class():
     print("  favicon_data = Column(LargeBinary)")
     print("  favicon_mime_type = Column(String(50))")
 
-def main():
-    """Run the migration."""
+def run_migration():
+    """Run the migration - standardized interface for migration runner."""
     print(f"Starting favicon migration...")
     print(f"Using database: {DATABASE_URL}")
     
@@ -143,6 +148,16 @@ def main():
     print("2. Update feed_service.py to use database storage")
     print("3. Add a new route to serve favicons from database")
     print("4. Update templates to use the new favicon route")
+    
+    return True
+
+def main():
+    """Run the migration - legacy interface."""
+    try:
+        return run_migration()
+    except Exception as e:
+        print(f"Migration failed: {e}")
+        return False
 
 if __name__ == "__main__":
     main()

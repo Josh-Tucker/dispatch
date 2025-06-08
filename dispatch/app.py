@@ -5,7 +5,7 @@ from flask_executor import Executor
 from services import * # Import all service functions
 from services import add_feed as add_feed_function  # Import with alias to avoid name conflict
 from services.feed_service import refresh_all_feed_favicons  # Import refresh function
-from model import Session, RssFeed  # Import Session and RssFeed for test compatibility
+from models import Session, RssFeed  # Import Session and RssFeed for test compatibility
 from datetime import datetime # Make sure datetime is imported
 
 app = Flask(__name__)

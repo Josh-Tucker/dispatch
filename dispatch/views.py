@@ -14,7 +14,7 @@ The actual implementation has been moved to the services package for better orga
 
 # Import all service functions to maintain backward compatibility
 from services import *
-from model import Session  # Import Session for backward compatibility
+from models import Session  # Import Session for backward compatibility
 
 # Explicit imports for clarity (these are already imported via *)
 from services.feed_service import (
