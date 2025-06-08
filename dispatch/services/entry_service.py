@@ -2,7 +2,7 @@ import feedparser
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
-from model import RssFeed, RssEntry, Session
+from models import RssFeed, RssEntry, Session
 from sqlalchemy import desc
 from dateutil import parser
 from datetime import datetime, timedelta

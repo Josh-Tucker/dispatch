@@ -12,7 +12,10 @@ import sys
 # Add the current directory to the path so we can import our modules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from model import init_database, DATABASE_URL
+try:
+    from .model import init_database, DATABASE_URL
+except ImportError:
+    from model import init_database, DATABASE_URL
 
 def main():
     """Initialize the database."""

@@ -8,7 +8,7 @@ import responses
 import feedparser
 from io import BytesIO
 
-from model import RssFeed, RssEntry, Settings
+from models import RssFeed, RssEntry, Settings
 from views import (
     add_feed, remove_feed, add_rss_entries, add_rss_entries_for_feed,
     add_rss_entries_for_all_feeds, get_all_feeds, get_feed_by_id,

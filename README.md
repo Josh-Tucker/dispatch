@@ -5,6 +5,14 @@ Dispatch is a RSS feed reader written in python with sqlite -> flask -> htmx/alp
 
 ![screenshot](./assets/Screenshot.png)
 
+## Recent Updates
+
+**Project Restructuring**: The codebase has been reorganized for better maintainability:
+- Database models moved to `dispatch/models/` directory
+- Automatic migration system added in `dispatch/migrations/`
+- All database migrations now run automatically on startup
+- See `dispatch/STRUCTURE.md` for detailed information about the new organization
+
 ## Run locally
 
 ### Prerequisites

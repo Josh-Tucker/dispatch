@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock
 from datetime import datetime, timedelta
 from io import BytesIO
 
-from model import RssFeed, RssEntry, Settings
+from models import RssFeed, RssEntry, Settings
 
 
 @pytest.mark.integration

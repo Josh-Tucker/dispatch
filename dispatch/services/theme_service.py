@@ -1,4 +1,4 @@
-from model import Settings, Session
+from models import Settings, Session
 
 
 def get_theme(theme_name):

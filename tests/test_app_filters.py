@@ -341,7 +341,7 @@ class TestAppStartup:
         assert callable(get_all_feeds)
         
         # Test that models are importable
-        from model import RssFeed, RssEntry, Settings
+        from models import RssFeed, RssEntry, Settings
         assert RssFeed is not None
         assert RssEntry is not None
         assert Settings is not None
