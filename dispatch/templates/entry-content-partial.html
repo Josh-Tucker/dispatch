@@ -1,5 +1,9 @@
 <div id="entry-content-container" class="entry_content">
-    {{ entry.content|safe }}
+    {% if entry.content %}
+        {{ entry.content|safe }}
+    {% else %}
+        {{ entry.description|safe }}
+    {% endif %}
     <div class="fetch-success-message">
         <span style="color: #28a745;">✓ Full article content fetched successfully</span>
     </div>
