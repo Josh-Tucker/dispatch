@@ -22,8 +22,9 @@
         
         <div class="entry_actions">
             {% if entry.link %}
-            {% set content_length = entry.content|length if entry.content else 0 %}
-            {% set seems_truncated = content_length < 500 or (entry.content and ('...' in entry.content or '[...]' in entry.content or 'Read more' in entry.content)) %}
+            {% set display_content = entry.content if entry.content else entry.description %}
+            {% set content_length = display_content|length if display_content else 0 %}
+            {% set seems_truncated = content_length < 500 or (display_content and ('...' in display_content or '[...]' in display_content or 'Read more' in display_content)) %}
             
             <button class="fetch-article-button {% if not seems_truncated %}subtle{% endif %}"
                     hx-post="/fetch_full_article/{{ entry.id }}" 
@@ -50,7 +51,13 @@
         </div>
     </div>
 
-<div id="entry-content-container" class="entry_content">{{ entry.content|safe }}</div>
+<div id="entry-content-container" class="entry_content">
+    {% if entry.content %}
+        {{ entry.content|safe }}
+    {% else %}
+        {{ entry.description|safe }}
+    {% endif %}
+</div>
 
 <style>
 .entry_header {

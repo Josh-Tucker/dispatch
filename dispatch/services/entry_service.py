@@ -75,10 +75,28 @@ def add_rss_entries(feed_id):
                 elif hasattr(entry, 'description'):
                     description = entry.description
 
+                # Get content - try to get full content from RSS feed if available
+                content = ""
+                if hasattr(entry, 'content') and entry.content and len(entry.content) > 0:
+                    # feedparser provides content as a list of dicts with 'value' key
+                    content = entry.content[0].get('value', '')
+                elif hasattr(entry, 'summary_detail') and hasattr(entry.summary_detail, 'value'):
+                    content = entry.summary_detail.value
+                else:
+                    # Fallback to description if no content is available
+                    content = description
+
                 # Get author
                 author = ""
                 if hasattr(entry, 'author'):
                     author = entry.author
+
+                # Get GUID
+                guid = ""
+                if hasattr(entry, 'guid'):
+                    guid = entry.guid
+                elif hasattr(entry, 'id'):
+                    guid = entry.id
 
                 # Create new entry
                 rss_entry = RssEntry(
@@ -86,8 +104,10 @@ def add_rss_entries(feed_id):
                     title=entry.title,
                     link=entry.link,
                     description=description,
+                    content=content,
                     published=published_date,
                     author=author,
+                    guid=guid,
                 )
                 
                 session.add(rss_entry)
