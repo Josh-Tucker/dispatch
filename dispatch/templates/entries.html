@@ -1,186 +1,83 @@
-{% extends "base.html" %}
-
-{% block content %}
+{% extends "base.html" %} {% block content %}
 <div class="page-header">
     <h1>
         {% if feed.favicon_data %}
-        <img src="{{ url_for('serve_favicon', feed_id=feed.id) }}" alt="" class="feed-favicon" onerror="this.style.display='none';">
-        {% endif %}
-        {{ feed.title }}
+        <img
+            src="{{ url_for('serve_favicon', feed_id=feed.id) }}"
+            alt=""
+            class="feed-favicon"
+            onerror="this.style.display='none';"
+        />
+        {% endif %} {{ feed.title }}
     </h1>
-    
+
     <div class="page-actions">
-        <button class="action-button mark-read-button"
-                hx-post="/mark_all_read/{{ feed.id }}" 
-                hx-target="#mark-read-result" 
-                hx-swap="innerHTML"
-                hx-on:click="this.disabled=true; this.innerHTML='<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><circle cx=\'12\' cy=\'12\' r=\'10\'></circle><path d=\'M12 6v6l4 2\'></path></svg>Processing...'"
-                hx-on:htmx:after-request="setTimeout(() => { this.disabled=false; this.innerHTML='<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><polyline points=\'20,6 9,17 4,12\'></polyline></svg>Mark All Read'; }, 2000)"
-                title="{% if feed.id == 'all' %}Mark all entries in all feeds as read{% else %}Mark all entries in this feed as read{% endif %}">
-            <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'>
+        <button
+            class="action-button mark-read-button"
+            hx-post="/mark_all_read/{{ feed.id }}"
+            hx-target="#mark-read-result"
+            hx-swap="innerHTML"
+            hx-on:click="this.disabled=true; this.innerHTML='<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><circle cx=\'12\' cy=\'12\' r=\'10\'></circle><path d=\'M12 6v6l4 2\'></path></svg>Processing...'"
+            hx-on:htmx:after-request="setTimeout(() => { this.disabled=false; this.innerHTML='<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><polyline points=\'20,6 9,17 4,12\'></polyline></svg>Mark All Read'; }, 2000)"
+            title="{% if feed.id == 'all' %}Mark all entries in all feeds as read{% else %}Mark all entries in this feed as read{% endif %}"
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+            >
                 <polyline points="20,6 9,17 4,12"></polyline>
             </svg>
             Mark All Read
         </button>
-        
-        {% if feed.id != "all" %}
-        {% include 'pin-status-partial.html' %}
-        {% endif %}
-        
+
+        {% if feed.id != "all" %} {% include 'pin-status-partial.html' %} {%
+        endif %}
+
         <div id="mark-read-result"></div>
     </div>
 </div>
 
-<style>
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-.page-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.action-button {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background-color: var(--background-colour);
-    color: var(--text-colour);
-    border: 1px solid var(--border-colour);
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.action-button:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.action-button svg {
-    width: 16px;
-    height: 16px;
-    stroke: var(--text-colour);
-}
-
-.pin-button-entries.pinned {
-    background-color: #007bff;
-    color: white;
-    border-color: #007bff;
-}
-
-.pin-button-entries.pinned svg {
-    fill: white;
-    stroke: white;
-}
-
-.mark-read-button:hover {
-    background-color: #28a745;
-    color: white;
-    border-color: #28a745;
-}
-
-.mark-read-button:hover svg {
-    stroke: white;
-}
-
-.mark-read-button:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-    background-color: #6c757d;
-    border-color: #6c757d;
-    color: white;
-}
-
-.mark-read-button:disabled svg {
-    stroke: white;
-}
-
-#mark-read-result {
-    font-size: 14px;
-    margin-left: 8px;
-    transition: opacity 0.3s ease;
-}
-
-.feed-favicon {
-    width: 26px;
-    height: 26px;
-    margin-right: 14px;
-    vertical-align: middle;
-    border-radius: 6px;
-    object-fit: cover;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    border: thin solid rgba(0, 0, 0, 0.05);
-}
-
-@media (max-width: 768px) {
-    .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .page-actions {
-        width: 100%;
-        justify-content: flex-start;
-    }
-    
-    .feed-favicon {
-        width: 22px;
-        height: 22px;
-        margin-right: 10px;
-    }
-    
-    .action-button {
-        font-size: 13px;
-        padding: 6px 12px;
-    }
-}
-</style>
-
-{% for entry in entries %}
-    {% if loop.last and next_page %}
-        {# Last entry gets the HTMX trigger for infinite scroll #}
-        <a class="card" href="{{ url_for('entry', entry_id=entry.id) }}"
-           hx-get="{{ url_for('entries', feed_id=feed.id, page=next_page) }}"
-           hx-trigger="revealed"
-           hx-swap="afterend"
-           hx-indicator="#loading-indicator">
-            <div class="card-header">
-                <h2 class="card-title">{{ entry.title }}</h2>
-            </div>
-            <div class="card-content">
-                <div class="card-latest">{{ entry.published|entry_timedetla }}</div>
-                <div class="card-unread">
-                    {% if entry.read %}
-                    <small>◯&nbsp;</small>
-                    {% else %}
-                    <small>⬤&nbsp;</small>
-                    {% endif %}
-                </div>
-            </div>
-        </a>
-    {% else %}
-        {# Regular entries without HTMX trigger #}
-        {% include 'entry-card.html' %}
-    {% endif %}
-{% endfor %}
-
-{% if next_page %}
-<div id="loading-indicator" class="htmx-indicator" style="text-align: center; padding: 20px; margin: 16px; border-radius: 0.75rem; border: thin solid rgba(0, 0, 0, 0.1); background-color: var(--background-colour);">
-    <div style="opacity: 0.7;">Loading more entries...</div>
+{% for entry in entries %} {% if loop.last and next_page %} {# Last entry gets
+the HTMX trigger for infinite scroll #}
+<a
+    class="card"
+    href="{{ url_for('entry', entry_id=entry.id) }}"
+    hx-get="{{ url_for('entries', feed_id=feed.id, page=next_page) }}"
+    hx-trigger="revealed"
+    hx-swap="afterend"
+    hx-indicator="#loading-indicator"
+>
+    <div class="card-header">
+        <h2 class="card-title">{{ entry.title }}</h2>
+    </div>
+    <div class="card-content">
+        <div class="card-latest">{{ entry.published|entry_timedetla }}</div>
+        <div class="card-unread">
+            {% if entry.read %}
+            <small>◯&nbsp;</small>
+            {% else %}
+            <small>⬤&nbsp;</small>
+            {% endif %}
+        </div>
+    </div>
+</a>
+{% else %} {# Regular entries without HTMX trigger #} {% include
+'entry-card.html' %} {% endif %} {% endfor %} {% if next_page %}
+<div
+    id="loading-indicator"
+    class="htmx-indicator"
+    style="
+        text-align: center;
+        padding: 20px;
+        margin: 16px;
+        border-radius: 0.75rem;
+        border: thin solid rgba(0, 0, 0, 0.1);
+        background-color: var(--background-colour);
+    "
+>
+    <div style="opacity: 0.7">Loading more entries...</div>
 </div>
-{% endif %}
-{% endblock %}
+{% endif %} {% endblock %}
