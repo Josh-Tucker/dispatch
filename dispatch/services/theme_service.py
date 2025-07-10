@@ -4,10 +4,10 @@ from models import Settings, Session
 def get_theme(theme_name):
     """
     Get theme configuration by name.
-    
+
     Args:
         theme_name: Name of the theme to retrieve ('default' checks database setting)
-        
+
     Returns:
         dict: Theme configuration with colors and settings
     """
@@ -41,7 +41,7 @@ def get_theme(theme_name):
             "background_colour": "#f8f9fa",
         },
     ]
-    
+
     # Handle 'default' theme by checking database setting
     if theme_name == "default":
         session = Session()
@@ -53,11 +53,11 @@ def get_theme(theme_name):
                 theme_name = "light"  # Fallback to light if no setting
         finally:
             session.close()
-    
+
     for theme in themes:
         if theme["name"] == theme_name:
             return theme
-    
+
     # Default to light theme if not found
     return themes[0]
 
@@ -65,7 +65,7 @@ def get_theme(theme_name):
 def set_default_theme(theme_name):
     """
     Set the default theme in the database.
-    
+
     Args:
         theme_name: Name of the theme to set as default
     """
@@ -84,7 +84,7 @@ def set_default_theme(theme_name):
 def get_default_theme():
     """
     Get the default theme from the database.
-    
+
     Returns:
         dict: Default theme configuration
     """
@@ -101,7 +101,7 @@ def get_default_theme():
 def get_available_themes():
     """
     Get list of all available themes.
-    
+
     Returns:
         list: List of theme names
     """
@@ -111,7 +111,7 @@ def get_available_themes():
 def get_all_themes():
     """
     Get all theme configurations.
-    
+
     Returns:
         list: List of all theme dictionaries
     """
