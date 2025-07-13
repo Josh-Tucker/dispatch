@@ -1,11 +1,13 @@
 version: '3.7'
 services:
-  caddy:
+  dispatch:
     image: ghcr.io/josh-tucker/dispatch:release
     container_name: dispatch
     ports:
       - 5000:5000/tcp
     restart: unless-stopped
+    environment:
+    - DATABASE_URL=sqlite:////data/rss_database.db
     volumes:
       - /opt/dispatch/db:/data
       - /opt/dispatch/assets:/static/img
