@@ -1,33 +1,41 @@
-{% for entry in entries %}
-    {% if loop.last and next_page %}
-        {# Last entry gets the HTMX trigger for infinite scroll #}
-        <a class="card" href="{{ url_for('entry', entry_id=entry.id) }}"
-           hx-get="{{ url_for('entries', feed_id=feed.id, page=next_page) }}"
-           hx-trigger="revealed"
-           hx-swap="afterend"
-           hx-indicator="#loading-indicator">
-            <div class="card-header">
-                <h2 class="card-title">{{ entry.title }}</h2>
-            </div>
-            <div class="card-content">
-                <div class="card-latest">{{ entry.published|entry_timedetla }}</div>
-                <div class="card-unread">
-                    {% if entry.read %}
-                    <small>◯&nbsp;</small>
-                    {% else %}
-                    <small>⬤&nbsp;</small>
-                    {% endif %}
-                </div>
-            </div>
-        </a>
-    {% else %}
-        {# Regular entries without HTMX trigger #}
-        {% include 'entry-card.html' %}
-    {% endif %}
-{% endfor %}
-
-{% if next_page %}
-<div id="loading-indicator" class="htmx-indicator" style="text-align: center; padding: 20px; margin: 16px; border-radius: 0.75rem; border: thin solid rgba(0, 0, 0, 0.1); background-color: var(--background-colour);">
-    <div style="opacity: 0.7;">Loading more entries...</div>
+{% for entry in entries %} {% if loop.last and next_page %} {# Last entry gets
+the HTMX trigger for infinite scroll #}
+<a
+    class="card"
+    href="{{ url_for('entry', entry_id=entry.id) }}"
+    hx-get="{{ url_for('entries', feed_id=feed.id, page=next_page) }}"
+    hx-trigger="revealed"
+    hx-swap="afterend"
+    hx-indicator="#loading-indicator"
+>
+    <div class="card-header">
+        <h2 class="card-title">{{ entry.title }}</h2>
+    </div>
+    <div class="card-content">
+        <div class="card-latest">{{ entry.published|entry_timedetla }}</div>
+        <div class="card-unread">
+            {% if entry.read %}
+            <small>◯&nbsp;</small>
+            {% else %}
+            <small>⬤&nbsp;</small>
+            {% endif %}
+        </div>
+    </div>
+</a>
+{% else %} {# Regular entries without HTMX trigger #} {% include
+'entry-card.html' %} {% endif %} {% endfor %} {% if next_page %}
+<div
+    id="loading-indicator"
+    class="htmx-indicator"
+    style="
+        text-align: center;
+        padding: 20px;
+        margin: 16px 0;
+        border-radius: 0.75rem;
+        border: thin solid rgba(0, 0, 0, 0.1);
+        background-color: var(--background-colour);
+    "
+>
+    <div style="opacity: 0.7">Loading more entries...</div>
 </div>
 {% endif %}

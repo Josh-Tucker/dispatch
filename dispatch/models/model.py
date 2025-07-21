@@ -89,8 +89,21 @@ class Settings(Base):
         session.add(Settings(key=key, value=value))
 
 
-# Create engine but don't create tables at import time
-engine = create_engine(DATABASE_URL)
+# Create engine with SQLite-specific configurations to reduce locking
+if DATABASE_URL.startswith('sqlite'):
+    engine = create_engine(
+        DATABASE_URL,
+        pool_timeout=20,
+        pool_recycle=-1,
+        pool_pre_ping=True,
+        connect_args={
+            'timeout': 30,
+            'check_same_thread': False
+        },
+        echo=False
+    )
+else:
+    engine = create_engine(DATABASE_URL)
 
 def init_database():
     """Initialize the database by creating all tables."""
