@@ -8,6 +8,8 @@ import hashlib
 import os
 import mimetypes
 from datetime import datetime
+import time
+import random
 
 
 def get_favicon_url(feed_url):
@@ -37,7 +39,7 @@ def get_favicon_url(feed_url):
                 favicon_url = f"{parsed_url.scheme}://{parsed_url.netloc}{favicon_url}"
             else:
                 favicon_url = urljoin(feed_url, favicon_url)
-        
+
         return favicon_url
     except Exception as e:
         print(f"Error getting favicon URL: {e}")
@@ -49,7 +51,7 @@ def download_and_store_favicon(feed_url):
     favicon_url = get_favicon_url(feed_url)
     if not favicon_url:
         return None, None
-    
+
     try:
         favicon_response = requests.get(favicon_url, timeout=10)
         if favicon_response.status_code == 200:
@@ -71,11 +73,11 @@ def download_and_store_favicon(feed_url):
                         mime_type = 'image/svg+xml'
                     else:
                         mime_type = 'image/x-icon'  # Default fallback
-            
+
             return favicon_response.content, mime_type
     except Exception as e:
         print(f"Error downloading favicon from {favicon_url}: {e}")
-    
+
     return None, None
 
 
@@ -127,7 +129,7 @@ def refresh_feed_favicon(feed_id):
 
         # Download new favicon
         favicon_data, favicon_mime_type = download_and_store_favicon(feed.link or feed.url)
-        
+
         if favicon_data:
             feed.favicon_data = favicon_data
             feed.favicon_mime_type = favicon_mime_type
@@ -137,7 +139,7 @@ def refresh_feed_favicon(feed_id):
         else:
             print(f"Could not fetch favicon for feed: {feed.title}")
             return False
-            
+
     except Exception as e:
         session.rollback()
         print(f"Error refreshing favicon for feed {feed_id}: {e}")
@@ -152,13 +154,13 @@ def refresh_all_feed_favicons():
     try:
         feeds = session.query(RssFeed).all()
         success_count = 0
-        
+
         for feed in feeds:
             print(f"Refreshing favicon for: {feed.title}")
-            
+
             # Download new favicon
             favicon_data, favicon_mime_type = download_and_store_favicon(feed.link or feed.url)
-            
+
             if favicon_data:
                 feed.favicon_data = favicon_data
                 feed.favicon_mime_type = favicon_mime_type
@@ -166,11 +168,11 @@ def refresh_all_feed_favicons():
                 print(f"  ✓ Updated ({len(favicon_data)} bytes, {favicon_mime_type})")
             else:
                 print(f"  ✗ Could not fetch favicon")
-        
+
         session.commit()
         print(f"Favicon refresh completed: {success_count}/{len(feeds)} feeds updated")
         return success_count, len(feeds)
-        
+
     except Exception as e:
         session.rollback()
         print(f"Error refreshing all favicons: {e}")
@@ -208,7 +210,7 @@ def get_all_feeds(sort_by="title"):
     )
     print(total_unread_count)
     all_feed = RssFeed(id="all", title="All Feeds")
-    
+
     # Get feeds with sorting logic - pinned feeds always first
     if sort_by == "title":
         feeds = session.query(RssFeed).order_by(
@@ -223,7 +225,7 @@ def get_all_feeds(sort_by="title"):
             desc(RssFeed.pinned),
             RssFeed.title
         ).all()
-    
+
     for feed in feeds:
         feed.unread_count = feed.get_unread_count(session)
         # Calculate the latest published date from entries for this feed
@@ -231,7 +233,7 @@ def get_all_feeds(sort_by="title"):
         feed.last_new_article_found = latest_entry.published if latest_entry else None
         # Calculate read frequency for sorting
         feed.read_frequency = feed.get_read_frequency(session)
-    
+
     # If sorting by frequency or last updated, do the final sort in Python
     if sort_by == "frequency_read":
         # Separate pinned and unpinned feeds
@@ -249,7 +251,7 @@ def get_all_feeds(sort_by="title"):
         pinned_feeds.sort(key=lambda x: x.last_new_article_found or datetime.min, reverse=True)
         unpinned_feeds.sort(key=lambda x: x.last_new_article_found or datetime.min, reverse=True)
         feeds = pinned_feeds + unpinned_feeds
-    
+
     all_feed.unread_count = total_unread_count
     session.close()
     return [all_feed] + feeds
