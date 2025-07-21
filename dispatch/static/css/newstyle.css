@@ -466,8 +466,17 @@ td:last-child {
     opacity: 0.7;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
     flex: 1;
+    position: relative;
+    margin-right: 16px;
+    min-width: 0;
+    mask: linear-gradient(to right, black 0%, black 70%, transparent 100%);
+    -webkit-mask: linear-gradient(
+        to right,
+        black 0%,
+        black 70%,
+        transparent 100%
+    );
 }
 
 .card-read-status {
@@ -483,6 +492,14 @@ td:last-child {
 
     .card-feed-title {
         font-size: var(--font-size-mobile-medium);
+        margin-right: 20px;
+        mask: linear-gradient(to right, black 0%, black 60%, transparent 100%);
+        -webkit-mask: linear-gradient(
+            to right,
+            black 0%,
+            black 60%,
+            transparent 100%
+        );
     }
 }
 
@@ -553,11 +570,30 @@ td:last-child {
 .entry_feed_title {
     font-size: var(--font-size-base);
     opacity: 0.75;
+    margin-bottom: var(--spacing-md);
+}
+
+.entry_feed_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+.entry_feed_info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
 }
 
 @media (max-width: 768px) {
     .entry_feed_title {
         font-size: var(--font-size-mobile-button);
+    }
+
+    .entry_feed_header {
+        gap: var(--spacing-sm);
     }
 }
 
