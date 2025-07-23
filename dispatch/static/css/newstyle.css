@@ -409,14 +409,23 @@ td:last-child {
 
 .card-content {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: auto 1fr auto;
     grid-template-rows: 1fr;
+    grid-template-areas: "latest preview time";
+    gap: 0;
     padding: var(--card-padding);
+    align-items: center;
 }
 
 @media (max-width: 768px) {
     .card-content {
         padding: var(--card-padding-mobile);
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "latest time"
+            "preview preview";
+        grid-template-rows: auto auto;
+        gap: var(--spacing-xs);
     }
 }
 
@@ -429,8 +438,9 @@ td:last-child {
 }
 
 .card-time {
-    border-left: var(--border-width) solid var(--border-color-dark);
+    grid-area: time;
     padding: 0.3rem;
+    padding-left: var(--spacing-sm);
     padding-right: 1rem;
     font-size: var(--font-size-small);
     text-align: right;
@@ -452,6 +462,32 @@ td:last-child {
     font-size: var(--font-size-xs);
     font-weight: bold;
     white-space: nowrap;
+}
+
+.card-latest {
+    grid-area: latest;
+    padding-right: 12px;
+}
+
+.card-entry-preview {
+    grid-area: preview;
+    border-left: var(--border-width) solid var(--border-color-dark);
+    font-size: var(--font-size-xs);
+    color: var(--text-colour);
+    opacity: 0.6;
+    white-space: nowrap;
+    overflow: hidden;
+    min-width: 0;
+    text-align: left;
+    padding-left: 11px;
+    padding-right: var(--spacing-sm);
+    mask: linear-gradient(to right, black 0%, black 70%, transparent 100%);
+    -webkit-mask: linear-gradient(
+        to right,
+        black 0%,
+        black 70%,
+        transparent 100%
+    );
 }
 
 /* Entry cards with feed info use flex layout */
@@ -527,6 +563,20 @@ td:last-child {
         padding: 0.3rem 0.5rem;
     }
 
+    .card-entry-preview {
+        font-size: var(--font-size-mobile-xs);
+        text-align: left;
+        margin-left: 0;
+        margin-top: var(--spacing-xs);
+        mask: linear-gradient(to right, black 0%, black 70%, transparent 100%);
+        -webkit-mask: linear-gradient(
+            to right,
+            black 0%,
+            black 70%,
+            transparent 100%
+        );
+    }
+
     .card-feed-title {
         font-size: var(--font-size-mobile-medium);
         margin-right: 20px;
@@ -587,6 +637,7 @@ td:last-child {
 
 .card-latest {
     padding: var(--spacing-xs) 0;
+    padding-right: 11px;
     font-size: var(--font-size-small);
     display: flex;
     flex-direction: column;

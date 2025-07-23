@@ -234,6 +234,9 @@ def get_all_feeds(sort_by="title"):
         # Calculate the latest unread entry date for this feed
         latest_unread_entry = session.query(RssEntry).filter_by(feed_id=feed.id, read=False).order_by(desc(RssEntry.published)).first()
         feed.last_unread_entry_date = latest_unread_entry.published if latest_unread_entry else None
+        # Get latest entry titles for preview (last 3 entries)
+        latest_entries = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).limit(3).all()
+        feed.latest_entry_titles = [entry.title for entry in latest_entries if entry.title]
         # Calculate read frequency for sorting
         feed.read_frequency = feed.get_read_frequency(session)
         # Add frequency data for sparkline graph (only for real feeds)
@@ -264,6 +267,9 @@ def get_all_feeds(sort_by="title"):
     # Calculate the latest unread entry date across all feeds
     latest_unread_all = session.query(RssEntry).filter(RssEntry.read == False).order_by(desc(RssEntry.published)).first()
     all_feed.last_unread_entry_date = latest_unread_all.published if latest_unread_all else None
+    # Get latest entry titles across all feeds for preview (last 3 entries)
+    latest_entries_all = session.query(RssEntry).order_by(desc(RssEntry.published)).limit(3).all()
+    all_feed.latest_entry_titles = [entry.title for entry in latest_entries_all if entry.title]
     session.close()
     return [all_feed] + feeds
 
@@ -279,6 +285,9 @@ def get_feed_by_id(feed_id):
         # Calculate the latest unread entry date for this feed
         latest_unread_entry = session.query(RssEntry).filter_by(feed_id=feed.id, read=False).order_by(desc(RssEntry.published)).first()
         feed.last_unread_entry_date = latest_unread_entry.published if latest_unread_entry else None
+        # Get latest entry titles for preview (last 3 entries)
+        latest_entries = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).limit(3).all()
+        feed.latest_entry_titles = [entry.title for entry in latest_entries if entry.title]
         feed.read_frequency = feed.get_read_frequency(session)
         # Add frequency data for sparkline graph
         feed.frequency_data = get_feed_frequency_data(feed.id)
@@ -423,6 +432,9 @@ def get_feeds_by_tag(tag):
                     # Calculate the latest unread entry date for this feed
                     latest_unread_entry = session.query(RssEntry).filter_by(feed_id=feed.id, read=False).order_by(desc(RssEntry.published)).first()
                     feed.last_unread_entry_date = latest_unread_entry.published if latest_unread_entry else None
+                    # Get latest entry titles for preview (last 3 entries)
+                    latest_entries = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).limit(3).all()
+                    feed.latest_entry_titles = [entry.title for entry in latest_entries if entry.title]
                     feed.read_frequency = feed.get_read_frequency(session)
                     # Add frequency data for sparkline graph
                     feed.frequency_data = get_feed_frequency_data(feed.id)

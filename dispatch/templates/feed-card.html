@@ -19,7 +19,12 @@
             >
             {% endif %}
         </div>
-        <div class="card-time {{ feed|get_feed_timestamp_class }}"></div>
+        <div class="card-entry-preview">
+            {% if feed.latest_entry_titles and feed.id != "all" %}
+            {{ feed.latest_entry_titles | join(" • ") }}
+            {% endif %}
+        </div>
+        <div class="card-time {{ feed|get_feed_timestamp_class }}">
             {% set color = feed|get_feed_timestamp_color %}
             {% if feed.last_unread_entry_date %}
             <span{% if color %} style="background-color: {{ color }};"{% endif %}>{{ feed.last_unread_entry_date|short_time_ago }}</span>
