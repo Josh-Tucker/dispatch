@@ -37,6 +37,9 @@ class RssFeed(Base):
     last_new_article_found = Column(DateTime)  # When new articles were last found
     pinned = Column(Boolean, default=False)  # Whether the feed is pinned to the top
     tags = Column(Text)  # Comma-separated tags for the feed
+    etag = Column(String)  # ETag from last HTTP request for conditional requests
+    last_modified = Column(String)  # Last-Modified header from last HTTP request
+    content_length = Column(Integer)  # Content-Length from last HTTP request
 
     entries = relationship("RssEntry", back_populates="feed")
 
