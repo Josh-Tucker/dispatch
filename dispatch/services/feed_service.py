@@ -231,6 +231,9 @@ def get_all_feeds(sort_by="title"):
         # Calculate the latest published date from entries for this feed
         latest_entry = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).first()
         feed.last_new_article_found = latest_entry.published if latest_entry else None
+        # Calculate the latest unread entry date for this feed
+        latest_unread_entry = session.query(RssEntry).filter_by(feed_id=feed.id, read=False).order_by(desc(RssEntry.published)).first()
+        feed.last_unread_entry_date = latest_unread_entry.published if latest_unread_entry else None
         # Calculate read frequency for sorting
         feed.read_frequency = feed.get_read_frequency(session)
         # Add frequency data for sparkline graph (only for real feeds)
@@ -258,6 +261,9 @@ def get_all_feeds(sort_by="title"):
         feeds = pinned_feeds + unpinned_feeds
 
     all_feed.unread_count = total_unread_count
+    # Calculate the latest unread entry date across all feeds
+    latest_unread_all = session.query(RssEntry).filter(RssEntry.read == False).order_by(desc(RssEntry.published)).first()
+    all_feed.last_unread_entry_date = latest_unread_all.published if latest_unread_all else None
     session.close()
     return [all_feed] + feeds
 
@@ -270,6 +276,9 @@ def get_feed_by_id(feed_id):
         # Calculate the latest published date from entries for this feed
         latest_entry = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).first()
         feed.last_new_article_found = latest_entry.published if latest_entry else None
+        # Calculate the latest unread entry date for this feed
+        latest_unread_entry = session.query(RssEntry).filter_by(feed_id=feed.id, read=False).order_by(desc(RssEntry.published)).first()
+        feed.last_unread_entry_date = latest_unread_entry.published if latest_unread_entry else None
         feed.read_frequency = feed.get_read_frequency(session)
         # Add frequency data for sparkline graph
         feed.frequency_data = get_feed_frequency_data(feed.id)
@@ -411,6 +420,9 @@ def get_feeds_by_tag(tag):
                     # Calculate the latest published date from entries for this feed
                     latest_entry = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).first()
                     feed.last_new_article_found = latest_entry.published if latest_entry else None
+                    # Calculate the latest unread entry date for this feed
+                    latest_unread_entry = session.query(RssEntry).filter_by(feed_id=feed.id, read=False).order_by(desc(RssEntry.published)).first()
+                    feed.last_unread_entry_date = latest_unread_entry.published if latest_unread_entry else None
                     feed.read_frequency = feed.get_read_frequency(session)
                     # Add frequency data for sparkline graph
                     feed.frequency_data = get_feed_frequency_data(feed.id)

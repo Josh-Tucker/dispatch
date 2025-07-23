@@ -428,6 +428,32 @@ td:last-child {
     text-align: right;
 }
 
+.card-time {
+    border-left: var(--border-width) solid var(--border-color-dark);
+    padding: 0.3rem;
+    padding-right: 1rem;
+    font-size: var(--font-size-small);
+    text-align: right;
+    font-weight: 500;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.card-time.feed-time-plain {
+    color: var(--text-colour);
+    opacity: 0.6;
+}
+
+.card-time.feed-time-gradient span {
+    color: #333;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: bold;
+    white-space: nowrap;
+}
+
 /* Entry cards with feed info use flex layout */
 .card-unread.entry-card {
     display: flex;
@@ -488,6 +514,17 @@ td:last-child {
         font-size: var(--font-size-mobile-xxl);
         padding: 0.6rem;
         padding-right: 1.4rem;
+    }
+
+    .card-time {
+        font-size: var(--font-size-mobile-medium);
+        padding: 0.6rem;
+        padding-right: 1.4rem;
+    }
+
+    .card-time.feed-time-gradient span {
+        font-size: var(--font-size-mobile-xs);
+        padding: 0.3rem 0.5rem;
     }
 
     .card-feed-title {
