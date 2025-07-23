@@ -44,6 +44,30 @@ def entry_timedetla(input_datetime):
     return service_timedetla(input_datetime)
 
 
+@app.template_filter()
+def short_time_ago(input_datetime):
+    from services.content_service import short_time_ago as service_short_time_ago
+    return service_short_time_ago(input_datetime)
+
+
+@app.template_filter()
+def get_feed_timestamp_class(feed):
+    from services.content_service import get_feed_timestamp_class as service_get_feed_timestamp_class
+    unread_count = getattr(feed, 'unread_count', 0)
+    last_unread_date = getattr(feed, 'last_unread_entry_date', None)
+    return service_get_feed_timestamp_class(unread_count, last_unread_date)
+
+
+@app.template_filter()
+def get_feed_timestamp_color(feed):
+    from services.content_service import get_feed_timestamp_color as service_get_feed_timestamp_color
+    unread_count = getattr(feed, 'unread_count', 0)
+    last_unread_date = getattr(feed, 'last_unread_entry_date', None)
+    return service_get_feed_timestamp_color(unread_count, last_unread_date)
+
+
+
+
 # Renamed from newindex, route changed from /new to /
 @app.route("/")
 def index():
@@ -594,7 +618,33 @@ def tag_entries(tag_name):
     feeds_with_tag = get_feeds_by_tag(tag_name)
 
     # Create a virtual feed object for the tag
-    tag_feed = {"title": tag_name, "id": f"tag:{tag_name}", "favicon_path": None, "unread_count": sum(feed.unread_count for feed in feeds_with_tag)}
+    # Find the most recent unread entry date across all feeds with this tag
+    most_recent_unread = None
+    all_latest_titles = []
+    for feed in feeds_with_tag:
+        if hasattr(feed, 'last_unread_entry_date') and feed.last_unread_entry_date:
+            if most_recent_unread is None or feed.last_unread_entry_date > most_recent_unread:
+                most_recent_unread = feed.last_unread_entry_date
+        # Collect latest entry titles from all feeds in this tag
+        if hasattr(feed, 'latest_entry_titles') and feed.latest_entry_titles:
+            all_latest_titles.extend(feed.latest_entry_titles)
+
+    # Keep only the first 3 unique titles
+    unique_titles = []
+    for title in all_latest_titles:
+        if title not in unique_titles:
+            unique_titles.append(title)
+        if len(unique_titles) >= 3:
+            break
+
+    tag_feed = {
+        "title": tag_name,
+        "id": f"tag:{tag_name}",
+        "favicon_path": None,
+        "unread_count": sum(feed.unread_count for feed in feeds_with_tag),
+        "last_unread_entry_date": most_recent_unread,
+        "latest_entry_titles": unique_titles
+    }
 
     # Add the tag feed at the beginning of the list
     feeds = [tag_feed] + feeds_with_tag
