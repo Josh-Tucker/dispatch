@@ -1,7 +1,7 @@
 {% extends "base.html" %} {% block content %}
 <div class="page-header">
     <h1>
-        {% if feed.favicon_data %}
+        {% if feed.favicon_data and 'tag:' not in feed.id|string %}
         <img
             src="{{ url_for('serve_favicon', feed_id=feed.id) }}"
             alt=""
@@ -19,7 +19,7 @@
             hx-swap="innerHTML"
             hx-on:click="this.disabled=true; this.innerHTML='<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><circle cx=\'12\' cy=\'12\' r=\'10\'></circle><path d=\'M12 6v6l4 2\'></path></svg>Processing...'"
             hx-on:htmx:after-request="setTimeout(() => { this.disabled=false; this.innerHTML='<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><polyline points=\'20,6 9,17 4,12\'></polyline></svg>Mark All Read'; }, 2000)"
-            title="{% if feed.id == 'all' %}Mark all entries in all feeds as read{% else %}Mark all entries in this feed as read{% endif %}"
+            title="{% if feed.id == 'all' %}Mark all entries in all feeds as read{% elif 'tag:' in feed.id|string %}Mark all entries in this tag as read{% else %}Mark all entries in this feed as read{% endif %}"
         >
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -33,8 +33,8 @@
             Mark All Read
         </button>
 
-        {% if feed.id != "all" %} {% include 'pin-status-partial.html' %} {%
-        endif %}
+        {% if feed.id != "all" and 'tag:' not in feed.id|string %} {% include
+        'pin-status-partial.html' %} {% endif %}
 
         <div id="mark-read-result"></div>
     </div>

@@ -109,45 +109,7 @@
     </div>
 
     <div class="settings_item">
-        <table>
-            <thead>
-                <tr>
-                    <th>Feed</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for feed in feeds %}
-                <tr>
-                    <td class="settings_table_feed_card">
-                        <div class="feed_card_left">
-                            {% if not feed.favicon_data %}
-                            <span>{% include 'bx-rss.svg' %}</span>
-                            {% else %}
-                            <span
-                                ><img
-                                    class="card-favicon"
-                                    src="{{ url_for('serve_favicon', feed_id=feed.id) }}"
-                            /></span>
-                            {% endif %}
-                            <span class="feed_card_title"
-                                >{{ feed.title }}</span
-                            >
-                        </div>
-                    </td>
-                    <td>
-                        <button
-                            class="delete_button"
-                            hx-get="/delete_feed/{{ feed.id }}"
-                            data-feed-id="{{ feed.id }}"
-                        >
-                            Delete
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        {% include 'settings-feed-table-partial.html' %}
     </div>
 </div>
 

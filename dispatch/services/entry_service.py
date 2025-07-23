@@ -297,13 +297,21 @@ def get_remote_content(url, entry_id):
         return None
 
 
-def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10, max_retries=3):
+def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10, max_retries=3, feed_ids=None):
     for attempt in range(max_retries):
         session = Session()
         try:
             query = session.query(RssEntry).options(joinedload(RssEntry.feed))
 
-            if feed_id == "all":
+            if feed_ids:
+                # Filter by list of feed IDs (for tag filtering)
+                query = (
+                    query.filter(RssEntry.feed_id.in_(feed_ids))
+                    .order_by(desc(RssEntry.published))
+                    .limit(entries_per_page)
+                    .offset((page - 1) * entries_per_page)
+                )
+            elif feed_id == "all":
                 query = (
                     query.order_by(desc(RssEntry.published))
                     .limit(entries_per_page)

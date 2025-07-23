@@ -36,6 +36,7 @@ class RssFeed(Base):
     last_updated = Column(DateTime, default=datetime.datetime.utcnow)
     last_new_article_found = Column(DateTime)  # When new articles were last found
     pinned = Column(Boolean, default=False)  # Whether the feed is pinned to the top
+    tags = Column(Text)  # Comma-separated tags for the feed
 
     entries = relationship("RssEntry", back_populates="feed")
 

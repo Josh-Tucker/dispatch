@@ -315,3 +315,80 @@ def set_feed_sort_preference(sort_by):
         return False
     finally:
         session.close()
+
+
+def parse_tags_string(tags_string):
+    """Parse a comma-separated string of tags into a list."""
+    if not tags_string:
+        return []
+    return [tag.strip() for tag in tags_string.split(',') if tag.strip()]
+
+
+def format_tags_list(tags_list):
+    """Format a list of tags into a comma-separated string."""
+    if not tags_list:
+        return None
+    return ', '.join(tag.strip() for tag in tags_list if tag.strip())
+
+
+def get_all_tags():
+    """Get all unique tags from all feeds."""
+    session = Session()
+    try:
+        feeds = session.query(RssFeed).filter(RssFeed.tags.isnot(None)).all()
+        all_tags = set()
+        for feed in feeds:
+            if feed.tags:
+                tags = parse_tags_string(feed.tags)
+                all_tags.update(tags)
+        return sorted(list(all_tags))
+    finally:
+        session.close()
+
+
+def get_feeds_by_tag(tag):
+    """Get all feeds that have a specific tag."""
+    session = Session()
+    try:
+        feeds = session.query(RssFeed).filter(RssFeed.tags.like(f'%{tag}%')).all()
+        # Filter to ensure exact tag match (not substring)
+        matching_feeds = []
+        for feed in feeds:
+            if feed.tags:
+                feed_tags = parse_tags_string(feed.tags)
+                if tag in feed_tags:
+                    feed.unread_count = feed.get_unread_count(session)
+                    # Calculate the latest published date from entries for this feed
+                    latest_entry = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).first()
+                    feed.last_new_article_found = latest_entry.published if latest_entry else None
+                    feed.read_frequency = feed.get_read_frequency(session)
+                    matching_feeds.append(feed)
+        return matching_feeds
+    finally:
+        session.close()
+
+
+def update_feed_tags(feed_id, tags_string):
+    """Update the tags for a specific feed."""
+    session = Session()
+    try:
+        feed = session.query(RssFeed).filter_by(id=feed_id).first()
+        if feed:
+            # Clean up the tags string
+            if tags_string:
+                tags_list = parse_tags_string(tags_string)
+                feed.tags = format_tags_list(tags_list)
+            else:
+                feed.tags = None
+            session.commit()
+            print(f"Tags updated for feed '{feed.title}': {feed.tags}")
+            return True
+        else:
+            print(f"Feed with ID {feed_id} not found.")
+            return False
+    except Exception as e:
+        session.rollback()
+        print(f"Error updating feed tags: {e}")
+        return False
+    finally:
+        session.close()

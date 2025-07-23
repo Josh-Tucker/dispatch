@@ -5,7 +5,7 @@ from flask import Flask, request, render_template, redirect, url_for, jsonify, m
 from flask_executor import Executor
 from services import * # Import all service functions
 from services import add_feed as add_feed_function  # Import with alias to avoid name conflict
-from services.feed_service import refresh_all_feed_favicons  # Import refresh function
+from services.feed_service import refresh_all_feed_favicons, get_all_tags, get_feeds_by_tag, update_feed_tags  # Import refresh function and tag functions
 from models import Session, RssFeed  # Import Session and RssFeed for test compatibility
 from datetime import datetime # Make sure datetime is imported
 
@@ -27,7 +27,8 @@ def entry_timedetla(input_datetime):
 def index():
     template = "index.html" # Renamed from new-index.html
     sort_by = get_feed_sort_preference()
-    return render_template(template, theme=get_theme("default"), feeds=get_all_feeds(sort_by), current_sort=sort_by)
+    all_tags = get_all_tags()
+    return render_template(template, theme=get_theme("default"), feeds=get_all_feeds(sort_by), current_sort=sort_by, all_tags=all_tags)
 
 # Renamed from newentries, route changed from /newentries/<feed_id>
 @app.route("/entries/<feed_id>")
@@ -38,6 +39,10 @@ def entries(feed_id):
 
     if feed_id == "all":
         feed = {"title": "All Feeds", "id": "all", "favicon_path": None}
+    elif feed_id.startswith("tag:"):
+        # Redirect to the tag all entries route
+        tag_name = feed_id[4:]  # Remove "tag:" prefix
+        return redirect(url_for('tag_all_entries', tag_name=tag_name))
     else:
         feed = get_feed_by_id(feed_id)
 
@@ -59,8 +64,9 @@ def entries(feed_id):
     # Regular page load - return full page
     has_more = len(entries) == entries_per_page
     next_page = page + 1 if has_more else None
+    all_tags = get_all_tags()
     return render_template("entries.html", entries=entries, feed=feed,
-                         theme=get_theme("default"), next_page=next_page)
+                         theme=get_theme("default"), next_page=next_page, all_tags=all_tags)
 
 # Renamed from newentry, route changed from /newentry/<entry_id>
 @app.route("/entry/<entry_id>")
@@ -72,7 +78,8 @@ def entry(entry_id):
     feed = get_feed_by_id(entry.feed_id)
     read_status = True
     mark_entry_as_read(entry_id, read_status) # Mark as read when viewed
-    return render_template(template, entry=entry, feed=feed, theme=get_theme("default"))
+    all_tags = get_all_tags()
+    return render_template(template, entry=entry, feed=feed, theme=get_theme("default"), all_tags=all_tags)
 
 # Renamed from newrefresh, route changed from /newrefresh/<feed_id>
 @app.route("/refresh/<feed_id>", methods=["POST"])
@@ -194,7 +201,8 @@ def refresh(feed_id):
 @app.route("/settings")
 def settings():
     template = "settings.html" # Renamed from new-settings.html
-    return render_template(template, feeds=get_all_feeds(), theme=get_theme("default"))
+    all_tags = get_all_tags()
+    return render_template(template, feeds=get_all_feeds(), theme=get_theme("default"), all_tags=all_tags)
 
 # --- Routes kept for settings functionality ---
 
@@ -304,16 +312,16 @@ def mark_all_read_route(feed_id):
         # Convert feed_id to int if it's not "all"
         if feed_id != "all":
             feed_id = int(feed_id)
-        
+
         mark_feed_entries_as_read(feed_id, True)
-        
+
         # Get feed name for better feedback
         if feed_id == "all":
             feed_name = "All Feeds"
         else:
             feed = get_feed_by_id(feed_id)
             feed_name = feed.title if feed else "Unknown Feed"
-        
+
         return f'<span style="color: #28a745;">✓ All entries in "{feed_name}" marked as read</span>'
     except Exception as e:
         print(f"Error marking entries as read: {e}")
@@ -345,20 +353,20 @@ def fetch_full_article_route(entry_id):
         entry = get_feed_entry_by_id(entry_id)
         if not entry:
             return '<div class="fetch-error-message"><span style="color: #dc3545;">✗ Entry not found</span></div>', 404
-        
+
         if not entry.link:
             return '<div class="fetch-error-message"><span style="color: #dc3545;">✗ No link available for this entry</span></div>', 400
-        
+
         # Fetch the remote content
         article = get_remote_content(entry.link, entry_id)
-        
+
         if article:
             # Get updated entry with new content
             updated_entry = get_feed_entry_by_id(entry_id)
             return render_template("entry-content-partial.html", entry=updated_entry)
         else:
             return f'<div class="fetch-error-message"><span style="color: #dc3545;">✗ Failed to fetch content from {entry.link}</span><br><small>The website may be blocking requests or the content may not be accessible.</small></div>', 500
-            
+
     except requests.exceptions.Timeout:
         return '<div class="fetch-error-message"><span style="color: #dc3545;">✗ Request timed out</span><br><small>The website took too long to respond.</small></div>', 500
     except requests.exceptions.ConnectionError:
@@ -397,7 +405,7 @@ def refresh_favicons():
         future = executor.submit(refresh_all_feed_favicons)
         task_id = f"refresh_favicons_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         executor.futures._futures[task_id] = future
-        
+
         return f"""
         <div class="refresh_status success">
             <p><strong>✓ Favicon refresh started!</strong></p>
@@ -421,9 +429,9 @@ def refresh_status(task_id):
     try:
         if task_id not in executor.futures._futures:
             return '<p>Task not found</p>'
-        
+
         future = executor.futures._futures[task_id]
-        
+
         if future.done():
             try:
                 result = future.result()
@@ -451,7 +459,7 @@ def refresh_status(task_id):
                 """
         else:
             return '<p>⏳ Refresh in progress...</p>'
-            
+
     except Exception as e:
         return f'<p>Error checking status: {str(e)}</p>'
 
@@ -555,6 +563,82 @@ def task_status():
         "active_task_count": len([t for t in tasks.values() if t["running"]]),
         "completed_task_count": len([t for t in tasks.values() if t["completed"]])
     })
+
+
+@app.route("/tag/<tag_name>")
+def tag_entries(tag_name):
+    """Show feed list for all feeds with a specific tag."""
+    # Get all feeds with this tag
+    feeds_with_tag = get_feeds_by_tag(tag_name)
+
+    # Create a virtual feed object for the tag
+    tag_feed = {"title": tag_name, "id": f"tag:{tag_name}", "favicon_path": None, "unread_count": sum(feed.unread_count for feed in feeds_with_tag)}
+
+    # Add the tag feed at the beginning of the list
+    feeds = [tag_feed] + feeds_with_tag
+
+    all_tags = get_all_tags()
+    return render_template("index.html", feeds=feeds, theme=get_theme("default"),
+                         all_tags=all_tags, current_sort="title")
+
+
+@app.route("/entries/tag:<tag_name>")
+def tag_all_entries(tag_name):
+    """Show all entries for feeds with a specific tag."""
+    page = int(request.args.get("page", default=1))
+    entries_per_page = 20
+
+    # Get all feeds with this tag
+    feeds_with_tag = get_feeds_by_tag(tag_name)
+
+    if not feeds_with_tag:
+        # No feeds with this tag
+        entries = []
+    else:
+        # Get entries from all feeds with this tag
+        feed_ids = [feed.id for feed in feeds_with_tag]
+        entries = get_feed_entries_by_feed_id("all", page, entries_per_page, feed_ids=feed_ids)
+
+    feed = {"title": tag_name, "id": f"tag:{tag_name}", "favicon_path": None}
+
+    # Check if this is an HTMX request for infinite scroll
+    if request.headers.get('HX-Request'):
+        # Return just the entry cards for HTMX requests
+        if entries:
+            # Check if there might be more entries by seeing if we got a full page
+            has_more = len(entries) == entries_per_page
+            next_page = page + 1 if has_more else None
+            return render_template('entry-cards-partial.html',
+                                 entries=entries,
+                                 feed=feed,
+                                 next_page=next_page)
+        else:
+            # No more entries - return empty content
+            return ""
+
+    # Regular page load - return full page
+    has_more = len(entries) == entries_per_page
+    next_page = page + 1 if has_more else None
+    all_tags = get_all_tags()
+    return render_template("entries.html", entries=entries, feed=feed,
+                         theme=get_theme("default"), next_page=next_page, all_tags=all_tags)
+
+
+@app.route("/update_feed_tags/<int:feed_id>", methods=["POST"])
+def update_feed_tags_route(feed_id):
+    """Update the tags for a specific feed."""
+    tags_string = request.form.get("tags", "").strip()
+
+    success = update_feed_tags(feed_id, tags_string)
+
+    if success:
+        # Return updated feed list for settings page
+        sort_by = get_feed_sort_preference()
+        feeds = get_all_feeds(sort_by)
+        return render_template("settings-feed-table-partial.html", feeds=feeds)
+    else:
+        return "Error updating tags", 500
+
 
 # --- Removed old routes ---
 # /
