@@ -1,37 +1,81 @@
 {% for feed in feeds %}
-    <div class="feed-item" data-feed-id="{{ feed.id }}">
-        <a class="card {% if feed.pinned %}pinned{% endif %}" href="{{ url_for('entries', feed_id=feed.id) }}">
-            <div class="card-header">
-                {% if not feed.favicon_data %}
-                {% include 'bx-rss.svg' %}
+<div class="feed-item" data-feed-id="{{ feed.id }}">
+    <a
+        class="card {% if feed.pinned %}pinned{% endif %}"
+        href="{{ url_for('entries', feed_id=feed.id) }}"
+    >
+        <div class="card-header">
+            {% if 'tag:' not in feed.id|string %} {% if not feed.favicon_data %}
+            {% include 'bx-rss.svg' %} {% else %}
+            <img
+                class="card-favicon"
+                src="{{ url_for('serve_favicon', feed_id=feed.id) }}"
+                alt="Feed Logo"
+            />
+            {% endif %} {% endif %}
+            <h2 class="card-title">{{ feed.title }}</h2>
+            {% if feed.id != "all" and 'tag:' not in feed.id|string %}
+            <button
+                class="pin-button {% if feed.pinned %}pinned{% endif %}"
+                hx-post="/toggle_feed_pin/{{ feed.id }}"
+                hx-target="#feed-list"
+                hx-swap="outerHTML"
+                onclick="event.preventDefault(); event.stopPropagation();"
+                title="{% if feed.pinned %}Unpin feed{% else %}Pin feed{% endif %}"
+            >
+                {% if feed.pinned %}
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                >
+                    <path
+                        d="M19 10.132v-6c0-1.103-.897-2-2-2H7c-1.103 0-2 .897-2 2V22l7-4.666L19 22V10.132z"
+                    ></path>
+                </svg>
                 {% else %}
-                <img class="card-favicon" src="{{ url_for('serve_favicon', feed_id=feed.id) }}" alt="Feed Logo">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <path
+                        d="M19 10.132v-6c0-1.103-.897-2-2-2H7c-1.103 0-2 .897-2 2V22l7-4.666L19 22V10.132z"
+                    ></path>
+                </svg>
                 {% endif %}
-                <h2 class="card-title">{{ feed.title }}</h2>
-                {% if feed.id != "all" %}
-                <button class="pin-button {% if feed.pinned %}pinned{% endif %}" 
-                        hx-post="/toggle_feed_pin/{{ feed.id }}" 
-                        hx-target="#feed-list" 
-                        hx-swap="outerHTML"
-                        onclick="event.preventDefault(); event.stopPropagation();"
-                        title="{% if feed.pinned %}Unpin feed{% else %}Pin feed{% endif %}">
-                    {% if feed.pinned %}
-                        <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'><path d="M19 10.132v-6c0-1.103-.897-2-2-2H7c-1.103 0-2 .897-2 2V22l7-4.666L19 22V10.132z"></path></svg>
-                    {% else %}
-                        <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d="M19 10.132v-6c0-1.103-.897-2-2-2H7c-1.103 0-2 .897-2 2V22l7-4.666L19 22V10.132z"></path></svg>
-                    {% endif %}
-                </button>
-                {% endif %}
-            </div>
+            </button>
+            {% endif %}
+        </div>
 
-            <div class="card-content">
-                <div class="card-latest">
-                    {% if feed.last_new_article_found and feed.id != "all" %}
-                    <small>Latest article: {{ feed.last_new_article_found|entry_timedetla }}</small>
-                    {% endif %}
+        <div class="card-content">
+            <div class="card-latest">
+                {% if feed.frequency_data and feed.id != "all" and 'tag:' not in
+                feed.id|string %}
+                <div class="frequency-graph">
+                    <svg
+                        width="60"
+                        height="20"
+                        viewBox="0 0 60 20"
+                        class="sparkline"
+                    >
+                        {% set max_count = feed.frequency_data|max %}
+                        <polyline
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            points="{% for count in feed.frequency_data %}{{ loop.index0 * 5 }},{% if max_count > 0 %}{{ 18 - (count / max_count * 16) }}{% else %}18{% endif %}{% if not loop.last %} {% endif %}{% endfor %}"
+                        />
+                    </svg>
                 </div>
-                <div class="card-unread">{{ feed.unread_count }}</div>
+                {% elif feed.tags and 'tag:' not in feed.id|string %}
+                <small class="feed-tags">Tags: {{ feed.tags }}</small>
+                {% endif %}
             </div>
-        </a>
-    </div>
+            <div class="card-unread">{{ feed.unread_count }}</div>
+        </div>
+    </a>
+</div>
 {% endfor %}

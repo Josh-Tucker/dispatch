@@ -14,9 +14,9 @@ import time
 import random
 
 
-def add_rss_entries(feed_id, max_retries=3):
+def add_rss_entries_for_feed(feed_id, max_retries=3):
     """
-    Fetches and adds RSS entries for a specific feed to the database.
+    Adds RSS entries from a specific feed to the database.
     Attempts to process feeds even if parsing exceptions occur.
 
     Args:
@@ -30,7 +30,6 @@ def add_rss_entries(feed_id, max_retries=3):
         session = Session()
         try:
             feed = session.query(RssFeed).filter_by(id=feed_id).first()
-
             if not feed:
                 session.close()
                 return False, f"Feed with ID {feed_id} not found"
@@ -38,7 +37,78 @@ def add_rss_entries(feed_id, max_retries=3):
             print(f"Processing feed: {feed.title}")
 
             try:
-                parsed_feed = feedparser.parse(feed.url)
+                # Prepare conditional request headers
+                headers = {}
+                if feed.etag:
+                    headers['If-None-Match'] = feed.etag
+                if feed.last_modified:
+                    headers['If-Modified-Since'] = feed.last_modified
+
+                # First try HEAD request to check headers without downloading content
+                try:
+                    head_response = requests.head(feed.url, headers=headers, timeout=15)
+
+                    # If content hasn't changed (304 Not Modified)
+                    if head_response.status_code == 304:
+                        print(f"Feed {feed.title} not modified (304) - skipping")
+                        session.close()
+                        return True, "Feed not modified"
+
+                    # Check content-length from HEAD request
+                    if (head_response.status_code == 200 and
+                        'content-length' in head_response.headers and
+                        feed.content_length is not None):
+                        try:
+                            head_content_length = int(head_response.headers['content-length'])
+                            if head_content_length == feed.content_length:
+                                print(f"Feed {feed.title} content length unchanged ({head_content_length} bytes) - skipping")
+                                session.close()
+                                return True, "Feed content length unchanged"
+                        except (ValueError, TypeError):
+                            pass  # Continue with GET request if content-length is invalid
+
+                except requests.exceptions.RequestException:
+                    pass  # Fall back to GET request if HEAD fails
+
+                # Make full GET request to download content
+                try:
+                    response = requests.get(feed.url, headers=headers, timeout=30)
+
+                    # If content hasn't changed (304 Not Modified)
+                    if response.status_code == 304:
+                        print(f"Feed {feed.title} not modified (304) - skipping")
+                        session.close()
+                        return True, "Feed not modified"
+
+                    # If request failed
+                    if response.status_code >= 400:
+                        print(f"HTTP error {response.status_code} for feed {feed.title}")
+                        session.close()
+                        return False, f"HTTP error {response.status_code}"
+
+                    # Update stored ETag, Last-Modified, and Content-Length headers for future requests
+                    if 'etag' in response.headers:
+                        feed.etag = response.headers['etag']
+                    if 'last-modified' in response.headers:
+                        feed.last_modified = response.headers['last-modified']
+
+                    # Update content length for future comparisons
+                    current_content_length = len(response.content)
+                    if 'content-length' in response.headers:
+                        try:
+                            feed.content_length = int(response.headers['content-length'])
+                        except (ValueError, TypeError):
+                            feed.content_length = current_content_length
+                    else:
+                        feed.content_length = current_content_length
+
+                    # Parse the feed content
+                    parsed_feed = feedparser.parse(response.content)
+
+                except requests.exceptions.RequestException as req_error:
+                    print(f"Request error for feed {feed.title}: {req_error}")
+                    # Fallback to feedparser for backwards compatibility
+                    parsed_feed = feedparser.parse(feed.url)
 
                 if hasattr(parsed_feed, 'status') and parsed_feed.status >= 400:
                     print(f"HTTP error {parsed_feed.status} for feed {feed.title}")
@@ -147,18 +217,20 @@ def add_rss_entries(feed_id, max_retries=3):
     return False, "Max retries exceeded"
 
 
-def add_rss_entries_for_feed(feed_id):
+# Backward compatibility alias
+def add_rss_entries(feed_id, max_retries=3):
     """
     Fetches and adds RSS entries for a specific feed to the database.
+    This is an alias for add_rss_entries_for_feed for backward compatibility.
 
     Args:
         feed_id: The ID of the RSS feed to process
+        max_retries: Maximum number of retry attempts for database operations
 
     Returns:
         tuple: (success_flag, message)
     """
-    print(f"Refreshing feed with ID: {feed_id}")
-    return add_rss_entries(feed_id)
+    return add_rss_entries_for_feed(feed_id, max_retries)
 
 
 def add_rss_entries_for_all_feeds(max_workers=3):
@@ -186,8 +258,8 @@ def add_rss_entries_for_all_feeds(max_workers=3):
 
     results = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Create partial function with the add_rss_entries function
-        process_func = partial(add_rss_entries)
+        # Create partial function with the add_rss_entries_for_feed function
+        process_func = partial(add_rss_entries_for_feed)
 
         # Submit all tasks
         future_to_feed_id = {
@@ -297,13 +369,21 @@ def get_remote_content(url, entry_id):
         return None
 
 
-def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10, max_retries=3):
+def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10, max_retries=3, feed_ids=None):
     for attempt in range(max_retries):
         session = Session()
         try:
             query = session.query(RssEntry).options(joinedload(RssEntry.feed))
 
-            if feed_id == "all":
+            if feed_ids:
+                # Filter by list of feed IDs (for tag filtering)
+                query = (
+                    query.filter(RssEntry.feed_id.in_(feed_ids))
+                    .order_by(desc(RssEntry.published))
+                    .limit(entries_per_page)
+                    .offset((page - 1) * entries_per_page)
+                )
+            elif feed_id == "all":
                 query = (
                     query.order_by(desc(RssEntry.published))
                     .limit(entries_per_page)

@@ -219,6 +219,21 @@
       <a class="menu-button settings-button" href="{{ url_for('settings')}}" method="POST">settings</a>
 
     </header>
+
+    <!-- Tags Navigation - persistent across all pages -->
+    {% if all_tags %}
+    <div class="tags-navigation">
+        <div class="tags-tabs">
+            <a href="/" class="tag-tab {% if request.endpoint == 'index' %}active{% endif %}">🏡</a>
+            {% for tag in all_tags %}
+            <a href="{{ url_for('tag_entries', tag_name=tag) }}" class="tag-tab {% if request.endpoint == 'tag_entries' and request.view_args.tag_name == tag %}active{% endif %}"
+                >{{ tag }}</a
+            >
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     {% block content %}
     {% endblock %}
   </div>
