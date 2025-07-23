@@ -57,6 +57,13 @@ from .content_service import (
     format_content_preview
 )
 
+from .scheduler_service import (
+    start_scheduler,
+    stop_scheduler,
+    get_scheduler_status,
+    reschedule_feeds
+)
+
 __all__ = [
     # Feed service
     'add_feed',
@@ -67,7 +74,7 @@ __all__ = [
     'toggle_feed_pin',
     'get_feed_sort_preference',
     'set_feed_sort_preference',
-    
+
     # Entry service
     'add_rss_entries',
     'add_rss_entries_for_feed',
@@ -79,18 +86,18 @@ __all__ = [
     'get_remote_content',
     'mark_entry_as_read',
     'mark_feed_entries_as_read',
-    
+
     # OPML service
     'add_feeds_from_opml',
     'export_feeds_to_opml',
-    
+
     # Theme service
     'get_theme',
     'set_default_theme',
     'get_default_theme',
     'get_available_themes',
     'get_all_themes',
-    
+
     # Content service
     'article_date_format',
     'article_long_date_format',
@@ -99,4 +106,10 @@ __all__ = [
     'extract_plain_text',
     'truncate_content',
     'format_content_preview',
+
+    # Scheduler service
+    'start_scheduler',
+    'stop_scheduler',
+    'get_scheduler_status',
+    'reschedule_feeds',
 ]

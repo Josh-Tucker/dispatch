@@ -109,6 +109,33 @@
     </div>
 
     <div class="settings_item">
+        <h3>Automatic Feed Updates</h3>
+        <p>Feeds are automatically updated every 24 hours in the background.</p>
+        <button
+            type="button"
+            class="refresh_button"
+            id="scheduler_status_btn"
+            hx-get="/scheduler/status"
+            hx-target="#scheduler_status_result"
+            hx-swap="innerHTML"
+        >
+            Check Scheduler Status
+        </button>
+        <button
+            type="button"
+            class="refresh_button"
+            id="scheduler_reschedule_btn"
+            hx-post="/scheduler/reschedule"
+            hx-target="#scheduler_reschedule_result"
+            hx-swap="innerHTML"
+        >
+            Reschedule Jobs
+        </button>
+        <div id="scheduler_status_result"></div>
+        <div id="scheduler_reschedule_result"></div>
+    </div>
+
+    <div class="settings_item">
         {% include 'settings-feed-table-partial.html' %}
     </div>
 </div>

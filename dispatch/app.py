@@ -6,14 +6,36 @@ from flask_executor import Executor
 from services import * # Import all service functions
 from services import add_feed as add_feed_function  # Import with alias to avoid name conflict
 from services.feed_service import refresh_all_feed_favicons, get_all_tags, get_feeds_by_tag, update_feed_tags  # Import refresh function and tag functions
+from services.scheduler_service import start_scheduler, stop_scheduler, get_scheduler_status, reschedule_feeds  # Import scheduler functions
 from models import Session, RssFeed  # Import Session and RssFeed for test compatibility
 from datetime import datetime # Make sure datetime is imported
+import atexit  # For graceful scheduler shutdown
 
 app = Flask(__name__)
 executor = Executor(app)
 app.config["EXECUTOR_TYPE"] = "thread"
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/rss_database.db")
+
+# Initialize and start the background scheduler for automatic feed updates
+scheduler = None
+try:
+    scheduler = start_scheduler()
+    print("✅ Background feed scheduler started - feeds will update automatically every 24 hours")
+except Exception as e:
+    print(f"⚠️  Failed to start background scheduler: {e}")
+    print("   Manual feed refresh will still work")
+
+# Register cleanup function to stop scheduler gracefully
+def cleanup_scheduler():
+    if scheduler:
+        try:
+            stop_scheduler()
+            print("✅ Background scheduler stopped gracefully")
+        except Exception as e:
+            print(f"⚠️  Error stopping scheduler: {e}")
+
+atexit.register(cleanup_scheduler)
 
 # Template filter for time delta - uses the service function for consistency
 @app.template_filter()
@@ -638,6 +660,26 @@ def update_feed_tags_route(feed_id):
         return render_template("settings-feed-table-partial.html", feeds=feeds)
     else:
         return "Error updating tags", 500
+
+
+@app.route("/scheduler/status")
+def scheduler_status():
+    """Get the status of the background scheduler and its jobs."""
+    try:
+        status = get_scheduler_status()
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+
+@app.route("/scheduler/reschedule", methods=["POST"])
+def scheduler_reschedule():
+    """Reschedule all feed refresh jobs (useful after adding/removing feeds)."""
+    try:
+        reschedule_feeds()
+        return jsonify({"message": "Feed refresh jobs rescheduled successfully", "status": "success"})
+    except Exception as e:
+        return jsonify({"error": str(e), "status": "error"}), 500
 
 
 # --- Removed old routes ---
