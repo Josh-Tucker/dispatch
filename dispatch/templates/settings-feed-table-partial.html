@@ -1,0 +1,58 @@
+<div id="settings-feed-table">
+    <table>
+        <thead>
+            <tr>
+                <th>Feed & Tags</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for feed in feeds %}
+            <tr>
+                <td class="settings_table_feed_card">
+                    <div class="feed_card_left">
+                        {% if not feed.favicon_data %}
+                        <span>{% include 'bx-rss.svg' %}</span>
+                        {% else %}
+                        <span
+                            ><img
+                                class="card-favicon"
+                                src="{{ url_for('serve_favicon', feed_id=feed.id) }}"
+                        /></span>
+                        {% endif %}
+                        <span class="feed_card_title">{{ feed.title }}</span>
+                    </div>
+                    <div class="feed_card_tags">
+                        <form
+                            hx-post="/update_feed_tags/{{ feed.id }}"
+                            hx-target="#settings-feed-table"
+                            hx-swap="outerHTML"
+                            hx-trigger="submit"
+                        >
+                            <input
+                                type="text"
+                                name="tags"
+                                placeholder="tag1, tag2, tag3"
+                                value="{{ feed.tags if feed.tags else '' }}"
+                                class="tags-input"
+                            />
+                            <button type="submit" class="tags-update-btn">
+                                Update Tags
+                            </button>
+                        </form>
+                    </div>
+                </td>
+                <td>
+                    <button
+                        class="delete_button"
+                        hx-get="/delete_feed/{{ feed.id }}"
+                        data-feed-id="{{ feed.id }}"
+                    >
+                        Delete
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
