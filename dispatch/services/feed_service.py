@@ -233,6 +233,11 @@ def get_all_feeds(sort_by="title"):
         feed.last_new_article_found = latest_entry.published if latest_entry else None
         # Calculate read frequency for sorting
         feed.read_frequency = feed.get_read_frequency(session)
+        # Add frequency data for sparkline graph (only for real feeds)
+        if feed.id != "all":
+            feed.frequency_data = get_feed_frequency_data(feed.id)
+        else:
+            feed.frequency_data = []
 
     # If sorting by frequency or last updated, do the final sort in Python
     if sort_by == "frequency_read":
@@ -266,6 +271,8 @@ def get_feed_by_id(feed_id):
         latest_entry = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).first()
         feed.last_new_article_found = latest_entry.published if latest_entry else None
         feed.read_frequency = feed.get_read_frequency(session)
+        # Add frequency data for sparkline graph
+        feed.frequency_data = get_feed_frequency_data(feed.id)
     session.close()
     return feed
 
@@ -317,6 +324,49 @@ def set_feed_sort_preference(sort_by):
         session.close()
 
 
+def get_feed_frequency_data(feed_id, weeks=12):
+    """Get frequency data for sparkline graph showing posts per week over time."""
+    session = Session()
+    try:
+        from datetime import datetime, timedelta
+        from sqlalchemy import func, extract
+
+        # Calculate date range (last N weeks)
+        end_date = datetime.now()
+        start_date = end_date - timedelta(weeks=weeks)
+
+        # Use SQL to group by week and count entries efficiently
+        weekly_counts = session.query(
+            func.strftime('%Y-%W', RssEntry.published).label('week'),
+            func.count(RssEntry.id).label('count')
+        ).filter(
+            RssEntry.feed_id == feed_id,
+            RssEntry.published >= start_date,
+            RssEntry.published <= end_date
+        ).group_by(func.strftime('%Y-%W', RssEntry.published)).all()
+
+        # Convert to dict for easy lookup
+        week_counts = {week: count for week, count in weekly_counts}
+
+        # Generate frequency data for each week
+        frequency_data = []
+        current_week_start = start_date
+
+        for week_num in range(weeks):
+            week_key = current_week_start.strftime('%Y-%W')
+            count = week_counts.get(week_key, 0)
+            frequency_data.append(count)
+            current_week_start += timedelta(days=7)
+
+        return frequency_data
+
+    except Exception as e:
+        print(f"Error getting frequency data for feed {feed_id}: {e}")
+        return [0] * weeks
+    finally:
+        session.close()
+
+
 def parse_tags_string(tags_string):
     """Parse a comma-separated string of tags into a list."""
     if not tags_string:
@@ -362,6 +412,8 @@ def get_feeds_by_tag(tag):
                     latest_entry = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).first()
                     feed.last_new_article_found = latest_entry.published if latest_entry else None
                     feed.read_frequency = feed.get_read_frequency(session)
+                    # Add frequency data for sparkline graph
+                    feed.frequency_data = get_feed_frequency_data(feed.id)
                     matching_feeds.append(feed)
         return matching_feeds
     finally:

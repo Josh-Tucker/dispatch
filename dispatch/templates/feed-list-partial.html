@@ -52,12 +52,24 @@
 
         <div class="card-content">
             <div class="card-latest">
-                {% if feed.last_new_article_found and feed.id != "all" and
-                'tag:' not in feed.id|string %}
-                <small
-                    >Latest article: {{
-                    feed.last_new_article_found|entry_timedetla }}</small
-                >
+                {% if feed.frequency_data and feed.id != "all" and 'tag:' not in
+                feed.id|string %}
+                <div class="frequency-graph">
+                    <svg
+                        width="60"
+                        height="20"
+                        viewBox="0 0 60 20"
+                        class="sparkline"
+                    >
+                        {% set max_count = feed.frequency_data|max %}
+                        <polyline
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            points="{% for count in feed.frequency_data %}{{ loop.index0 * 5 }},{% if max_count > 0 %}{{ 18 - (count / max_count * 16) }}{% else %}18{% endif %}{% if not loop.last %} {% endif %}{% endfor %}"
+                        />
+                    </svg>
+                </div>
                 {% elif feed.tags and 'tag:' not in feed.id|string %}
                 <small class="feed-tags">Tags: {{ feed.tags }}</small>
                 {% endif %}

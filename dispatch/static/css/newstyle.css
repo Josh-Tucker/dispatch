@@ -1616,10 +1616,56 @@ header a.menu-button:hover {
     font-size: var(--font-size-small);
 }
 
-/* Mobile responsive for feed tags */
+/* Frequency Graph Styles */
+.frequency-graph {
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-start;
+    height: 20px;
+    min-width: 60px;
+}
+
+.sparkline {
+    display: block;
+    width: 60px;
+    height: 100%;
+    color: var(--highlight-color);
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.5;
+}
+
+.card:hover .sparkline {
+    opacity: 1;
+    transform: scaleY(1.1);
+}
+
+/* Fallback for feeds without data */
+.frequency-graph:empty::after {
+    content: "";
+    width: 60px;
+    height: 2px;
+    background: var(--border-color-light);
+    opacity: 0.3;
+}
+
+/* Mobile responsive for feed tags and graphs */
 @media (max-width: 768px) {
     .feed-tags {
         font-size: var(--font-size-mobile-small);
+    }
+
+    .frequency-graph {
+        height: 18px;
+        min-width: 50px;
+    }
+
+    .sparkline {
+        width: 50px;
+        height: 100%;
+        stroke-width: 1.5;
     }
 }
 
