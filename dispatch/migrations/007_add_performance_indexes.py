@@ -225,6 +225,10 @@ def rollback_migration():
         print(f"❌ Migration {MIGRATION_ID} rollback failed: {e}")
         return False
 
+def run_migration():
+    """Run the migration - called by migration runner."""
+    return apply_migration()
+
 def main():
     """Main function for running migration directly."""
     if len(sys.argv) > 1 and sys.argv[1] == "rollback":
