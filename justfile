@@ -6,7 +6,7 @@ init:
     cd dispatch; python3  init_db.py
 
 run:
-    cd dispatch; python3 app.py
+    cd dispatch; DEBUG=true python3 app.py
 
 # Test commands
 test:
@@ -40,7 +40,7 @@ test-clean:
 
 # Docker commands
 docker-run:
-    docker run -d -p 8800:8800 dispatch:latest
+    docker run -d -p 5000:5000 dispatch:latest
 
 docker-build:
     docker build -t dispatch:latest .

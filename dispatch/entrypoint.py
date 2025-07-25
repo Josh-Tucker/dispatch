@@ -13,14 +13,12 @@ import sqlite3
 from pathlib import Path
 
 def main():
-    # Ensure Python output is unbuffered for Docker
     sys.stdout.reconfigure(line_buffering=True)
     sys.stderr.reconfigure(line_buffering=True)
 
     print("🚀 Starting Dispatch RSS Reader...")
     print(f"📍 Working directory: {os.getcwd()}")
 
-    # Show directory contents for debugging
     try:
         files = os.listdir('.')
         print("📁 Contents:")
@@ -31,11 +29,9 @@ def main():
     except Exception as e:
         print(f"Could not list directory contents: {e}")
 
-    # Get database URL from environment
     database_url = os.getenv("DATABASE_URL", "sqlite:///data/rss_database.db")
     print(f"📊 Using database: {database_url}")
 
-    # Ensure database directory exists if using SQLite
     if "sqlite:///" in database_url:
         db_path = database_url.split("///")[1]
         db_dir = os.path.dirname(db_path)
@@ -44,7 +40,6 @@ def main():
             data_dir.mkdir(parents=True, exist_ok=True)
             print(f"📁 Database directory ensured at: {data_dir.absolute()}")
 
-    # Import migration system
     try:
         sys.path.insert(0, os.path.join(os.getcwd(), 'migrations'))
         from migrations import run_migrations
@@ -54,7 +49,6 @@ def main():
         print(f"⚠️  Migration system not available: {e}")
         migration_system_available = False
 
-    # Check if database exists and has required tables
     if "sqlite:///" in database_url:
         db_path = database_url.split("///")[1]
     else:
@@ -69,7 +63,6 @@ def main():
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
 
-            # Get list of existing tables
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             existing_tables = [row[0] for row in cursor.fetchall()]
             conn.close()
@@ -81,7 +74,6 @@ def main():
                 print(f"⚠️  Missing required tables: {missing_tables}")
                 print("🔧 Running database initialization to create missing tables...")
 
-                # Run database initialization
                 try:
                     result = subprocess.run([sys.executable, "models/init_db.py"],
                                           check=True,
@@ -92,8 +84,6 @@ def main():
                         print("📄 Init output:", result.stdout.strip())
                     if result.stderr:
                         print("📄 Init stderr:", result.stderr.strip())
-
-                    # Verify tables were created
                     conn = sqlite3.connect(db_path)
                     cursor = conn.cursor()
                     cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -129,7 +119,6 @@ def main():
     else:
         print("📊 Using external database - skipping local file checks")
 
-    # Run database migrations
     if migration_system_available:
         print("📊 Running database migrations...")
         try:
@@ -145,14 +134,11 @@ def main():
     else:
         print("⚠️  Skipping migrations - migration system not available")
 
-    # Start the main application
     print("🌐 Starting web server...")
     sys.stdout.flush()
     sys.stderr.flush()
 
-    # Get command line arguments passed to this script
     if len(sys.argv) > 1:
-        # Execute the command passed as arguments
         try:
             os.execvp(sys.argv[1], sys.argv[1:])
         except Exception as e:

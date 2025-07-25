@@ -23,9 +23,10 @@ class FeedScheduler:
         """Initialize the scheduler with appropriate configuration."""
         self.scheduler = None
         self.is_running = False
+        self.is_lazy_mode = False
+        self.jobs_scheduled = False
         self.logger = self._setup_logging()
 
-        # Configure scheduler
         self._configure_scheduler()
 
     def _setup_logging(self):
@@ -33,7 +34,6 @@ class FeedScheduler:
         logger = logging.getLogger('feed_scheduler')
         logger.setLevel(logging.INFO)
 
-        # Create handler if it doesn't exist
         if not logger.handlers:
             handler = logging.StreamHandler()
             formatter = logging.Formatter(
@@ -51,13 +51,13 @@ class FeedScheduler:
         }
 
         executors = {
-            'default': ThreadPoolExecutor(max_workers=3)  # Limited for SQLite
+            'default': ThreadPoolExecutor(max_workers=3)
         }
 
         job_defaults = {
-            'coalesce': True,  # Combine multiple pending instances into one
-            'max_instances': 1,  # Only one instance of each job at a time
-            'misfire_grace_time': 300  # 5 minutes grace time for missed jobs
+            'coalesce': True,
+            'max_instances': 1,
+            'misfire_grace_time': 300
         }
 
         self.scheduler = BackgroundScheduler(
@@ -67,7 +67,7 @@ class FeedScheduler:
             timezone='UTC'
         )
 
-    def start(self):
+    def start(self, lazy=False):
         """Start the scheduler and set up automatic feed refresh jobs."""
         if self.is_running:
             self.logger.warning("Scheduler is already running")
@@ -76,10 +76,15 @@ class FeedScheduler:
         try:
             self.scheduler.start()
             self.is_running = True
-            self.logger.info("Feed scheduler started successfully")
+            self.is_lazy_mode = lazy
 
-            # Schedule automatic feed refreshing
-            self._schedule_feed_refresh()
+            if lazy:
+                self.logger.info("Feed scheduler started in lazy mode")
+                self._schedule_basic_refresh()
+                self.logger.info("Individual feed jobs will be scheduled on first request")
+            else:
+                self.logger.info("Feed scheduler started successfully")
+                self._schedule_feed_refresh()
 
         except Exception as e:
             self.logger.error(f"Failed to start scheduler: {e}")
@@ -100,15 +105,13 @@ class FeedScheduler:
             self.logger.error(f"Error stopping scheduler: {e}")
             raise
 
-    def _schedule_feed_refresh(self):
-        """Schedule automatic refresh for all feeds every 24 hours."""
-        # Remove existing auto-refresh job if it exists
+    def _schedule_basic_refresh(self):
+        """Schedule only the basic automatic refresh job (for lazy mode)."""
         try:
             self.scheduler.remove_job('auto_refresh_feeds')
         except:
-            pass  # Job doesn't exist yet
+            pass
 
-        # Schedule feed refresh every 24 hours
         self.scheduler.add_job(
             func=self._refresh_all_feeds_job,
             trigger=IntervalTrigger(hours=24),
@@ -117,10 +120,14 @@ class FeedScheduler:
             replace_existing=True
         )
 
-        self.logger.info("Scheduled automatic feed refresh every 24 hours")
+        self.logger.info("Scheduled basic automatic feed refresh every 24 hours")
 
-        # Also schedule individual feed checks (staggered)
+    def _schedule_feed_refresh(self):
+        """Schedule automatic refresh for all feeds every 24 hours."""
+        self._schedule_basic_refresh()
+
         self._schedule_staggered_feed_checks()
+        self.jobs_scheduled = True
 
     def _schedule_staggered_feed_checks(self):
         """Schedule individual feed checks staggered throughout the day."""
@@ -132,21 +139,17 @@ class FeedScheduler:
                 self.logger.info("No feeds found to schedule")
                 return
 
-            # Stagger feeds throughout the 24-hour period
-            interval_minutes = max(1, (24 * 60) // len(feeds))  # At least 1 minute apart
+            interval_minutes = max(1, (24 * 60) // len(feeds))
 
             for i, feed in enumerate(feeds):
-                # Remove existing job if it exists
                 job_id = f'refresh_feed_{feed.id}'
                 try:
                     self.scheduler.remove_job(job_id)
                 except:
                     pass
 
-                # Calculate start time (stagger feeds)
                 start_time = datetime.now() + timedelta(minutes=i * interval_minutes)
 
-                # Schedule this specific feed
                 self.scheduler.add_job(
                     func=self._refresh_single_feed_job,
                     args=[feed.id],
@@ -163,6 +166,25 @@ class FeedScheduler:
             self.logger.error(f"Error scheduling staggered feed checks: {e}")
         finally:
             session.close()
+
+    def schedule_jobs_on_demand(self):
+        """Schedule individual feed jobs on demand (for lazy mode)."""
+        if not self.is_running:
+            self.logger.warning("Cannot schedule jobs - scheduler not running")
+            return False
+
+        if self.jobs_scheduled:
+            self.logger.debug("Jobs already scheduled")
+            return True
+
+        self.logger.info("Scheduling individual feed jobs on demand...")
+        try:
+            self._schedule_staggered_feed_checks()
+            self.jobs_scheduled = True
+            return True
+        except Exception as e:
+            self.logger.error(f"Error scheduling jobs on demand: {e}")
+            return False
 
     def _refresh_all_feeds_job(self):
         """Background job to refresh all feeds."""
@@ -231,7 +253,7 @@ class FeedScheduler:
     def get_job_status(self):
         """Get status of all scheduled jobs."""
         if not self.is_running:
-            return {"status": "stopped", "jobs": []}
+            return {"status": "stopped", "jobs": [], "lazy_mode": self.is_lazy_mode}
 
         jobs = []
         for job in self.scheduler.get_jobs():
@@ -245,7 +267,9 @@ class FeedScheduler:
         return {
             "status": "running",
             "jobs": jobs,
-            "total_jobs": len(jobs)
+            "total_jobs": len(jobs),
+            "lazy_mode": self.is_lazy_mode,
+            "jobs_scheduled": self.jobs_scheduled
         }
 
     def reschedule_feeds(self):
@@ -258,7 +282,6 @@ class FeedScheduler:
         self._schedule_staggered_feed_checks()
 
 
-# Global scheduler instance
 _scheduler_instance = None
 
 
@@ -270,10 +293,10 @@ def get_scheduler():
     return _scheduler_instance
 
 
-def start_scheduler():
+def start_scheduler(lazy=False):
     """Start the global scheduler."""
     scheduler = get_scheduler()
-    scheduler.start()
+    scheduler.start(lazy=lazy)
     return scheduler
 
 
@@ -293,3 +316,8 @@ def reschedule_feeds():
     """Reschedule all feed refresh jobs."""
     scheduler = get_scheduler()
     scheduler.reschedule_feeds()
+
+def schedule_jobs_on_first_request():
+    """Schedule individual feed jobs on first request (for lazy mode)."""
+    scheduler = get_scheduler()
+    return scheduler.schedule_jobs_on_demand()

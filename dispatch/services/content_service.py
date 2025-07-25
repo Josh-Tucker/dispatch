@@ -49,35 +49,31 @@ def entry_timedetla(published_date):
         str: Human-readable time difference
     """
     try:
-        # Handle string dates
         if isinstance(published_date, str):
             published_date = parser.parse(published_date)
 
-        # Handle None or invalid dates
         if not published_date:
             return "Unknown"
 
         now = datetime.now()
 
-        # Handle future dates
         if published_date > now:
             return "Just now"
 
         time_diff = now - published_date
 
-        # Match original template filter behavior for backward compatibility
-        if time_diff.total_seconds() < 59 * 30:  # Less than 30 minutes
+        if time_diff.total_seconds() < 59 * 30:
             minutes = int(time_diff.total_seconds() / 60)
             return f"{minutes} min{'s' if minutes != 1 else ''} ago"
-        elif time_diff.total_seconds() < 59 * 60:  # Less than 1 hour
+        elif time_diff.total_seconds() < 59 * 60:
             return "0 hours ago"
-        elif time_diff.total_seconds() < 59 * 60 * 24:  # Less than 24 hours
+        elif time_diff.total_seconds() < 59 * 60 * 24:
             hours = int(time_diff.total_seconds() / 3600)
             return f"{hours} hour{'s' if hours != 1 else ''} ago"
-        elif time_diff.total_seconds() < 59 * 60 * 24 * 30:  # Less than 30 days
+        elif time_diff.total_seconds() < 59 * 60 * 24 * 30:
             days = int(time_diff.total_seconds() / (3600 * 24))
             return f"{days} day{'s' if days != 1 else ''} ago"
-        elif time_diff.total_seconds() < 59 * 60 * 24 * 365:  # Less than 1 year
+        elif time_diff.total_seconds() < 59 * 60 * 24 * 365:
             months = int(time_diff.total_seconds() / (3600 * 24 * 30))
             return f"{months} month{'s' if months != 1 else ''} ago"
         else:
@@ -102,9 +98,6 @@ def sanitize_html_content(content):
     if not content:
         return ""
 
-    # Basic HTML sanitization could be added here
-    # For now, just return the content as-is
-    # In a production environment, you might want to use a library like bleach
     return content
 
 
@@ -144,7 +137,6 @@ def truncate_content(content, max_length=200):
     if len(content) <= max_length:
         return content
 
-    # Find the last space before the max_length to avoid cutting words
     truncated = content[:max_length]
     last_space = truncated.rfind(' ')
 
@@ -168,13 +160,11 @@ def format_content_preview(content, max_length=300):
     if not content:
         return ""
 
-    # Extract plain text if it looks like HTML
     if '<' in content and '>' in content:
         plain_text = extract_plain_text(content)
     else:
         plain_text = content
 
-    # Truncate to desired length
     return truncate_content(plain_text, max_length)
 
 
@@ -190,41 +180,32 @@ def short_time_ago(published_date):
         str: Short time difference format
     """
     try:
-        # Handle string dates
         if isinstance(published_date, str):
             published_date = parser.parse(published_date)
 
-        # Handle None or invalid dates
         if not published_date:
             return None
 
         now = datetime.now()
 
-        # Handle future dates
         if published_date > now:
             return "now"
 
         time_diff = now - published_date
         total_seconds = time_diff.total_seconds()
 
-        # Less than 1 hour
         if total_seconds < 3600:
             hours = max(1, int(total_seconds / 3600))
             return f"{hours}hr"
-        # Less than 1 day
         elif total_seconds < 86400:
             hours = int(total_seconds / 3600)
             return f"{hours}hr"
-        # Less than or equal to 1 year (with small tolerance for floating point precision)
-        elif total_seconds <= 31536001:  # 365 days + 1 second tolerance
+        elif total_seconds <= 31536001:
             days = int(total_seconds / 86400)
             if days == 1:
                 return "1 day"
-            elif days == 365:
-                return "365 days"
             else:
                 return f"{days} days"
-        # More than 1 year
         else:
             years = int(total_seconds / 31536000)
             return f"{years} year{'s' if years != 1 else ''}"
@@ -246,16 +227,13 @@ def get_feed_timestamp_class(unread_count, last_unread_date):
     Returns:
         str: CSS class name
     """
-    # If no unread entries, use plain styling
     if not unread_count or unread_count == 0:
         return "feed-time-plain"
 
-    # If there are unread entries but no date, default to plain
     if not last_unread_date:
         return "feed-time-plain"
 
     try:
-        # Handle string dates
         if isinstance(last_unread_date, str):
             last_unread_date = parser.parse(last_unread_date)
 
@@ -281,16 +259,13 @@ def get_feed_timestamp_color(unread_count, last_unread_date):
     Returns:
         str: CSS color value or None for plain styling
     """
-    # If no unread entries, use plain styling
     if not unread_count or unread_count == 0:
         return None
 
-    # If there are unread entries but no date, default to plain
     if not last_unread_date:
         return None
 
     try:
-        # Handle string dates
         if isinstance(last_unread_date, str):
             last_unread_date = parser.parse(last_unread_date)
 
@@ -298,36 +273,27 @@ def get_feed_timestamp_color(unread_count, last_unread_date):
         time_diff = now - last_unread_date
         hours_ago = time_diff.total_seconds() / 3600
 
-        # Logarithmic scale: 0.5 hours (30 min) to 8760 hours (1 year)
-        # Clamp to reasonable bounds
-        hours_clamped = max(0.5, min(hours_ago, 8760))  # 30 minutes to 1 year
+        hours_clamped = max(0.5, min(hours_ago, 8760))
 
-        # Logarithmic interpolation (base 10)
-        # log10(0.5) ≈ -0.3, log10(8760) ≈ 3.94
         import math
         log_hours = math.log10(hours_clamped)
-        log_min = math.log10(0.5)    # ~-0.3 (30 minutes)
-        log_max = math.log10(8760)   # ~3.94 (1 year)
+        log_min = math.log10(0.5)
+        log_max = math.log10(8760)
 
-        # Normalize to 0-1 range
         t = (log_hours - log_min) / (log_max - log_min)
-        t = max(0, min(1, t))  # Ensure within bounds
+        t = max(0, min(1, t))
 
-        # Pastel color interpolation from green to yellow to orange to red
-        if t <= 0.33:  # Green to yellow (first third)
-            # Pastel green (#90EE90) to pastel yellow (#FFFFE0)
+        if t <= 0.33:
             factor = t / 0.33
             r = int(144 + (255 - 144) * factor)
             g = int(238 + (255 - 238) * factor)
             b = int(144 + (224 - 144) * factor)
-        elif t <= 0.66:  # Yellow to orange (middle third)
-            # Pastel yellow (#FFFFE0) to pastel orange (#FFD4AA)
+        elif t <= 0.66:
             factor = (t - 0.33) / 0.33
             r = 255
             g = int(255 - (255 - 212) * factor)
             b = int(224 - (224 - 170) * factor)
-        else:  # Orange to red (final third)
-            # Pastel orange (#FFD4AA) to pastel red (#FFB6C1)
+        else:
             factor = (t - 0.66) / 0.34
             r = 255
             g = int(212 - (212 - 182) * factor)

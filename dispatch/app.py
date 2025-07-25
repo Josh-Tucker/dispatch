@@ -1,15 +1,16 @@
 import os
 import json
 import requests
+import time
 from flask import Flask, request, render_template, redirect, url_for, jsonify, make_response, Response
 from flask_executor import Executor
-from services import * # Import all service functions
-from services import add_feed as add_feed_function  # Import with alias to avoid name conflict
-from services.feed_service import refresh_all_feed_favicons, get_all_tags, get_feeds_by_tag, update_feed_tags  # Import refresh function and tag functions
-from services.scheduler_service import start_scheduler, stop_scheduler, get_scheduler_status, reschedule_feeds  # Import scheduler functions
-from models import Session, RssFeed  # Import Session and RssFeed for test compatibility
-from datetime import datetime # Make sure datetime is imported
-import atexit  # For graceful scheduler shutdown
+from services import *
+from services import add_feed as add_feed_function
+from services.feed_service import refresh_all_feed_favicons, get_all_tags, get_feeds_by_tag, update_feed_tags
+from services.scheduler_service import start_scheduler, stop_scheduler, get_scheduler_status, reschedule_feeds, schedule_jobs_on_first_request
+from models import Session, RssFeed
+from datetime import datetime
+import atexit
 
 app = Flask(__name__)
 executor = Executor(app)
@@ -17,16 +18,18 @@ app.config["EXECUTOR_TYPE"] = "thread"
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/rss_database.db")
 
-# Initialize and start the background scheduler for automatic feed updates
+_startup_time = time.time()
+_first_request_handled = False
+
 scheduler = None
 try:
-    scheduler = start_scheduler()
-    print("✅ Background feed scheduler started - feeds will update automatically every 24 hours")
+    scheduler = start_scheduler(lazy=True)
+    print("✅ Lazy background feed scheduler started - full initialization deferred until first request")
 except Exception as e:
-    print(f"⚠️  Failed to start background scheduler: {e}")
+    print(f"⚠️  Failed to start lazy background scheduler: {e}")
     print("   Manual feed refresh will still work")
 
-# Register cleanup function to stop scheduler gracefully
+
 def cleanup_scheduler():
     if scheduler:
         try:
@@ -37,7 +40,45 @@ def cleanup_scheduler():
 
 atexit.register(cleanup_scheduler)
 
-# Template filter for time delta - uses the service function for consistency
+
+def monitor_performance(route_name):
+    """Decorator to monitor route performance."""
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            start_time = time.perf_counter()
+            try:
+                result = func(*args, **kwargs)
+                end_time = time.perf_counter()
+                duration = (end_time - start_time) * 1000
+                print(f"🚀 Route '{route_name}' completed in {duration:.1f}ms")
+                return result
+            except Exception as e:
+                end_time = time.perf_counter()
+                duration = (end_time - start_time) * 1000
+                print(f"❌ Route '{route_name}' failed after {duration:.1f}ms: {e}")
+                raise
+        wrapper.__name__ = func.__name__
+        return wrapper
+    return decorator
+
+
+def handle_first_request():
+    """Initialize expensive operations on first request."""
+    global _first_request_handled
+    if not _first_request_handled:
+        startup_duration = (time.time() - _startup_time) * 1000
+        print(f"🎯 First request received {startup_duration:.1f}ms after startup")
+
+
+        try:
+            schedule_jobs_on_first_request()
+            print("✅ Lazy scheduler fully initialized on first request")
+        except Exception as e:
+            print(f"⚠️  Error during lazy scheduler initialization: {e}")
+
+        _first_request_handled = True
+
+
 @app.template_filter()
 def entry_timedetla(input_datetime):
     from services.content_service import entry_timedetla as service_timedetla
@@ -68,16 +109,23 @@ def get_feed_timestamp_color(feed):
 
 
 
-# Renamed from newindex, route changed from /new to /
+
 @app.route("/")
+@monitor_performance("index")
 def index():
-    template = "index.html" # Renamed from new-index.html
+    handle_first_request()
+
+    template = "index.html"
+
     sort_by = get_feed_sort_preference()
     all_tags = get_all_tags()
-    return render_template(template, theme=get_theme("default"), feeds=get_all_feeds(sort_by), current_sort=sort_by, all_tags=all_tags)
+    feeds = get_all_feeds(sort_by)
 
-# Renamed from newentries, route changed from /newentries/<feed_id>
+    return render_template(template, theme=get_theme("default"), feeds=feeds, current_sort=sort_by, all_tags=all_tags)
+
+
 @app.route("/entries/<feed_id>")
+@monitor_performance("entries")
 def entries(feed_id):
     page = int(request.args.get("page", default=1))
     entries_per_page = 20
@@ -114,53 +162,43 @@ def entries(feed_id):
     return render_template("entries.html", entries=entries, feed=feed,
                          theme=get_theme("default"), next_page=next_page, all_tags=all_tags)
 
-# Renamed from newentry, route changed from /newentry/<entry_id>
 @app.route("/entry/<entry_id>")
+@monitor_performance("entry")
 def entry(entry_id):
-    template = "entry.html" # Renamed from new-entry.html
+    template = "entry.html"
     entry = get_feed_entry_by_id(entry_id)
     if not entry:
         return "Entry not found", 404
     feed = get_feed_by_id(entry.feed_id)
     read_status = True
-    mark_entry_as_read(entry_id, read_status) # Mark as read when viewed
+    mark_entry_as_read(entry_id, read_status)
     all_tags = get_all_tags()
     return render_template(template, entry=entry, feed=feed, theme=get_theme("default"), all_tags=all_tags)
 
-# Renamed from newrefresh, route changed from /newrefresh/<feed_id>
 @app.route("/refresh/<feed_id>", methods=["POST"])
 def refresh(feed_id):
-    # Get the referrer URL to determine where to redirect back to
     referrer = request.referrer if request.referrer else "/"
-
-    # Store the timestamp when the refresh was requested
     refresh_timestamp = datetime.now().isoformat()
 
-    # Helper function to determine where to redirect based on referrer
     def get_redirect_url():
         if 'entry/' in referrer:
             try:
-                # Extract entry_id from referrer URL
                 entry_id = referrer.split('entry/')[-1].split('?')[0].split('#')[0]
                 return redirect(url_for('entry', entry_id=entry_id))
             except Exception:
-                # If something goes wrong with entry parsing, fall back to feed page
                 return redirect(url_for('entries', feed_id=feed_id))
         elif feed_id == "all":
             return redirect(url_for('index'))
         else:
             return redirect(url_for('entries', feed_id=feed_id))
 
-    # Check if this is an HTMX request
     is_htmx = request.headers.get('HX-Request')
 
     try:
         if feed_id == "all":
-            # Check if task is already running
             if f"refresh_all" in executor.futures._futures:
                 print(f"Task refresh_all is already running")
                 if is_htmx:
-                    # For HTMX, return a response that triggers a client-side redirect
                     response = make_response("")
                     response.headers['HX-Redirect'] = url_for('index')
                     return response
@@ -169,19 +207,16 @@ def refresh(feed_id):
             executor.submit_stored("refresh_all", add_rss_entries_for_all_feeds)
             print(f"Started task refresh_all")
             if is_htmx:
-                # For HTMX, return a response that triggers a client-side redirect
                 response = make_response("")
                 response.headers['HX-Redirect'] = url_for('index')
                 return response
             return redirect(url_for('index'))
         else:
-            # Validate feed_id exists
             try:
-                feed_id_int = int(feed_id)  # Make sure it's a valid integer if numeric
+                feed_id_int = int(feed_id)
             except ValueError:
                 print(f"Invalid feed_id format: {feed_id}")
                 if is_htmx:
-                    # For HTMX, return a response that triggers a client-side redirect
                     response = make_response("")
                     if feed_id == "all":
                         response.headers['HX-Redirect'] = url_for('index')
@@ -190,37 +225,29 @@ def refresh(feed_id):
                     return response
                 return get_redirect_url()
 
-            # Check if task is already running
             if f"refresh_{feed_id}" in executor.futures._futures:
                 print(f"Task refresh_{feed_id} is already running")
                 if is_htmx:
-                    # For HTMX, return a response that triggers a client-side redirect
                     response = make_response("")
                     response.headers['HX-Redirect'] = url_for('entries', feed_id=feed_id)
                     return response
                 return get_redirect_url()
 
-            # Ensure feed_id is passed correctly if the function expects it
             try:
                 executor.submit_stored(f"refresh_{feed_id}", add_rss_entries_for_feed, feed_id)
                 print(f"Started task refresh_{feed_id}")
             except Exception as e:
                 print(f"Error starting refresh task for feed {feed_id}: {str(e)}")
 
-            # Handle response based on request type
             if is_htmx:
-                # For HTMX, return a response that triggers a client-side redirect
                 response = make_response("")
                 response.headers['HX-Redirect'] = url_for('entries', feed_id=feed_id)
                 return response
-            # Redirect back to appropriate page
             return get_redirect_url()
 
     except ValueError as e:
-        # This occurs when a task with the same key already exists
         print(f"ValueError in refresh route: {str(e)}")
         if is_htmx:
-            # For HTMX, return a response that triggers a client-side redirect
             response = make_response("")
             if feed_id == "all":
                 response.headers['HX-Redirect'] = url_for('index')
@@ -229,10 +256,8 @@ def refresh(feed_id):
             return response
         return get_redirect_url()
     except Exception as e:
-        # Catch any other exceptions
         print(f"Unexpected error in refresh route: {str(e)}")
         if is_htmx:
-            # For HTMX, return a response that triggers a client-side redirect
             response = make_response("")
             if feed_id == "all":
                 response.headers['HX-Redirect'] = url_for('index')
@@ -240,19 +265,16 @@ def refresh(feed_id):
                 response.headers['HX-Redirect'] = url_for('entries', feed_id=feed_id)
             return response
         return get_redirect_url()
-    # Note: We're using redirects which will cause a full page refresh
-    # and show the updated content after the background task is queued.
 
-# Renamed from newsettings, route changed from /newsettings
 @app.route("/settings")
+@monitor_performance("settings")
 def settings():
-    template = "settings.html" # Renamed from new-settings.html
+    template = "settings.html"
     all_tags = get_all_tags()
     return render_template(template, feeds=get_all_feeds(), theme=get_theme("default"), all_tags=all_tags)
 
-# --- Routes kept for settings functionality ---
-
 @app.route("/upload_opml", methods=["POST"])
+@monitor_performance("upload_opml")
 def upload_opml():
     if 'opml_file' not in request.files:
         return "<div class='feedback-message error'>No file selected</div>"
@@ -266,7 +288,6 @@ def upload_opml():
         return "<div class='feedback-message error'>Please select an OPML file</div>"
 
     try:
-        # Submit background task to process OPML
         executor.submit_stored("opml_import", add_feeds_from_opml, uploaded_file)
         return "<div class='feedback-message success'>Processing OPML file... <em>Please refresh the page in a few moments to see the new feeds.</em></div>"
     except Exception as e:
@@ -274,18 +295,17 @@ def upload_opml():
 
 
 @app.route("/add_feed", methods=["POST"])
+@monitor_performance("add_feed")
 def add_feed_route():
     feed_url = request.form.get("feed_url", "").strip()
 
     if not feed_url:
         return "<div class='feedback-message error'>Please enter a feed URL</div>"
 
-    # Basic URL validation
     if not (feed_url.startswith('http://') or feed_url.startswith('https://')):
         feed_url = 'https://' + feed_url
 
     try:
-        # Check if feed already exists
         session = Session()
         existing_feed = session.query(RssFeed).filter_by(url=feed_url).first()
         session.close()
@@ -293,7 +313,6 @@ def add_feed_route():
         if existing_feed:
             return f"<div class='feedback-message warning'>Feed already exists: {existing_feed.title}</div>"
 
-        # Submit background task to add the feed
         executor.submit_stored(f"feed_add_{feed_url}", add_feed_function, feed_url)
         return f"<div class='feedback-message success'>Adding feed: {feed_url}... <em>Please refresh the page in a few moments to see the new feed.</em></div>"
 
@@ -301,36 +320,33 @@ def add_feed_route():
         return f"<div class='feedback-message error'>Error adding feed: {str(e)}</div>"
 
 
-@app.route("/delete_feed/<feed_id>") # Changed to DELETE method for RESTfulness, requires JS/HTMX change
+@app.route("/delete_feed/<feed_id>")
 def delete_feed(feed_id):
-    # Assuming remove_feed handles potential errors (e.g., feed not found)
     remove_feed(feed_id)
-    # For HTMX, returning an empty response with 200 OK is often used
-    # when the target element is removed by hx-target="closest tr" hx-swap="outerHTML"
-    # If the settings page should be fully re-rendered by HTMX:
-    # return render_template("settings.html", feeds=get_all_feeds(), theme=get_theme("default"))
-    # Let's assume the HTMX will handle removal, return empty OK
     return "", 200
 
 
 @app.route("/set_theme", methods=["POST"])
+@monitor_performance("set_theme")
 def set_theme():
     theme_name = request.form["theme"]
     theme = get_theme(theme_name)
-    template = "theme.html" # Keep this as it targets the style block
+    template = "theme.html"
     return render_template(template, theme=theme)
 
 
 @app.route("/set_default_theme", methods=["POST"])
+@monitor_performance("set_default_theme")
 def route_set_default_theme():
     theme_name = request.form["theme"]
     set_default_theme(theme_name)
     theme = get_theme(theme_name)
-    template = "theme.html" # Keep this as it targets the style block
+    template = "theme.html"
     return render_template(template, theme=theme)
 
 
 @app.route("/set_feed_sort", methods=["POST"])
+@monitor_performance("set_feed_sort")
 def set_feed_sort():
     """Set the feed sorting preference and return updated feed list."""
     sort_by = request.form.get("sort_by", "title")
@@ -339,7 +355,8 @@ def set_feed_sort():
     return render_template("feed-list-partial.html", feeds=feeds, current_sort=sort_by)
 
 
-@app.route("/toggle_feed_pin/<int:feed_id>", methods=["POST"])
+@app.route("/toggle_feed_pin/<feed_id>", methods=["POST"])
+@monitor_performance("toggle_feed_pin")
 def toggle_feed_pin_route(feed_id):
     """Toggle the pinned status of a feed."""
     pinned = toggle_feed_pin(feed_id)
@@ -352,16 +369,15 @@ def toggle_feed_pin_route(feed_id):
 
 
 @app.route("/mark_all_read/<feed_id>", methods=["POST"])
+@monitor_performance("mark_all_read")
 def mark_all_read_route(feed_id):
     """Mark all entries in a feed as read."""
     try:
-        # Convert feed_id to int if it's not "all"
         if feed_id != "all":
             feed_id = int(feed_id)
 
         mark_feed_entries_as_read(feed_id, True)
 
-        # Get feed name for better feedback
         if feed_id == "all":
             feed_name = "All Feeds"
         else:
@@ -374,7 +390,8 @@ def mark_all_read_route(feed_id):
         return '<span style="color: #dc3545;">✗ Error marking entries as read</span>', 500
 
 
-@app.route("/toggle_feed_pin_entries/<int:feed_id>", methods=["POST"])
+@app.route("/toggle_feed_pin_entries/<feed_id>", methods=["POST"])
+@monitor_performance("toggle_feed_pin_entries")
 def toggle_feed_pin_entries_route(feed_id):
     """Toggle the pinned status of a feed from entries page."""
     try:
@@ -392,7 +409,8 @@ def toggle_feed_pin_entries_route(feed_id):
         return "Error toggling pin status", 500
 
 
-@app.route("/fetch_full_article/<int:entry_id>", methods=["POST"])
+@app.route("/fetch_full_article/<entry_id>", methods=["POST"])
+@monitor_performance("fetch_full_article")
 def fetch_full_article_route(entry_id):
     """Fetch the full article content from the original URL."""
     try:
@@ -403,11 +421,9 @@ def fetch_full_article_route(entry_id):
         if not entry.link:
             return '<div class="fetch-error-message"><span style="color: #dc3545;">✗ No link available for this entry</span></div>', 400
 
-        # Fetch the remote content
         article = get_remote_content(entry.link, entry_id)
 
         if article:
-            # Get updated entry with new content
             updated_entry = get_feed_entry_by_id(entry_id)
             return render_template("entry-content-partial.html", entry=updated_entry)
         else:
@@ -433,21 +449,19 @@ def serve_favicon(feed_id):
                 feed.favicon_data,
                 mimetype=feed.favicon_mime_type or 'image/x-icon'
             )
-            # Cache for 1 hour
             response.headers['Cache-Control'] = 'public, max-age=3600'
             return response
         else:
-            # Return 404 if no favicon found
             return '', 404
     finally:
         session.close()
 
 
 @app.route("/refresh_favicons", methods=["POST"])
+@monitor_performance("refresh_favicons")
 def refresh_favicons():
     """Refresh all feed favicons."""
     try:
-        # Run the refresh in background
         future = executor.submit(refresh_all_feed_favicons)
         task_id = f"refresh_favicons_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         executor.futures._futures[task_id] = future
@@ -514,20 +528,16 @@ def cleanup_tasks():
     """Clean up completed tasks from the executor after they've been displayed."""
     try:
         current_time = datetime.now()
-        # Get all done futures and remove them if they've been complete for more than 30 seconds
         for key in list(executor.futures._futures.keys()):
             try:
                 future = executor.futures._futures[key]
                 if future and future.done():
-                    # Check if this task has a completion timestamp
                     if not hasattr(future, '_completion_time'):
-                        # Set completion time when we first detect it's done
                         future._completion_time = current_time
                         print(f"Task {key} completed, marking completion time")
                     else:
-                        # Check if enough time has passed since completion
                         time_since_completion = (current_time - future._completion_time).total_seconds()
-                        if time_since_completion > 30:  # 30 seconds grace period
+                        if time_since_completion > 30:
                             executor.futures._futures.pop(key, None)
                             print(f"Cleaned up completed task: {key} (completed {time_since_completion:.1f}s ago)")
             except Exception as e:
@@ -540,10 +550,9 @@ def cleanup_tasks():
 def cleanup_completed_tasks(response):
     """Global after_request handler to clean up completed tasks."""
     try:
-        # Only run cleanup occasionally to avoid overhead on every request
         if hasattr(app, 'cleanup_counter'):
             app.cleanup_counter += 1
-            if app.cleanup_counter % 50 != 0:  # Only clean up every 50 requests
+            if app.cleanup_counter % 50 != 0:
                 return response
         else:
             app.cleanup_counter = 1
@@ -555,13 +564,9 @@ def cleanup_completed_tasks(response):
 
 @app.route("/task_status", methods=["GET"])
 def task_status():
-    """
-    Returns the status of all running background tasks.
-    Used for UI feedback on refresh operations.
-    """
+    """Returns the status of all running background tasks."""
     tasks = {}
 
-    # Check for all feeds refresh
     all_feeds_key = "refresh_all"
     if all_feeds_key in executor.futures._futures:
         future = executor.futures._futures[all_feeds_key]
@@ -575,13 +580,11 @@ def task_status():
             "task_type": "refresh_all"
         }
 
-    # Check for individual feed refreshes
     for key in list(executor.futures._futures.keys()):
         if key.startswith("refresh_") and key != "refresh_all":
             future = executor.futures._futures[key]
             feed_id = key.split("refresh_")[1]
 
-            # Attempt to get feed title
             feed_title = None
             try:
                 session = Session()
@@ -614,22 +617,17 @@ def task_status():
 @app.route("/tag/<tag_name>")
 def tag_entries(tag_name):
     """Show feed list for all feeds with a specific tag."""
-    # Get all feeds with this tag
     feeds_with_tag = get_feeds_by_tag(tag_name)
 
-    # Create a virtual feed object for the tag
-    # Find the most recent unread entry date across all feeds with this tag
     most_recent_unread = None
     all_latest_titles = []
     for feed in feeds_with_tag:
         if hasattr(feed, 'last_unread_entry_date') and feed.last_unread_entry_date:
             if most_recent_unread is None or feed.last_unread_entry_date > most_recent_unread:
                 most_recent_unread = feed.last_unread_entry_date
-        # Collect latest entry titles from all feeds in this tag
         if hasattr(feed, 'latest_entry_titles') and feed.latest_entry_titles:
             all_latest_titles.extend(feed.latest_entry_titles)
 
-    # Keep only the first 3 unique titles
     unique_titles = []
     for title in all_latest_titles:
         if title not in unique_titles:
@@ -646,7 +644,6 @@ def tag_entries(tag_name):
         "latest_entry_titles": unique_titles
     }
 
-    # Add the tag feed at the beginning of the list
     feeds = [tag_feed] + feeds_with_tag
 
     all_tags = get_all_tags()
@@ -660,24 +657,18 @@ def tag_all_entries(tag_name):
     page = int(request.args.get("page", default=1))
     entries_per_page = 20
 
-    # Get all feeds with this tag
     feeds_with_tag = get_feeds_by_tag(tag_name)
 
     if not feeds_with_tag:
-        # No feeds with this tag
         entries = []
     else:
-        # Get entries from all feeds with this tag
         feed_ids = [feed.id for feed in feeds_with_tag]
         entries = get_feed_entries_by_feed_id("all", page, entries_per_page, feed_ids=feed_ids)
 
     feed = {"title": tag_name, "id": f"tag:{tag_name}", "favicon_path": None}
 
-    # Check if this is an HTMX request for infinite scroll
     if request.headers.get('HX-Request'):
-        # Return just the entry cards for HTMX requests
         if entries:
-            # Check if there might be more entries by seeing if we got a full page
             has_more = len(entries) == entries_per_page
             next_page = page + 1 if has_more else None
             return render_template('entry-cards-partial.html',
@@ -685,10 +676,8 @@ def tag_all_entries(tag_name):
                                  feed=feed,
                                  next_page=next_page)
         else:
-            # No more entries - return empty content
             return ""
 
-    # Regular page load - return full page
     has_more = len(entries) == entries_per_page
     next_page = page + 1 if has_more else None
     all_tags = get_all_tags()
@@ -696,7 +685,8 @@ def tag_all_entries(tag_name):
                          theme=get_theme("default"), next_page=next_page, all_tags=all_tags)
 
 
-@app.route("/update_feed_tags/<int:feed_id>", methods=["POST"])
+@app.route("/update_feed_tags/<feed_id>", methods=["POST"])
+@monitor_performance("update_feed_tags")
 def update_feed_tags_route(feed_id):
     """Update the tags for a specific feed."""
     tags_string = request.form.get("tags", "").strip()
@@ -704,7 +694,6 @@ def update_feed_tags_route(feed_id):
     success = update_feed_tags(feed_id, tags_string)
 
     if success:
-        # Return updated feed list for settings page
         sort_by = get_feed_sort_preference()
         feeds = get_all_feeds(sort_by)
         return render_template("settings-feed-table-partial.html", feeds=feeds)
@@ -712,7 +701,8 @@ def update_feed_tags_route(feed_id):
         return "Error updating tags", 500
 
 
-@app.route("/scheduler/status")
+@app.route("/scheduler_status")
+@monitor_performance("scheduler_status")
 def scheduler_status():
     """Get the status of the background scheduler and its jobs."""
     try:
@@ -722,7 +712,8 @@ def scheduler_status():
         return jsonify({"error": str(e), "status": "error"}), 500
 
 
-@app.route("/scheduler/reschedule", methods=["POST"])
+@app.route("/scheduler_reschedule", methods=["POST"])
+@monitor_performance("scheduler_reschedule")
 def scheduler_reschedule():
     """Reschedule all feed refresh jobs (useful after adding/removing feeds)."""
     try:
@@ -732,21 +723,49 @@ def scheduler_reschedule():
         return jsonify({"error": str(e), "status": "error"}), 500
 
 
-# --- Removed old routes ---
-# /
-# /feeds
-# /update_feed/<feed_id>
-# /get-result
-# /entries/<feed_id> (old version)
-# /entry/<entry_id> (old version)
-# /feed_read/<feed_id>
-# /entry_read/<entry_id>/<read_status>
-# /fetch_content/<entry_id>
-# /settings (old version)
+@app.route("/performance_stats")
+@monitor_performance("performance_stats")
+def performance_stats():
+    """Get performance statistics for the application."""
+    try:
+        startup_duration = (time.time() - _startup_time) * 1000
+
+        scheduler_status = get_scheduler_status()
+
+        session = Session()
+        try:
+            feed_count = session.query(RssFeed).count()
+            entry_count = session.query(RssEntry).count()
+            unread_count = session.query(RssEntry).filter_by(read=False).count()
+        finally:
+            session.close()
+
+        stats = {
+            'startup_time_ms': startup_duration,
+            'first_request_handled': _first_request_handled,
+            'database_stats': {
+                'total_feeds': feed_count,
+                'total_entries': entry_count,
+                'total_unread': unread_count
+            },
+            'scheduler_stats': scheduler_status,
+            'performance_optimizations': {
+                'lazy_scheduler': True,
+                'optimized_feed_queries': True,
+                'batch_database_operations': True,
+                'database_indexes': True
+            }
+        }
+
+        return jsonify(stats)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
 
 if __name__ == "__main__":
-    # Ensure the 'data' directory exists if using SQLite default path
-    # Ensure the database directory exists if using SQLite
     if "sqlite:///" in DATABASE_URL:
         db_path = DATABASE_URL.split("///")[1]
         db_dir = os.path.dirname(db_path)
@@ -754,5 +773,5 @@ if __name__ == "__main__":
             os.makedirs(db_dir)
 
     port = int(os.environ.get("PORT", 5000))
-    # Set debug=True for development, False for production
-    app.run(debug=True, host="0.0.0.0", port=port)
+    debug = os.environ.get("DEBUG", "false").lower() in ("true", "1", "yes", "on")
+    app.run(debug=debug, host="0.0.0.0", port=port)
