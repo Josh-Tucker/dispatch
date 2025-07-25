@@ -26,20 +26,20 @@ class RssFeed(Base):
 
     id = Column(Integer, primary_key=True)
     url = Column(String, unique=True)
-    title = Column(String)  # Title of the RSS feed
-    link = Column(String)  # URL of the feed's website
-    description = Column(Text)  # A brief description of the feed
-    published = Column(DateTime)  # The publication date of the feed
-    favicon_path = Column(String)  # URL of the feed's favicon (deprecated, use favicon_data)
-    favicon_data = Column(LargeBinary)  # Binary data of the favicon
-    favicon_mime_type = Column(String(50))  # MIME type of the favicon
+    title = Column(String)
+    link = Column(String)
+    description = Column(Text)
+    published = Column(DateTime)
+    favicon_path = Column(String)
+    favicon_data = Column(LargeBinary)
+    favicon_mime_type = Column(String(50))
     last_updated = Column(DateTime, default=datetime.datetime.utcnow)
-    last_new_article_found = Column(DateTime)  # When new articles were last found
-    pinned = Column(Boolean, default=False)  # Whether the feed is pinned to the top
-    tags = Column(Text)  # Comma-separated tags for the feed
-    etag = Column(String)  # ETag from last HTTP request for conditional requests
-    last_modified = Column(String)  # Last-Modified header from last HTTP request
-    content_length = Column(Integer)  # Content-Length from last HTTP request
+    last_new_article_found = Column(DateTime)
+    pinned = Column(Boolean, default=False)
+    tags = Column(Text)
+    etag = Column(String)
+    last_modified = Column(String)
+    content_length = Column(Integer)
 
     entries = relationship("RssEntry", back_populates="feed")
 
@@ -64,13 +64,13 @@ class RssEntry(Base):
 
     id = Column(Integer, primary_key=True)
     feed_id = Column(Integer, ForeignKey("rss_feeds.id"))
-    title = Column(String)  # Title of the feed entry
-    link = Column(String)  # URL of the feed entry
-    description = Column(Text)  # Content or summary of the feed entry
+    title = Column(String)
+    link = Column(String)
+    description = Column(Text)
     content = Column(Text)
-    published = Column(DateTime)  # Publication date of the feed entry
-    author = Column(String)  # Author of the feed entry
-    guid = Column(String)  # Unique identifier for the entry
+    published = Column(DateTime)
+    author = Column(String)
+    guid = Column(String)
     read = Column(Boolean, default=False)
 
     feed = relationship("RssFeed", back_populates="entries")
@@ -93,7 +93,7 @@ class Settings(Base):
         session.add(Settings(key=key, value=value))
 
 
-# Create engine with SQLite-specific configurations to reduce locking
+
 if DATABASE_URL.startswith('sqlite'):
     engine = create_engine(
         DATABASE_URL,

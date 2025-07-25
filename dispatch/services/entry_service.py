@@ -37,24 +37,20 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
             print(f"Processing feed: {feed.title}")
 
             try:
-                # Prepare conditional request headers
                 headers = {}
                 if feed.etag:
                     headers['If-None-Match'] = feed.etag
                 if feed.last_modified:
                     headers['If-Modified-Since'] = feed.last_modified
 
-                # First try HEAD request to check headers without downloading content
                 try:
                     head_response = requests.head(feed.url, headers=headers, timeout=15)
 
-                    # If content hasn't changed (304 Not Modified)
                     if head_response.status_code == 304:
                         print(f"Feed {feed.title} not modified (304) - skipping")
                         session.close()
                         return True, "Feed not modified"
 
-                    # Check content-length from HEAD request
                     if (head_response.status_code == 200 and
                         'content-length' in head_response.headers and
                         feed.content_length is not None):
@@ -65,34 +61,29 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                                 session.close()
                                 return True, "Feed content length unchanged"
                         except (ValueError, TypeError):
-                            pass  # Continue with GET request if content-length is invalid
+                            pass
 
                 except requests.exceptions.RequestException:
-                    pass  # Fall back to GET request if HEAD fails
+                    pass
 
-                # Make full GET request to download content
                 try:
                     response = requests.get(feed.url, headers=headers, timeout=30)
 
-                    # If content hasn't changed (304 Not Modified)
                     if response.status_code == 304:
                         print(f"Feed {feed.title} not modified (304) - skipping")
                         session.close()
                         return True, "Feed not modified"
 
-                    # If request failed
                     if response.status_code >= 400:
                         print(f"HTTP error {response.status_code} for feed {feed.title}")
                         session.close()
                         return False, f"HTTP error {response.status_code}"
 
-                    # Update stored ETag, Last-Modified, and Content-Length headers for future requests
                     if 'etag' in response.headers:
                         feed.etag = response.headers['etag']
                     if 'last-modified' in response.headers:
                         feed.last_modified = response.headers['last-modified']
 
-                    # Update content length for future comparisons
                     current_content_length = len(response.content)
                     if 'content-length' in response.headers:
                         try:
@@ -102,12 +93,10 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                     else:
                         feed.content_length = current_content_length
 
-                    # Parse the feed content
                     parsed_feed = feedparser.parse(response.content)
 
                 except requests.exceptions.RequestException as req_error:
                     print(f"Request error for feed {feed.title}: {req_error}")
-                    # Fallback to feedparser for backwards compatibility
                     parsed_feed = feedparser.parse(feed.url)
 
                 if hasattr(parsed_feed, 'status') and parsed_feed.status >= 400:
@@ -124,7 +113,6 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
 
             for entry in parsed_feed.entries:
                 try:
-                    # Check if entry already exists
                     existing_entry = session.query(RssEntry).filter_by(
                         feed_id=feed_id, link=entry.link
                     ).first()
@@ -132,7 +120,6 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                     if existing_entry:
                         continue
 
-                    # Parse published date
                     published_date = None
                     if hasattr(entry, 'published'):
                         try:
@@ -143,37 +130,30 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                     else:
                         published_date = datetime.now()
 
-                    # Get description/summary
                     description = ""
                     if hasattr(entry, 'summary'):
                         description = entry.summary
                     elif hasattr(entry, 'description'):
                         description = entry.description
 
-                    # Get content - try to get full content from RSS feed if available
                     content = ""
                     if hasattr(entry, 'content') and entry.content and len(entry.content) > 0:
-                        # feedparser provides content as a list of dicts with 'value' key
                         content = entry.content[0].get('value', '')
                     elif hasattr(entry, 'summary_detail') and hasattr(entry.summary_detail, 'value'):
                         content = entry.summary_detail.value
                     else:
-                        # Fallback to description if no content is available
                         content = description
 
-                    # Get author
                     author = ""
                     if hasattr(entry, 'author'):
                         author = entry.author
 
-                    # Get GUID
                     guid = ""
                     if hasattr(entry, 'guid'):
                         guid = entry.guid
                     elif hasattr(entry, 'id'):
                         guid = entry.id
 
-                    # Create new entry
                     rss_entry = RssEntry(
                         feed_id=feed_id,
                         title=entry.title,
@@ -192,8 +172,6 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                     print(f"Error processing entry {getattr(entry, 'title', 'Unknown')}: {entry_error}")
                     continue
 
-            # Note: last_new_article_found is now calculated dynamically based on latest entry published date
-
             session.commit()
             print(f"Added {entries_added} new entries for feed: {feed.title}")
 
@@ -204,9 +182,8 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
             session.rollback()
             session.close()
 
-            # Check if it's a database lock error and we should retry
             if "database is locked" in str(e).lower() and attempt < max_retries - 1:
-                wait_time = (attempt + 1) * 2 + random.uniform(0, 1)  # Exponential backoff with jitter
+                wait_time = (attempt + 1) * 2 + random.uniform(0, 1)
                 print(f"Database locked for feed {feed_id}, retrying in {wait_time:.1f} seconds (attempt {attempt + 1}/{max_retries})")
                 time.sleep(wait_time)
                 continue
@@ -217,7 +194,6 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
     return False, "Max retries exceeded"
 
 
-# Backward compatibility alias
 def add_rss_entries(feed_id, max_retries=3):
     """
     Fetches and adds RSS entries for a specific feed to the database.
@@ -258,16 +234,13 @@ def add_rss_entries_for_all_feeds(max_workers=3):
 
     results = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Create partial function with the add_rss_entries_for_feed function
         process_func = partial(add_rss_entries_for_feed)
 
-        # Submit all tasks
         future_to_feed_id = {
             executor.submit(process_func, feed_id): feed_id
             for feed_id in feed_ids
         }
 
-        # Collect results as they complete
         for future in concurrent.futures.as_completed(future_to_feed_id):
             feed_id = future_to_feed_id[future]
             try:
@@ -305,7 +278,6 @@ def get_feed_entry_by_id(entry_id, max_retries=3):
         try:
             entry = session.query(RssEntry).options(joinedload(RssEntry.feed)).filter_by(id=entry_id).first()
             if entry:
-                # Ensure attributes are loaded before session close
                 _ = entry.id, entry.title, entry.read
                 session.expunge(entry)
             session.close()
@@ -325,10 +297,8 @@ def get_feed_entry_by_id(entry_id, max_retries=3):
 def update_entry(entry_id, article):
     session = Session()
     try:
-        # Fetch the RssEntry object for the given entry_id
         entry = session.query(RssEntry).filter_by(id=entry_id).first()
 
-        # Update the RssEntry object with the fetched content
         entry.content = article["content"]
         if not entry.published and "published" in article:
             entry.published = parser.parse(article["published"])
@@ -376,7 +346,6 @@ def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10, max_retrie
             query = session.query(RssEntry).options(joinedload(RssEntry.feed))
 
             if feed_ids:
-                # Filter by list of feed IDs (for tag filtering)
                 query = (
                     query.filter(RssEntry.feed_id.in_(feed_ids))
                     .order_by(desc(RssEntry.published))
@@ -399,7 +368,6 @@ def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10, max_retrie
 
             entries = query.all()
 
-            # Expunge entries from session to avoid DetachedInstanceError
             for entry in entries:
                 session.expunge(entry)
 

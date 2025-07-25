@@ -6,17 +6,15 @@ This allows existing code that imports from views.py to continue working without
 
 The actual implementation has been moved to the services package for better organization:
 - services.feed_service: RSS feed management
-- services.entry_service: RSS entry processing  
+- services.entry_service: RSS entry processing
 - services.opml_service: OPML import/export
 - services.theme_service: Theme management
 - services.content_service: Content formatting utilities
 """
 
-# Import all service functions to maintain backward compatibility
 from services import *
-from models import Session  # Import Session for backward compatibility
+from models import Session
 
-# Explicit imports for clarity (these are already imported via *)
 from services.feed_service import (
     add_feed,
     remove_feed,

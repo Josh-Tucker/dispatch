@@ -42,7 +42,6 @@ def get_theme(theme_name):
         },
     ]
 
-    # Handle 'default' theme by checking database setting
     if theme_name == "default":
         session = Session()
         try:
@@ -50,7 +49,7 @@ def get_theme(theme_name):
             if default_theme_name:
                 theme_name = default_theme_name
             else:
-                theme_name = "light"  # Fallback to light if no setting
+                theme_name = "light"
         finally:
             session.close()
 
@@ -58,7 +57,6 @@ def get_theme(theme_name):
         if theme["name"] == theme_name:
             return theme
 
-    # Default to light theme if not found
     return themes[0]
 
 
@@ -92,7 +90,7 @@ def get_default_theme():
     try:
         theme_name = Settings.get_setting(session, "theme")
         if not theme_name:
-            theme_name = "light"  # Default fallback
+            theme_name = "light"
         return get_theme(theme_name)
     finally:
         session.close()
