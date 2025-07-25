@@ -24,5 +24,4 @@ RUN mkdir -p data
 ENTRYPOINT ["python3", "-u", "entrypoint.py"]
 
 # Command to run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
-
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "4", "--timeout", "30", "--keep-alive", "2", "--preload", "app:app"]
