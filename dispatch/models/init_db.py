@@ -13,14 +13,14 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 try:
-    from .model import init_database, DATABASE_URL
+    from .model import DATABASE_URL, init_database
 except ImportError:
-    from model import init_database, DATABASE_URL
+    from model import DATABASE_URL, init_database
 
 def main():
     """Initialize the database."""
     print(f"Initializing database at: {DATABASE_URL}")
-    
+
     # Ensure database directory exists if using SQLite
     if "sqlite:///" in DATABASE_URL:
         db_path = DATABASE_URL.split("///")[1]
@@ -28,7 +28,7 @@ def main():
         if db_dir and not os.path.exists(db_dir):
             os.makedirs(db_dir)
             print(f"Created directory: {db_dir}")
-    
+
     # Initialize the database
     try:
         init_database()

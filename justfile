@@ -52,6 +52,29 @@ lint:
 format:
     python3 -m black dispatch/ --exclude=venv
 
+# Ruff commands (modern linting and formatting)
+ruff-check:
+    python3 -m ruff check dispatch/
+
+ruff-fix:
+    python3 -m ruff check --fix dispatch/
+
+ruff-format:
+    python3 -m ruff format dispatch/
+
+# Combined code quality commands
+quality-check: ruff-check
+    @echo "✅ Code quality check complete"
+
+quality-fix: ruff-fix
+    @echo "🔧 Auto-fixable issues resolved"
+
+quality-format: ruff-format
+    @echo "🎨 Code formatting applied"
+
+quality-all: quality-fix quality-format
+    @echo "🚀 All code quality improvements applied"
+
 # Requirements management
 install-prod:
     pip install -r requirements.txt
@@ -77,3 +100,10 @@ dev-setup: init
     @echo "  just install-prod     - Install production dependencies only"
     @echo "  just install-dev      - Install development dependencies only"
     @echo "  just install-all      - Install all dependencies"
+    @echo ""
+    @echo "Code quality commands:"
+    @echo "  just lint             - Run flake8 linting"
+    @echo "  just format           - Format code with black"
+    @echo "  just ruff-check       - Check code with ruff"
+    @echo "  just ruff-fix         - Fix auto-fixable ruff issues"
+    @echo "  just ruff-format      - Format code with ruff"

@@ -1,16 +1,36 @@
+import atexit
 import os
-import json
-import requests
 import time
-from flask import Flask, request, render_template, redirect, url_for, jsonify, make_response, Response
+from datetime import datetime
+
+import requests
+from flask import (
+    Flask,
+    Response,
+    jsonify,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask_executor import Executor
+from models import RssFeed, Session
 from services import *
 from services import add_feed as add_feed_function
-from services.feed_service import refresh_all_feed_favicons, get_all_tags, get_feeds_by_tag, update_feed_tags
-from services.scheduler_service import start_scheduler, stop_scheduler, get_scheduler_status, reschedule_feeds, schedule_jobs_on_first_request
-from models import Session, RssFeed
-from datetime import datetime
-import atexit
+from services.feed_service import (
+    get_all_tags,
+    get_feeds_by_tag,
+    refresh_all_feed_favicons,
+    update_feed_tags,
+)
+from services.scheduler_service import (
+    get_scheduler_status,
+    reschedule_feeds,
+    schedule_jobs_on_first_request,
+    start_scheduler,
+    stop_scheduler,
+)
 
 app = Flask(__name__)
 executor = Executor(app)
@@ -93,7 +113,9 @@ def short_time_ago(input_datetime):
 
 @app.template_filter()
 def get_feed_timestamp_class(feed):
-    from services.content_service import get_feed_timestamp_class as service_get_feed_timestamp_class
+    from services.content_service import (
+        get_feed_timestamp_class as service_get_feed_timestamp_class,
+    )
     unread_count = getattr(feed, 'unread_count', 0)
     last_unread_date = getattr(feed, 'last_unread_entry_date', None)
     return service_get_feed_timestamp_class(unread_count, last_unread_date)
@@ -101,7 +123,9 @@ def get_feed_timestamp_class(feed):
 
 @app.template_filter()
 def get_feed_timestamp_color(feed):
-    from services.content_service import get_feed_timestamp_color as service_get_feed_timestamp_color
+    from services.content_service import (
+        get_feed_timestamp_color as service_get_feed_timestamp_color,
+    )
     unread_count = getattr(feed, 'unread_count', 0)
     last_unread_date = getattr(feed, 'last_unread_entry_date', None)
     return service_get_feed_timestamp_color(unread_count, last_unread_date)
@@ -178,7 +202,6 @@ def entry(entry_id):
 @app.route("/refresh/<feed_id>", methods=["POST"])
 def refresh(feed_id):
     referrer = request.referrer if request.referrer else "/"
-    refresh_timestamp = datetime.now().isoformat()
 
     def get_redirect_url():
         if 'entry/' in referrer:
@@ -196,8 +219,8 @@ def refresh(feed_id):
 
     try:
         if feed_id == "all":
-            if f"refresh_all" in executor.futures._futures:
-                print(f"Task refresh_all is already running")
+            if "refresh_all" in executor.futures._futures:
+                print("Task refresh_all is already running")
                 if is_htmx:
                     response = make_response("")
                     response.headers['HX-Redirect'] = url_for('index')
@@ -205,7 +228,7 @@ def refresh(feed_id):
                 return get_redirect_url()
 
             executor.submit_stored("refresh_all", add_rss_entries_for_all_feeds)
-            print(f"Started task refresh_all")
+            print("Started task refresh_all")
             if is_htmx:
                 response = make_response("")
                 response.headers['HX-Redirect'] = url_for('index')
@@ -213,7 +236,7 @@ def refresh(feed_id):
             return redirect(url_for('index'))
         else:
             try:
-                feed_id_int = int(feed_id)
+                int(feed_id)
             except ValueError:
                 print(f"Invalid feed_id format: {feed_id}")
                 if is_htmx:
@@ -237,7 +260,7 @@ def refresh(feed_id):
                 executor.submit_stored(f"refresh_{feed_id}", add_rss_entries_for_feed, feed_id)
                 print(f"Started task refresh_{feed_id}")
             except Exception as e:
-                print(f"Error starting refresh task for feed {feed_id}: {str(e)}")
+                print(f"Error starting refresh task for feed {feed_id}: {e!s}")
 
             if is_htmx:
                 response = make_response("")
@@ -246,7 +269,7 @@ def refresh(feed_id):
             return get_redirect_url()
 
     except ValueError as e:
-        print(f"ValueError in refresh route: {str(e)}")
+        print(f"ValueError in refresh route: {e!s}")
         if is_htmx:
             response = make_response("")
             if feed_id == "all":
@@ -256,7 +279,7 @@ def refresh(feed_id):
             return response
         return get_redirect_url()
     except Exception as e:
-        print(f"Unexpected error in refresh route: {str(e)}")
+        print(f"Unexpected error in refresh route: {e!s}")
         if is_htmx:
             response = make_response("")
             if feed_id == "all":
@@ -291,7 +314,7 @@ def upload_opml():
         executor.submit_stored("opml_import", add_feeds_from_opml, uploaded_file)
         return "<div class='feedback-message success'>Processing OPML file... <em>Please refresh the page in a few moments to see the new feeds.</em></div>"
     except Exception as e:
-        return f"<div class='feedback-message error'>Error processing OPML file: {str(e)}</div>"
+        return f"<div class='feedback-message error'>Error processing OPML file: {e!s}</div>"
 
 
 @app.route("/add_feed", methods=["POST"])
@@ -317,7 +340,7 @@ def add_feed_route():
         return f"<div class='feedback-message success'>Adding feed: {feed_url}... <em>Please refresh the page in a few moments to see the new feed.</em></div>"
 
     except Exception as e:
-        return f"<div class='feedback-message error'>Error adding feed: {str(e)}</div>"
+        return f"<div class='feedback-message error'>Error adding feed: {e!s}</div>"
 
 
 @app.route("/delete_feed/<feed_id>")
@@ -478,7 +501,7 @@ def refresh_favicons():
         return f"""
         <div class="refresh_status error">
             <p><strong>✗ Failed to start favicon refresh</strong></p>
-            <p>Error: {str(e)}</p>
+            <p>Error: {e!s}</p>
         </div>
         """, 500
 
@@ -514,14 +537,14 @@ def refresh_status(task_id):
                 return f"""
                 <div class="refresh_status error">
                     <p><strong>✗ Refresh failed</strong></p>
-                    <p>Error: {str(e)}</p>
+                    <p>Error: {e!s}</p>
                 </div>
                 """
         else:
             return '<p>⏳ Refresh in progress...</p>'
 
     except Exception as e:
-        return f'<p>Error checking status: {str(e)}</p>'
+        return f'<p>Error checking status: {e!s}</p>'
 
 # Helper function to clean up tasks
 def cleanup_tasks():

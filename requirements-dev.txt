@@ -16,3 +16,4 @@ responses==0.24.1
 # Code quality and formatting
 flake8==6.1.0
 black==23.11.0
+ruff==0.1.6

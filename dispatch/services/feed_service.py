@@ -1,15 +1,12 @@
+import mimetypes
+from datetime import datetime
+from urllib.parse import urljoin, urlparse
+
 import feedparser
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, urljoin
-from models import RssFeed, RssEntry, Session, Settings
-from sqlalchemy import func, desc, case
-import hashlib
-import os
-import mimetypes
-from datetime import datetime
-import time
-import random
+from models import RssEntry, RssFeed, Session, Settings
+from sqlalchemy import desc, func
 
 
 def get_favicon_url(feed_url):
@@ -159,7 +156,7 @@ def refresh_all_feed_favicons():
                 success_count += 1
                 print(f"  ✓ Updated ({len(favicon_data)} bytes, {favicon_mime_type})")
             else:
-                print(f"  ✗ Could not fetch favicon")
+                print("  ✗ Could not fetch favicon")
 
         session.commit()
         print(f"Favicon refresh completed: {success_count}/{len(feeds)} feeds updated")
@@ -217,11 +214,11 @@ def get_all_feeds(sort_by="title"):
                 func.count(RssEntry.id).label('unread_count')
             )
             .filter(RssEntry.feed_id.in_(feed_ids))
-            .filter(RssEntry.read == False)
+            .filter(RssEntry.read is False)
             .group_by(RssEntry.feed_id)
             .all()
         )
-        unread_counts = {feed_id: count for feed_id, count in unread_counts_query}
+        unread_counts = dict(unread_counts_query)
 
         total_counts_query = (
             session.query(
@@ -232,7 +229,7 @@ def get_all_feeds(sort_by="title"):
             .group_by(RssEntry.feed_id)
             .all()
         )
-        total_counts = {feed_id: count for feed_id, count in total_counts_query}
+        total_counts = dict(total_counts_query)
 
         read_counts_query = (
             session.query(
@@ -240,11 +237,11 @@ def get_all_feeds(sort_by="title"):
                 func.count(RssEntry.id).label('read_count')
             )
             .filter(RssEntry.feed_id.in_(feed_ids))
-            .filter(RssEntry.read == True)
+            .filter(RssEntry.read is True)
             .group_by(RssEntry.feed_id)
             .all()
         )
-        read_counts = {feed_id: count for feed_id, count in read_counts_query}
+        read_counts = dict(read_counts_query)
 
         latest_entries_subquery = (
             session.query(
@@ -268,7 +265,7 @@ def get_all_feeds(sort_by="title"):
             )
             .all()
         )
-        latest_entry_dates = {feed_id: published for feed_id, published in latest_entries_query}
+        latest_entry_dates = dict(latest_entries_query)
 
         latest_unread_subquery = (
             session.query(
@@ -276,7 +273,7 @@ def get_all_feeds(sort_by="title"):
                 func.max(RssEntry.published).label('latest_unread_published')
             )
             .filter(RssEntry.feed_id.in_(feed_ids))
-            .filter(RssEntry.read == False)
+            .filter(RssEntry.read is False)
             .group_by(RssEntry.feed_id)
             .subquery()
         )
@@ -291,10 +288,10 @@ def get_all_feeds(sort_by="title"):
                 (RssEntry.feed_id == latest_unread_subquery.c.feed_id) &
                 (RssEntry.published == latest_unread_subquery.c.latest_unread_published)
             )
-            .filter(RssEntry.read == False)
+            .filter(RssEntry.read is False)
             .all()
         )
-        latest_unread_dates = {feed_id: published for feed_id, published in latest_unread_query}
+        latest_unread_dates = dict(latest_unread_query)
 
         latest_titles_query = (
             session.query(
@@ -458,7 +455,8 @@ def get_feed_frequency_data(feed_id, weeks=12):
     session = Session()
     try:
         from datetime import datetime, timedelta
-        from sqlalchemy import func, extract
+
+        from sqlalchemy import func
 
         # Calculate date range (last N weeks)
         end_date = datetime.now()
@@ -475,7 +473,7 @@ def get_feed_frequency_data(feed_id, weeks=12):
         ).group_by(func.strftime('%Y-%W', RssEntry.published)).all()
 
         # Convert to dict for easy lookup
-        week_counts = {week: count for week, count in weekly_counts}
+        week_counts = dict(weekly_counts)
 
         # Generate frequency data for each week
         frequency_data = []
@@ -520,7 +518,7 @@ def get_all_tags():
             if feed.tags:
                 tags = parse_tags_string(feed.tags)
                 all_tags.update(tags)
-        return sorted(list(all_tags))
+        return sorted(all_tags)
     finally:
         session.close()
 

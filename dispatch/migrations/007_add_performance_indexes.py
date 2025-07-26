@@ -6,10 +6,9 @@ to significantly improve application performance.
 Designed to be run safely multiple times and work in Docker environments.
 """
 
-import sqlite3
 import os
+import sqlite3
 import sys
-from datetime import datetime
 
 # Migration metadata
 MIGRATION_ID = "007"
@@ -102,7 +101,7 @@ def apply_migration():
             print(f"   📊 Created {created_count} new indexes, {skipped_count} already existed")
 
             if created_count > 0:
-                print(f"   🚀 Performance should be significantly improved!")
+                print("   🚀 Performance should be significantly improved!")
 
             return True
 
