@@ -362,8 +362,11 @@ def set_theme():
 @monitor_performance("set_default_theme")
 def route_set_default_theme():
     theme_name = request.form["theme"]
-    set_default_theme(theme_name)
-    theme = get_theme(theme_name)
+    success = set_default_theme(theme_name)
+    if success:
+        theme = get_theme(theme_name)
+    else:
+        theme = get_theme("default")
     template = "theme.html"
     return render_template(template, theme=theme)
 

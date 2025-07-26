@@ -9,46 +9,36 @@
         <form
             id="theme_form"
             hx-post="/set_default_theme"
-            hx-target="#root_style"
-            hx-swap="outerHTML"
+            hx-target="body"
+            hx-swap="none"
         >
             <label for="theme">Select a theme:</label>
-            <select id="theme" name="theme">
-                <option
-                    hx-post="/set_theme"
-                    hx-target="#root_style"
-                    hx-swap="outerHTML"
-                    value="light"
-                >
-                    Light
-                </option>
-                <option
-                    hx-post="/set_theme"
-                    hx-target="#root_style"
-                    hx-swap="outerHTML"
-                    value="dark"
-                >
-                    Dark
-                </option>
-                <option
-                    hx-post="/set_theme"
-                    hx-target="#root_style"
-                    hx-swap="outerHTML"
-                    value="clean"
-                >
-                    Clean
-                </option>
-                <option
-                    hx-post="/set_theme"
-                    hx-target="#root_style"
-                    hx-swap="outerHTML"
-                    value="new"
-                >
-                    New
-                </option>
+            <select id="theme" name="theme" onchange="previewTheme(this.value)">
+                <option value="light" {% if theme == "light" %}selected{% endif %}>Light</option>
+                <option value="dark" {% if theme == "dark" %}selected{% endif %}>Dark</option>
+                <option value="clean" {% if theme == "clean" %}selected{% endif %}>Clean</option>
+                <option value="new" {% if theme == "new" %}selected{% endif %}>New</option>
             </select>
             <button type="submit">Set Default</button>
         </form>
+
+        <script>
+            function previewTheme(themeName) {
+                if (window.applyTheme) {
+                    window.applyTheme(themeName);
+                }
+            }
+
+            // Handle form submission
+            document.getElementById("theme_form").addEventListener("htmx:afterRequest", function (event) {
+                if (event.detail.successful) {
+                    const selectedTheme = document.getElementById("theme").value;
+                    if (window.applyTheme) {
+                        window.applyTheme(selectedTheme);
+                    }
+                }
+            });
+        </script>
     </div>
 
     <div class="settings_item">

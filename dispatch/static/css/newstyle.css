@@ -3,14 +3,11 @@
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap");
 
 :root {
+    /* Layout variables */
     --border-radius-sm: 3px;
     --border-radius-md: 4px;
     --border-radius-lg: 5px;
     --border-width: 1px;
-    --border-color-light: rgba(0, 0, 0, 0.05);
-    --border-color-medium: rgba(0, 0, 0, 0.08);
-    --border-color-dark: rgba(0, 0, 0, 0.1);
-    --highlight-color: #bb0033;
 
     /* Spacing variables */
     --spacing-xs: 4px;
@@ -54,7 +51,7 @@
     --font-size-mobile-heading: 36px;
     --font-size-mobile-content: 22px;
 
-    /* Color variables */
+    /* Status colors (theme-independent) */
     --success-color: #28a745;
     --error-color: #dc3545;
     --warning-color: #856404;
@@ -74,6 +71,70 @@
     /* Pin button variables */
     --pin-button-size: 20px;
     --pin-icon-size: 16px;
+}
+
+/* Default theme (light) - defined in :root */
+:root {
+    --primary-colour: #f582ae;
+    --text-colour: #172c66;
+    --highlight-colour: #bb0033;
+    --background-colour: #fef6e4;
+    --border-colour: #172c66;
+    --border-color-light: rgba(23, 44, 102, 0.05);
+    --border-color-medium: rgba(23, 44, 102, 0.08);
+    --border-color-dark: rgba(23, 44, 102, 0.1);
+}
+
+/* Dark theme */
+html.theme-dark,
+body.theme-dark {
+    --primary-colour: #f582ae !important;
+    --text-colour: #fef6e4 !important;
+    --highlight-colour: #8bd3dd !important;
+    --background-colour: #172c66 !important;
+    --border-colour: #fef6e4 !important;
+    --border-color-light: rgba(254, 246, 228, 0.05) !important;
+    --border-color-medium: rgba(254, 246, 228, 0.08) !important;
+    --border-color-dark: rgba(254, 246, 228, 0.1) !important;
+}
+
+/* Clean theme */
+html.theme-clean,
+body.theme-clean {
+    --primary-colour: #000000 !important;
+    --text-colour: #000000 !important;
+    --highlight-colour: #ffffff !important;
+    --background-colour: #ffffff !important;
+    --border-colour: #000000 !important;
+    --border-color-light: rgba(0, 0, 0, 0.05) !important;
+    --border-color-medium: rgba(0, 0, 0, 0.08) !important;
+    --border-color-dark: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* New theme */
+html.theme-new,
+body.theme-new {
+    --primary-colour: #ff6b6b !important;
+    --text-colour: #2c3e50 !important;
+    --highlight-colour: #4ecdc4 !important;
+    --background-colour: #f8f9fa !important;
+    --border-colour: #2c3e50 !important;
+    --border-color-light: rgba(44, 62, 80, 0.05) !important;
+    --border-color-medium: rgba(44, 62, 80, 0.08) !important;
+    --border-color-dark: rgba(44, 62, 80, 0.1) !important;
+}
+
+/* Light theme class for explicit application */
+html.theme-light,
+body.theme-light {
+    --primary-colour: #f582ae !important;
+    --text-colour: #172c66 !important;
+    --highlight-colour: #bb0033 !important;
+    --background-colour: #fef6e4 !important;
+    --border-colour: #172c66 !important;
+    --border-color-light: rgba(23, 44, 102, 0.05) !important;
+    --border-color-medium: rgba(23, 44, 102, 0.08) !important;
+    --border-color-dark: rgba(23, 44, 102, 0.1) !important;
 }
 
 body,
@@ -167,9 +228,9 @@ input[type="submit"] {
 input[type="file"]::file-selector-button:hover,
 button[type="submit"]:hover,
 input[type="submit"]:hover {
-    background-color: var(--highlight-color);
+    background-color: var(--highlight-colour);
     color: white;
-    border-color: var(--highlight-color);
+    border-color: var(--highlight-colour);
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
@@ -909,9 +970,9 @@ header a.menu-button {
 /* Apply hover effect similar to fetch-article-button */
 header a.refresh-link:hover,
 header a.menu-button:hover {
-    background-color: var(--highlight-color);
+    background-color: var(--highlight-colour);
     color: white;
-    border-color: var(--highlight-color);
+    border-color: var(--highlight-colour);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -978,7 +1039,7 @@ header a.menu-button:hover {
 
 .refresh-link.running {
     pointer-events: none !important;
-    background-color: var(--highlight-color);
+    background-color: var(--highlight-colour);
     opacity: 0.8;
     cursor: wait;
 }
@@ -1122,7 +1183,7 @@ header a.menu-button:hover {
 }
 
 .dropdown-menu a.active {
-    background-color: var(--highlight-color);
+    background-color: var(--highlight-colour);
     color: white;
 }
 
@@ -1259,13 +1320,13 @@ header a.menu-button:hover {
 }
 
 .pin-button.pinned svg {
-    fill: var(--highlight-color);
+    fill: var(--highlight-colour);
 }
 
 .pin-button-entries.pinned {
-    background-color: var(--highlight-color);
+    background-color: var(--highlight-colour);
     color: white;
-    border-color: var(--highlight-color);
+    border-color: var(--highlight-colour);
 }
 
 .pin-button-entries.pinned svg {
@@ -1275,7 +1336,7 @@ header a.menu-button:hover {
 
 /* Card Pinned State */
 .card.pinned {
-    border-left: 4px solid var(--highlight-color);
+    border-left: 4px solid var(--highlight-colour);
     background: linear-gradient(
         135deg,
         var(--background-colour) 0%,
@@ -1370,9 +1431,9 @@ header a.menu-button:hover {
 }
 
 .fetch-article-button:hover {
-    background-color: var(--highlight-color);
+    background-color: var(--highlight-colour);
     color: white;
-    border-color: var(--highlight-color);
+    border-color: var(--highlight-colour);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -1413,7 +1474,7 @@ header a.menu-button:hover {
 }
 
 .content-hint {
-    color: var(--highlight-color);
+    color: var(--highlight-colour);
     font-size: var(--font-size-small);
     font-style: italic;
     text-align: right;
@@ -1601,15 +1662,15 @@ header a.menu-button:hover {
 }
 
 .tag-tab:hover {
-    background: var(--highlight-color);
+    background: var(--highlight-colour);
     color: white;
-    border-color: var(--highlight-color);
+    border-color: var(--highlight-colour);
 }
 
 .tag-tab.active {
-    background: var(--highlight-color);
+    background: var(--highlight-colour);
     color: white;
-    border-color: var(--highlight-color);
+    border-color: var(--highlight-colour);
     font-weight: 500;
 }
 
@@ -1638,13 +1699,13 @@ header a.menu-button:hover {
 
 .tags-input:focus {
     outline: none;
-    border-color: var(--highlight-color);
+    border-color: var(--highlight-colour);
     box-shadow: 0 0 0 2px rgba(187, 0, 51, 0.1);
 }
 
 .tags-update-btn {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--highlight-color);
+    background: var(--highlight-colour);
     color: white;
     border: none;
     border-radius: var(--border-radius-sm);
@@ -1717,7 +1778,7 @@ header a.menu-button:hover {
     display: block;
     width: 60px;
     height: 100%;
-    color: var(--highlight-color);
+    color: var(--highlight-colour);
     opacity: 0.7;
     transition: all 0.2s ease;
     stroke-linecap: round;

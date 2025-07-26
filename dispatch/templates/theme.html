@@ -1,10 +1,37 @@
-<style id="root_style">
-    :root {
-        --primary-colour: {{ theme.primary_colour }};
-        --entry-content-colour: {{ theme.text_colour }};
-        --text-colour: {{ theme.text_colour }};
-        --border-colour: {{ theme.text_colour }};
-        --highlight-colour: {{ theme.highlight_colour }};
-        --background-colour: {{ theme.background_colour }};
+<script>
+    // Theme management
+    document.addEventListener("DOMContentLoaded", function () {
+        const currentTheme = "{{ theme }}";
+        applyTheme(currentTheme);
+    });
+
+    function applyTheme(themeName) {
+        // Remove all existing theme classes
+        const themeClasses = [
+            "theme-light",
+            "theme-dark",
+            "theme-clean",
+            "theme-new",
+        ];
+        document.documentElement.classList.remove(...themeClasses);
+        document.body.classList.remove(...themeClasses);
+
+        // Apply the new theme class to both html and body
+        if (themeName) {
+            document.documentElement.classList.add(`theme-${themeName}`);
+            document.body.classList.add(`theme-${themeName}`);
+        }
+
+        // Store the theme preference
+        localStorage.setItem("dispatch-theme", themeName);
     }
-</style>
+
+    // Function to switch themes (called by theme selector)
+    function switchTheme(themeName) {
+        applyTheme(themeName);
+    }
+
+    // Make theme switching functions globally available
+    window.applyTheme = applyTheme;
+    window.switchTheme = switchTheme;
+</script>
