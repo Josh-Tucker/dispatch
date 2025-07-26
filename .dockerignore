@@ -159,3 +159,8 @@ dispatch/static/img/*
 .aider*
 
 *.opml
+
+# Development requirements files (not needed in production Docker image)
+requirements-dev.txt
+requirements-all.txt
+requirements-current.txt

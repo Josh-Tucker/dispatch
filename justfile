@@ -2,7 +2,7 @@ init:
     python3 -m venv .venv
     python3 -m pip install --upgrade pip
     python3 -m pip --version
-    pip install -r requirements.txt
+    pip install -r requirements-all.txt
     cd dispatch; python3  init_db.py
 
 run:
@@ -52,8 +52,28 @@ lint:
 format:
     python3 -m black dispatch/ --exclude=venv
 
+# Requirements management
+install-prod:
+    pip install -r requirements.txt
+
+install-dev:
+    pip install -r requirements-dev.txt
+
+install-all:
+    pip install -r requirements-all.txt
+
+update-requirements:
+    pip freeze > requirements-current.txt
+    @echo "Current environment frozen to requirements-current.txt"
+    @echo "Review and update requirements.txt and requirements-dev.txt as needed"
+
 dev-setup: init
     @echo "Development environment setup complete!"
     @echo "Run 'just test' to run all tests"
     @echo "Run 'just test-coverage' to run tests with coverage"
     @echo "Run 'just run' to start the application"
+    @echo ""
+    @echo "Requirements commands:"
+    @echo "  just install-prod     - Install production dependencies only"
+    @echo "  just install-dev      - Install development dependencies only"
+    @echo "  just install-all      - Install all dependencies"
