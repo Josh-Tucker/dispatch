@@ -1,6 +1,7 @@
+from datetime import datetime
+
 import dateutil.parser
 from dateutil import parser
-from datetime import datetime, timedelta
 
 
 def article_date_format(date: str) -> str:
@@ -238,8 +239,6 @@ def get_feed_timestamp_class(unread_count, last_unread_date):
             last_unread_date = parser.parse(last_unread_date)
 
         now = datetime.now()
-        time_diff = now - last_unread_date
-        hours_ago = time_diff.total_seconds() / 3600
 
         return "feed-time-gradient"
 

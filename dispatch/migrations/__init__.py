@@ -5,12 +5,11 @@ This module automatically discovers and runs database migrations in the correct 
 Migrations are numbered sequentially (001, 002, etc.) and are run only once.
 """
 
-import os
-import sys
+import glob
 import importlib
 import importlib.util
-import glob
-from pathlib import Path
+import os
+import sys
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -76,8 +75,9 @@ def has_migration_table():
     Check if the migrations tracking table exists.
     """
     try:
-        from models import Session, engine
         import sqlite3
+
+        from models import Session, engine
 
         # For SQLite databases
         if "sqlite:///" in str(engine.url):
@@ -114,8 +114,9 @@ def create_migration_table():
     Create the migrations tracking table.
     """
     try:
-        from models import Session, engine
         import sqlite3
+
+        from models import Session, engine
 
         # For SQLite databases
         if "sqlite:///" in str(engine.url):
@@ -165,8 +166,9 @@ def is_migration_applied(migration_id):
     Check if a migration has already been applied.
     """
     try:
-        from models import Session, engine
         import sqlite3
+
+        from models import Session, engine
 
         # For SQLite databases
         if "sqlite:///" in str(engine.url):
@@ -200,8 +202,9 @@ def record_migration(migration_id, name, description):
     """
 
     try:
-        from models import Session, engine
         import sqlite3
+
+        from models import Session, engine
 
         # For SQLite databases
         if "sqlite:///" in str(engine.url):
@@ -317,7 +320,7 @@ def run_migrations():
             print(f"❌ Migration {migration_id} failed with exception: {e}")
             return False
 
-    print(f"\n🎉 Migration process completed!")
+    print("\n🎉 Migration process completed!")
     print(f"   ✅ {success_count} migration(s) applied")
     print(f"   ⏭️  {skip_count} migration(s) skipped (already applied)")
     return True

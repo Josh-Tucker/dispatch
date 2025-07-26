@@ -9,16 +9,17 @@ This script:
 4. Updates the favicon_path column to be nullable (we'll keep it for backward compatibility during transition)
 """
 
+import mimetypes
 import os
 import sys
-import mimetypes
-from sqlalchemy import text, Column, LargeBinary, String
+
+from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
 # Add the parent directory to the path so we can import our modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models import Session, RssFeed, engine, Base, DATABASE_URL
+from models import DATABASE_URL, RssFeed, Session
 
 # Migration metadata
 MIGRATION_ID = "002"
@@ -28,7 +29,7 @@ MIGRATION_DESCRIPTION = "Move favicons from files to database storage"
 def add_favicon_columns():
     """Add favicon_data and favicon_mime_type columns to rss_feeds table."""
     session = Session()
-    
+
     try:
         # Try to add the favicon_data column
         session.execute(text('ALTER TABLE rss_feeds ADD COLUMN favicon_data BLOB'))
@@ -38,7 +39,7 @@ def add_favicon_columns():
             print("favicon_data column already exists")
         else:
             raise e
-    
+
     try:
         # Try to add the favicon_mime_type column
         session.execute(text('ALTER TABLE rss_feeds ADD COLUMN favicon_mime_type VARCHAR(50)'))
@@ -48,17 +49,17 @@ def add_favicon_columns():
             print("favicon_mime_type column already exists")
         else:
             raise e
-    
+
     session.commit()
     session.close()
 
 def migrate_favicon_files():
     """Migrate existing favicon files to database."""
     session = Session()
-    
+
     try:
         feeds = session.query(RssFeed).filter(RssFeed.favicon_path.isnot(None)).all()
-        
+
         for feed in feeds:
             if feed.favicon_path:
                 # Try different path formats
@@ -71,19 +72,19 @@ def migrate_favicon_files():
                 ]
                 # Filter out None values
                 possible_paths = [p for p in possible_paths if p is not None]
-                
+
                 file_path = None
                 for path in possible_paths:
                     if os.path.exists(path):
                         file_path = path
                         break
-                
+
                 if file_path:
                     try:
                         # Read the favicon file
                         with open(file_path, 'rb') as f:
                             favicon_data = f.read()
-                        
+
                         # Determine MIME type
                         mime_type, _ = mimetypes.guess_type(file_path)
                         if not mime_type:
@@ -98,21 +99,21 @@ def migrate_favicon_files():
                                 mime_type = 'image/svg+xml'
                             else:
                                 mime_type = 'image/x-icon'  # Default fallback
-                        
+
                         # Update the feed with favicon data
                         feed.favicon_data = favicon_data
                         feed.favicon_mime_type = mime_type
-                        
+
                         print(f"Migrated favicon for feed: {feed.title} ({len(favicon_data)} bytes, {mime_type})")
-                        
+
                     except Exception as e:
                         print(f"Error migrating favicon for feed {feed.title}: {e}")
                 else:
                     print(f"Favicon file not found for feed {feed.title}: tried {possible_paths}")
-        
+
         session.commit()
         print(f"Successfully migrated {len(feeds)} feeds")
-        
+
     except Exception as e:
         session.rollback()
         print(f"Error during migration: {e}")
@@ -128,27 +129,27 @@ def update_model_class():
 
 def run_migration():
     """Run the migration - standardized interface for migration runner."""
-    print(f"Starting favicon migration...")
+    print("Starting favicon migration...")
     print(f"Using database: {DATABASE_URL}")
-    
+
     # Add the new columns
     print("Step 1: Adding favicon columns to database...")
     add_favicon_columns()
-    
+
     # Migrate existing favicon files
     print("Step 2: Migrating existing favicon files...")
     migrate_favicon_files()
-    
+
     print("Step 3: Manual update required...")
     update_model_class()
-    
+
     print("\nMigration completed!")
     print("Don't forget to:")
     print("1. Update the RssFeed model in model.py")
     print("2. Update feed_service.py to use database storage")
     print("3. Add a new route to serve favicons from database")
     print("4. Update templates to use the new favicon route")
-    
+
     return True
 
 def main():

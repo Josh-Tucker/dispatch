@@ -1,0 +1,69 @@
+# Ruff configuration file for Dispatch project
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    ".pytest_cache",
+    "htmlcov",
+]
+
+# Same as Black.
+line-length = 88
+indent-width = 4
+
+# Assume Python 3.12
+target-version = "py312"
+
+[lint]
+# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
+select = ["E", "F", "W", "I", "UP", "B", "C4", "PGH", "RUF"]
+
+ignore = [
+    # Ignore star imports - they're used intentionally in this codebase
+    "F403", # 'from module import *' used; unable to detect undefined names
+    "F405", # name may be undefined, or defined from star imports
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+[lint.per-file-ignores]
+# Allow bare except in migration files where it's used intentionally
+# Also allow module level imports not at top in migration files
+"dispatch/migrations/*.py" = ["E722", "E402"]
+# Allow bare except in scheduler service for error handling
+"dispatch/services/scheduler_service.py" = ["E722"]
+
+[format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"

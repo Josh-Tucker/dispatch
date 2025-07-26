@@ -6,11 +6,11 @@ Runs migrations before starting the main application
 """
 
 import os
-import sys
-import subprocess
-import glob
 import sqlite3
+import subprocess
+import sys
 from pathlib import Path
+
 
 def main():
     sys.stdout.reconfigure(line_buffering=True)
@@ -23,7 +23,6 @@ def main():
         files = os.listdir('.')
         print("📁 Contents:")
         for file in sorted(files):
-            stat = os.stat(file)
             file_type = "d" if os.path.isdir(file) else "-"
             print(f"  {file_type} {file}")
     except Exception as e:

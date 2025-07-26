@@ -4,15 +4,15 @@ Scheduler service for automatic RSS feed refreshing.
 Handles periodic background tasks for feed updates.
 """
 
-import os
 import logging
 from datetime import datetime, timedelta
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.interval import IntervalTrigger
-from apscheduler.triggers.cron import CronTrigger
+
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.jobstores.memory import MemoryJobStore
-from models import Session, RssFeed
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from models import RssFeed, Session
+
 from services.entry_service import add_rss_entries_for_feed
 
 

@@ -1,17 +1,18 @@
+import concurrent.futures
+import random
+import time
+from datetime import datetime
+from functools import partial
+from urllib.parse import urljoin
+
 import feedparser
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, urljoin
-from models import RssFeed, RssEntry, Session
+from dateutil import parser
+from models import RssEntry, RssFeed, Session
+from readabilipy import simple_json_from_html_string
 from sqlalchemy import desc
 from sqlalchemy.orm import joinedload
-from dateutil import parser
-from datetime import datetime, timedelta
-from readabilipy import simple_json_from_html_string
-import concurrent.futures
-from functools import partial
-import time
-import random
 
 
 def add_rss_entries_for_feed(feed_id, max_retries=3):
@@ -318,7 +319,7 @@ def get_remote_content(url, entry_id):
         response = requests.get(url)
         response.raise_for_status()
         article = simple_json_from_html_string(response.text, use_readability=True)
-        entry = get_feed_entry_by_id(entry_id)
+        get_feed_entry_by_id(entry_id)
 
         soup = BeautifulSoup(article["content"], "html.parser")
 

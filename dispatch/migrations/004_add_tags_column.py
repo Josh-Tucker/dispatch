@@ -5,10 +5,9 @@ This handles existing databases that don't have the tags column.
 Designed to be run safely multiple times and work in Docker environments.
 """
 
-import sqlite3
 import os
+import sqlite3
 import sys
-from datetime import datetime
 
 # Migration metadata
 MIGRATION_ID = "004"
@@ -78,7 +77,7 @@ def migrate_database():
         cursor.execute("SELECT COUNT(*) FROM rss_feeds")
         total_count = cursor.fetchone()[0]
 
-        print(f"✅ Migration completed successfully!")
+        print("✅ Migration completed successfully!")
         print(f"   📊 Updated {total_count} feeds with tags column")
 
         conn.close()
@@ -86,7 +85,7 @@ def migrate_database():
 
     except Exception as e:
         print(f"❌ Migration failed: {e}")
-        print(f"🔍 Error details: {str(e)}")
+        print(f"🔍 Error details: {e!s}")
         if 'conn' in locals():
             try:
                 conn.rollback()

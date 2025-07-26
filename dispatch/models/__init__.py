@@ -5,19 +5,19 @@ This package contains all database-related models and utilities.
 """
 
 from .model import (
+    DATABASE_URL,
     Base,
-    RssFeed,
     RssEntry,
+    RssFeed,
+    Session,
     Settings,
     engine,
-    Session,
     init_database,
-    DATABASE_URL
 )
 
 __all__ = [
     'Base',
-    'RssFeed', 
+    'RssFeed',
     'RssEntry',
     'Settings',
     'engine',

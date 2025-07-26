@@ -1,0 +1,9 @@
+# Combined requirements file for development setup
+# This includes both production and development dependencies
+# Install with: pip install -r requirements-all.txt
+
+# Production dependencies (runtime)
+-r requirements.txt
+
+# Development and testing dependencies
+-r requirements-dev.txt
