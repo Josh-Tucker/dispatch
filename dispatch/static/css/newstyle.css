@@ -80,9 +80,21 @@
     --highlight-colour: #bb0033;
     --background-colour: #fef6e4;
     --border-colour: #172c66;
-    --border-color-light: rgba(23, 44, 102, 0.05);
-    --border-color-medium: rgba(23, 44, 102, 0.08);
-    --border-color-dark: rgba(23, 44, 102, 0.1);
+    --border-color-light: color-mix(
+        in srgb,
+        var(--border-colour) 5%,
+        transparent
+    );
+    --border-color-medium: color-mix(
+        in srgb,
+        var(--border-colour) 8%,
+        transparent
+    );
+    --border-color-dark: color-mix(
+        in srgb,
+        var(--border-colour) 10%,
+        transparent
+    );
 }
 
 /* Dark theme */
@@ -93,9 +105,21 @@ body.theme-dark {
     --highlight-colour: #8bd3dd !important;
     --background-colour: #172c66 !important;
     --border-colour: #fef6e4 !important;
-    --border-color-light: rgba(254, 246, 228, 0.05) !important;
-    --border-color-medium: rgba(254, 246, 228, 0.08) !important;
-    --border-color-dark: rgba(254, 246, 228, 0.1) !important;
+    --border-color-light: color-mix(
+        in srgb,
+        var(--border-colour) 5%,
+        transparent
+    ) !important;
+    --border-color-medium: color-mix(
+        in srgb,
+        var(--border-colour) 8%,
+        transparent
+    ) !important;
+    --border-color-dark: color-mix(
+        in srgb,
+        var(--border-colour) 10%,
+        transparent
+    ) !important;
 }
 
 /* Clean theme */
@@ -106,22 +130,46 @@ body.theme-clean {
     --highlight-colour: #ffffff !important;
     --background-colour: #ffffff !important;
     --border-colour: #000000 !important;
-    --border-color-light: rgba(0, 0, 0, 0.05) !important;
-    --border-color-medium: rgba(0, 0, 0, 0.08) !important;
-    --border-color-dark: rgba(0, 0, 0, 0.1) !important;
+    --border-color-light: color-mix(
+        in srgb,
+        var(--border-colour) 5%,
+        transparent
+    ) !important;
+    --border-color-medium: color-mix(
+        in srgb,
+        var(--border-colour) 8%,
+        transparent
+    ) !important;
+    --border-color-dark: color-mix(
+        in srgb,
+        var(--border-colour) 10%,
+        transparent
+    ) !important;
 }
 
 /* New theme */
 html.theme-new,
 body.theme-new {
-    --primary-colour: #ff6b6b !important;
-    --text-colour: #2c3e50 !important;
-    --highlight-colour: #4ecdc4 !important;
-    --background-colour: #f8f9fa !important;
-    --border-colour: #2c3e50 !important;
-    --border-color-light: rgba(44, 62, 80, 0.05) !important;
-    --border-color-medium: rgba(44, 62, 80, 0.08) !important;
-    --border-color-dark: rgba(44, 62, 80, 0.1) !important;
+    --primary-colour: #e8452e !important;
+    --text-colour: #010101 !important;
+    --highlight-colour: #e8452e !important;
+    --background-colour: #f3d4bd !important;
+    --border-colour: #010101 !important;
+    --border-color-light: color-mix(
+        in srgb,
+        var(--border-colour) 5%,
+        transparent
+    ) !important;
+    --border-color-medium: color-mix(
+        in srgb,
+        var(--border-colour) 8%,
+        transparent
+    ) !important;
+    --border-color-dark: color-mix(
+        in srgb,
+        var(--border-colour) 10%,
+        transparent
+    ) !important;
 }
 
 /* Light theme class for explicit application */
@@ -132,9 +180,21 @@ body.theme-light {
     --highlight-colour: #bb0033 !important;
     --background-colour: #fef6e4 !important;
     --border-colour: #172c66 !important;
-    --border-color-light: rgba(23, 44, 102, 0.05) !important;
-    --border-color-medium: rgba(23, 44, 102, 0.08) !important;
-    --border-color-dark: rgba(23, 44, 102, 0.1) !important;
+    --border-color-light: color-mix(
+        in srgb,
+        var(--border-colour) 5%,
+        transparent
+    ) !important;
+    --border-color-medium: color-mix(
+        in srgb,
+        var(--border-colour) 8%,
+        transparent
+    ) !important;
+    --border-color-dark: color-mix(
+        in srgb,
+        var(--border-colour) 10%,
+        transparent
+    ) !important;
 }
 
 body,
