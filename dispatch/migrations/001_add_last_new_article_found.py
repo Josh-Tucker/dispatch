@@ -16,7 +16,7 @@ MIGRATION_DESCRIPTION = "Add last_new_article_found column to rss_feeds table"
 
 
 def migrate_database():
-    """Add last_new_article_found column to existing rss_feeds table if it doesn't exist."""
+    """Add last_new_article_found column to existing rss_feeds table."""
 
     # Database path - handle both local development and Docker environments
     db_path = "/data/rss_database.db"
@@ -55,7 +55,8 @@ def migrate_database():
 
         if "last_new_article_found" in columns:
             print(
-                "✅ Column 'last_new_article_found' already exists - no migration needed"
+                "✅ Column 'last_new_article_found' already exists - "
+                "no migration needed"
             )
             conn.close()
             return True
@@ -68,7 +69,8 @@ def migrate_database():
             ADD COLUMN last_new_article_found DATETIME
         """)
 
-        # For existing feeds, set last_new_article_found to the date of their most recent entry
+        # For existing feeds, set last_new_article_found to the date of their
+        # most recent entry
         # This gives a reasonable starting point
         cursor.execute("""
             UPDATE rss_feeds
@@ -98,7 +100,8 @@ def migrate_database():
         print("✅ Migration completed successfully!")
         print(f"   📊 Updated {updated_count} feeds with existing articles")
         print(
-            f"   📋 {total_count - updated_count} feeds without articles will be updated when new articles are found"
+            f"   📋 {total_count - updated_count} feeds without articles will be "
+            f"updated when new articles are found"
         )
 
         conn.close()

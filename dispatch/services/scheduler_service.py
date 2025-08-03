@@ -217,7 +217,8 @@ class FeedScheduler:
 
             self.logger.info(
                 f"Automatic feed refresh completed: "
-                f"{success_count} updated, {skipped_count} skipped, {error_count} errors"
+                f"{success_count} updated, {skipped_count} skipped, "
+                f"{error_count} errors"
             )
 
         except Exception as e:

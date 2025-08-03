@@ -6,7 +6,8 @@ This script:
 1. Adds a new favicon_data column to store favicon content as BLOB
 2. Adds a favicon_mime_type column to store the MIME type
 3. Migrates existing favicon files to the database
-4. Updates the favicon_path column to be nullable (we'll keep it for backward compatibility during transition)
+4. Updates the favicon_path column to be nullable (we'll keep it for backward
+   compatibility during transition)
 """
 
 import mimetypes
@@ -115,14 +116,16 @@ def migrate_favicon_files():
                         feed.favicon_mime_type = mime_type
 
                         print(
-                            f"Migrated favicon for feed: {feed.title} ({len(favicon_data)} bytes, {mime_type})"
+                            f"Migrated favicon for feed: {feed.title} "
+                            f"({len(favicon_data)} bytes, {mime_type})"
                         )
 
                     except Exception as e:
                         print(f"Error migrating favicon for feed {feed.title}: {e}")
                 else:
                     print(
-                        f"Favicon file not found for feed {feed.title}: tried {possible_paths}"
+                        f"Favicon file not found for feed {feed.title}: "
+                        f"tried {possible_paths}"
                     )
 
         session.commit()

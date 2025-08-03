@@ -241,12 +241,16 @@ def entries(feed_id: str) -> str | Response:
 @monitor_performance("entry")
 def entry(entry_id: str) -> str | tuple[str, int]:
     template = "entry.html"
-    entry = get_feed_entry_by_id(entry_id)
+    try:
+        entry_id_int = int(entry_id)
+    except ValueError:
+        return "Invalid entry ID", 400
+    entry = get_feed_entry_by_id(entry_id_int)
     if not entry:
         return "Entry not found", 404
     feed = get_feed_by_id(entry.feed_id)
     read_status = True
-    mark_entry_as_read(entry_id, read_status)
+    mark_entry_as_read(entry_id_int, read_status)
     all_tags = get_all_tags()
     return render_template(
         template, entry=entry, feed=feed, theme=get_theme("default"), all_tags=all_tags
@@ -518,7 +522,15 @@ def toggle_feed_pin_entries_route(feed_id: str) -> str | tuple[str, int]:
 def fetch_full_article_route(entry_id: str) -> str | tuple[str, int]:
     """Fetch the full article content from the original URL."""
     try:
-        entry = get_feed_entry_by_id(entry_id)
+        try:
+            entry_id_int = int(entry_id)
+        except ValueError:
+            return (
+                '<div class="fetch-error-message">'
+                '<span style="color: #dc3545;">✗ Invalid entry ID</span></div>',
+                400,
+            )
+        entry = get_feed_entry_by_id(entry_id_int)
         if not entry:
             return (
                 '<div class="fetch-error-message">'
@@ -526,7 +538,8 @@ def fetch_full_article_route(entry_id: str) -> str | tuple[str, int]:
                 404,
             )
 
-        if not entry.link or not str(entry.link).strip():
+        entry_link = str(entry.link) if entry.link else ""
+        if not entry_link or not entry_link.strip():
             return (
                 '<div class="fetch-error-message">'
                 '<span style="color: #dc3545;">✗ No link available for this entry'
@@ -534,10 +547,10 @@ def fetch_full_article_route(entry_id: str) -> str | tuple[str, int]:
                 400,
             )
 
-        article = get_remote_content(entry.link, entry_id)
+        content = get_remote_content(entry_link, entry_id_int)
 
-        if article:
-            updated_entry = get_feed_entry_by_id(entry_id)
+        if content:
+            updated_entry = get_feed_entry_by_id(entry_id_int)
             return render_template("entry-content-partial.html", entry=updated_entry)
         else:
             return (

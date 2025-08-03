@@ -63,8 +63,18 @@ These rules ensure maintainability, safety, and developer velocity.
 - **G-1 (MUST)** `just ruff-check` passes (or `ruff check dispatch/`).
 - **G-2 (MUST)** `just ruff-format` applied (or `ruff format dispatch/`).
 - **G-3 (MUST)** `just test` passes all tests.
+- **G-4 (MUST)** Pyright type checking passes without errors in modified files.
+- **G-5 (SHOULD)** Address pyright warnings in modified files when practical.
+- **G-6 (SHOULD)** Check for new pylsp/language server issues in modified files.
 ---
-### 8 - Git
+### 8 — Type Checking & Quality Assurance
+- **TC-1 (MUST)** Before finalizing any code changes, run pyright type checking on modified files.
+- **TC-2 (MUST)** Fix all pyright errors in newly written or significantly modified code.
+- **TC-3 (SHOULD)** Address pyright warnings when they indicate real type safety issues.
+- **TC-4 (SHOULD)** Use `# type: ignore[error-code]` comments sparingly and only for unavoidable issues with external libraries.
+- **TC-5 (MUST)** When adding type annotations, prefer explicit over implicit types for clarity.
+---
+### 9 — Git
 - **GH-1 (MUST)** Use Conventional Commits format when writing commit messages: https://www.conventionalcommits.org/en/v1.0.0
 - **GH-2 (SHOULD NOT)** Refer to Claude or Anthropic in commit messages.
 ---
@@ -154,6 +164,7 @@ Perform this analysis for every MAJOR code change you introduced (skip minor cha
 1. CLAUDE.md checklist Writing Functions Best Practices.
 2. CLAUDE.md checklist Writing Tests Best Practices.
 3. CLAUDE.md checklist Implementation Best Practices.
+4. CLAUDE.md checklist Type Checking & Quality Assurance.
 ```
 ### QCHECKF
 When I type "qcheckf", this means:
@@ -161,6 +172,7 @@ When I type "qcheckf", this means:
 You are a SKEPTICAL senior software engineer.
 Perform this analysis for every MAJOR function you added or edited (skip minor changes):
 1. CLAUDE.md checklist Writing Functions Best Practices.
+2. Run pyright type checking on the function and fix any errors.
 ```
 ### QCHECKT
 When I type "qcheckt", this means:

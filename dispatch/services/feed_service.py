@@ -107,7 +107,8 @@ def add_feed(feed_url):
         print(f"Feed added: {rss_feed.title}")
         if favicon_data:
             print(
-                f"Favicon stored in database ({len(favicon_data)} bytes, {favicon_mime_type})"
+                f"Favicon stored in database ({len(favicon_data)} bytes, "
+                f"{favicon_mime_type})"
             )
     except Exception as e:
         session.rollback()
@@ -133,7 +134,8 @@ def refresh_feed_favicon(feed_id):
             feed.favicon_mime_type = favicon_mime_type
             session.commit()
             print(
-                f"Favicon refreshed for feed: {feed.title} ({len(favicon_data)} bytes, {favicon_mime_type})"
+                f"Favicon refreshed for feed: {feed.title} "
+                f"({len(favicon_data)} bytes, {favicon_mime_type})"
             )
             return True
         else:

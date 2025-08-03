@@ -103,7 +103,8 @@ def main():
                     if e.stderr:
                         print(f"📤 STDERR: {e.stderr.strip()}")
                     print(
-                        "🔍 This usually means the database schema is incompatible or corrupted"
+                        "🔍 This usually means the database schema is incompatible "
+                        "or corrupted"
                     )
                     print("🔧 Possible solutions:")
                     print("   - Backup and delete the database file to start fresh")

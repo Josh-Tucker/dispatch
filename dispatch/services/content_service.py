@@ -44,7 +44,8 @@ def entry_timedetla(published_date):
     Used as a template filter to show relative time (e.g., "5 min ago", "2 hours ago").
 
     Args:
-        published_date: DateTime object or string representing when content was published
+        published_date: DateTime object or string representing when content was
+            published
 
     Returns:
         str: Human-readable time difference
@@ -176,7 +177,8 @@ def short_time_ago(published_date):
     Returns formats like: 1hr, 1day, 4days, 40days, 365days, 1year
 
     Args:
-        published_date: DateTime object or string representing when content was published
+        published_date: DateTime object or string representing when content was
+            published
 
     Returns:
         str: Short time difference format

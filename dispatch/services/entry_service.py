@@ -37,7 +37,7 @@ def _fetch_feed_with_caching(feed: RssFeed) -> tuple[bool, str, dict | None]:
             headers["If-Modified-Since"] = feed.last_modified
 
         try:
-            head_response = requests.head(feed.url, headers=headers, timeout=15)
+            head_response = requests.head(feed.url or "", headers=headers, timeout=15)
 
             if head_response.status_code == 304:
                 print(f"Feed {feed.title} not modified (304) - skipping")
@@ -63,13 +63,13 @@ def _fetch_feed_with_caching(feed: RssFeed) -> tuple[bool, str, dict | None]:
             pass
 
         try:
-            response = requests.get(feed.url, headers=headers, timeout=30)
+            response = requests.get(feed.url or "", headers=headers, timeout=15)
 
             if response.status_code == 304:
                 print(f"Feed {feed.title} not modified (304) - skipping")
                 return True, "Feed not modified", None
 
-            if response.status_code >= 400:
+            if hasattr(response, "status_code") and response.status_code >= 400:  # type: ignore[attr-defined]
                 print(f"HTTP error {response.status_code} for feed {feed.title}")
                 return False, f"HTTP error {response.status_code}", None
 
@@ -378,7 +378,7 @@ def get_remote_content(url: str, entry_id: int) -> dict | None:
         article = simple_json_from_html_string(response.text, use_readability=True)
         get_feed_entry_by_id(entry_id)
 
-        soup = BeautifulSoup(article["content"], "html.parser")
+        soup = BeautifulSoup(article.get("content", ""), "html.parser")
 
         for a in soup.find_all("a", href=True):
             if not a["href"].startswith("http"):
@@ -388,7 +388,7 @@ def get_remote_content(url: str, entry_id: int) -> dict | None:
             if not img["src"].startswith("http"):
                 img["src"] = urljoin(url, img["src"])
 
-        article["content"] = str(soup)
+        article["content"] = str(soup)  # type: ignore[assignment]
         update_entry(entry_id, article)
 
         return article

@@ -19,7 +19,7 @@ MIGRATION_DESCRIPTION = (
 
 
 def migrate_database():
-    """Add conditional request fields to existing rss_feeds table if they don't exist."""
+    """Add conditional request fields to existing rss_feeds table."""
 
     # Database path - handle both local development and Docker environments
     db_path = os.getenv("DATABASE_URL", "sqlite:///data/rss_database.db")
