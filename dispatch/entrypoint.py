@@ -20,7 +20,7 @@ def main():
     print(f"📍 Working directory: {os.getcwd()}")
 
     try:
-        files = os.listdir('.')
+        files = os.listdir(".")
         print("📁 Contents:")
         for file in sorted(files):
             file_type = "d" if os.path.isdir(file) else "-"
@@ -40,8 +40,9 @@ def main():
             print(f"📁 Database directory ensured at: {data_dir.absolute()}")
 
     try:
-        sys.path.insert(0, os.path.join(os.getcwd(), 'migrations'))
+        sys.path.insert(0, os.path.join(os.getcwd(), "migrations"))
         from migrations import run_migrations
+
         migration_system_available = True
         print("✅ Migration system loaded")
     except ImportError as e:
@@ -54,7 +55,7 @@ def main():
         print(f"⚠️  Non-SQLite database detected: {database_url}")
         print("🔧 Skipping local database file checks for non-SQLite databases")
         db_path = None
-    required_tables = ['settings', 'rss_feeds', 'rss_entries']
+    required_tables = ["settings", "rss_feeds", "rss_entries"]
 
     if db_path and os.path.exists(db_path):
         print(f"📊 Checking database schema at: {os.path.abspath(db_path)}")
@@ -67,17 +68,21 @@ def main():
             conn.close()
 
             print(f"📋 Found tables: {existing_tables}")
-            missing_tables = [table for table in required_tables if table not in existing_tables]
+            missing_tables = [
+                table for table in required_tables if table not in existing_tables
+            ]
 
             if missing_tables:
                 print(f"⚠️  Missing required tables: {missing_tables}")
                 print("🔧 Running database initialization to create missing tables...")
 
                 try:
-                    result = subprocess.run([sys.executable, "models/init_db.py"],
-                                          check=True,
-                                          capture_output=True,
-                                          text=True)
+                    result = subprocess.run(
+                        [sys.executable, "models/init_db.py"],
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
                     print("✅ Database schema initialization completed successfully")
                     if result.stdout:
                         print("📄 Init output:", result.stdout.strip())
@@ -97,7 +102,9 @@ def main():
                         print(f"📤 STDOUT: {e.stdout.strip()}")
                     if e.stderr:
                         print(f"📤 STDERR: {e.stderr.strip()}")
-                    print("🔍 This usually means the database schema is incompatible or corrupted")
+                    print(
+                        "🔍 This usually means the database schema is incompatible or corrupted"
+                    )
                     print("🔧 Possible solutions:")
                     print("   - Backup and delete the database file to start fresh")
                     print("   - Check database file permissions")
@@ -114,7 +121,9 @@ def main():
             print(f"❌ Unexpected error checking database schema: {e}")
             sys.exit(1)
     elif db_path:
-        print("📊 Database file doesn't exist yet - will be created during initialization")
+        print(
+            "📊 Database file doesn't exist yet - will be created during initialization"
+        )
     else:
         print("📊 Using external database - skipping local file checks")
 
@@ -146,6 +155,7 @@ def main():
     else:
         print("❌ No command provided to execute")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

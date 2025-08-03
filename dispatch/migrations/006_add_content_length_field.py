@@ -13,7 +13,10 @@ import sys
 # Migration metadata
 MIGRATION_ID = "006"
 MIGRATION_NAME = "add_content_length_field"
-MIGRATION_DESCRIPTION = "Add content_length field to rss_feeds table for conditional requests"
+MIGRATION_DESCRIPTION = (
+    "Add content_length field to rss_feeds table for conditional requests"
+)
+
 
 def migrate_database():
     """Add content_length field to existing rss_feeds table if it doesn't exist."""
@@ -50,7 +53,9 @@ def migrate_database():
         """)
 
         if not cursor.fetchone():
-            print("📋 rss_feeds table doesn't exist yet - will be created by SQLAlchemy")
+            print(
+                "📋 rss_feeds table doesn't exist yet - will be created by SQLAlchemy"
+            )
             conn.close()
             return True
 
@@ -58,7 +63,7 @@ def migrate_database():
         cursor.execute("PRAGMA table_info(rss_feeds)")
         columns = [column[1] for column in cursor.fetchall()]
 
-        if 'content_length' in columns:
+        if "content_length" in columns:
             print("✅ Column 'content_length' already exists - no migration needed")
             conn.close()
             return True
@@ -87,13 +92,14 @@ def migrate_database():
     except Exception as e:
         print(f"❌ Migration failed: {e}")
         print(f"🔍 Error details: {e!s}")
-        if 'conn' in locals():
+        if "conn" in locals():
             try:
                 conn.rollback()
                 conn.close()
             except:
                 pass
         return False
+
 
 if __name__ == "__main__":
     print("🗄️  Running database migration for content_length field...")

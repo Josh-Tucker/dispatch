@@ -17,6 +17,7 @@ try:
 except ImportError:
     from model import DATABASE_URL, init_database
 
+
 def main():
     """Initialize the database."""
     print(f"Initializing database at: {DATABASE_URL}")
@@ -36,6 +37,7 @@ def main():
     except Exception as e:
         print(f"Error initializing database: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

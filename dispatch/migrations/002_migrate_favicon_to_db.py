@@ -26,13 +26,14 @@ MIGRATION_ID = "002"
 MIGRATION_NAME = "migrate_favicon_to_db"
 MIGRATION_DESCRIPTION = "Move favicons from files to database storage"
 
+
 def add_favicon_columns():
     """Add favicon_data and favicon_mime_type columns to rss_feeds table."""
     session = Session()
 
     try:
         # Try to add the favicon_data column
-        session.execute(text('ALTER TABLE rss_feeds ADD COLUMN favicon_data BLOB'))
+        session.execute(text("ALTER TABLE rss_feeds ADD COLUMN favicon_data BLOB"))
         print("Added favicon_data column")
     except OperationalError as e:
         if "duplicate column name" in str(e).lower():
@@ -42,7 +43,9 @@ def add_favicon_columns():
 
     try:
         # Try to add the favicon_mime_type column
-        session.execute(text('ALTER TABLE rss_feeds ADD COLUMN favicon_mime_type VARCHAR(50)'))
+        session.execute(
+            text("ALTER TABLE rss_feeds ADD COLUMN favicon_mime_type VARCHAR(50)")
+        )
         print("Added favicon_mime_type column")
     except OperationalError as e:
         if "duplicate column name" in str(e).lower():
@@ -52,6 +55,7 @@ def add_favicon_columns():
 
     session.commit()
     session.close()
+
 
 def migrate_favicon_files():
     """Migrate existing favicon files to database."""
@@ -64,11 +68,15 @@ def migrate_favicon_files():
             if feed.favicon_path:
                 # Try different path formats
                 # Remove leading slash if present
-                clean_path = feed.favicon_path.lstrip('/')
+                clean_path = feed.favicon_path.lstrip("/")
                 possible_paths = [
-                    os.path.join("dispatch", "static", clean_path),  # Full path from project root
+                    os.path.join(
+                        "dispatch", "static", clean_path
+                    ),  # Full path from project root
                     os.path.join("static", clean_path),  # Relative path
-                    feed.favicon_path if feed.favicon_path.startswith('static/') else None,  # Direct path if it starts with static/
+                    feed.favicon_path
+                    if feed.favicon_path.startswith("static/")
+                    else None,  # Direct path if it starts with static/
                 ]
                 # Filter out None values
                 possible_paths = [p for p in possible_paths if p is not None]
@@ -82,34 +90,40 @@ def migrate_favicon_files():
                 if file_path:
                     try:
                         # Read the favicon file
-                        with open(file_path, 'rb') as f:
+                        with open(file_path, "rb") as f:
                             favicon_data = f.read()
 
                         # Determine MIME type
                         mime_type, _ = mimetypes.guess_type(file_path)
                         if not mime_type:
                             # Default MIME types for common favicon formats
-                            if file_path.lower().endswith('.ico'):
-                                mime_type = 'image/x-icon'
-                            elif file_path.lower().endswith('.png'):
-                                mime_type = 'image/png'
-                            elif file_path.lower().endswith('.jpg') or file_path.lower().endswith('.jpeg'):
-                                mime_type = 'image/jpeg'
-                            elif file_path.lower().endswith('.svg'):
-                                mime_type = 'image/svg+xml'
+                            if file_path.lower().endswith(".ico"):
+                                mime_type = "image/x-icon"
+                            elif file_path.lower().endswith(".png"):
+                                mime_type = "image/png"
+                            elif file_path.lower().endswith(
+                                ".jpg"
+                            ) or file_path.lower().endswith(".jpeg"):
+                                mime_type = "image/jpeg"
+                            elif file_path.lower().endswith(".svg"):
+                                mime_type = "image/svg+xml"
                             else:
-                                mime_type = 'image/x-icon'  # Default fallback
+                                mime_type = "image/x-icon"  # Default fallback
 
                         # Update the feed with favicon data
                         feed.favicon_data = favicon_data
                         feed.favicon_mime_type = mime_type
 
-                        print(f"Migrated favicon for feed: {feed.title} ({len(favicon_data)} bytes, {mime_type})")
+                        print(
+                            f"Migrated favicon for feed: {feed.title} ({len(favicon_data)} bytes, {mime_type})"
+                        )
 
                     except Exception as e:
                         print(f"Error migrating favicon for feed {feed.title}: {e}")
                 else:
-                    print(f"Favicon file not found for feed {feed.title}: tried {possible_paths}")
+                    print(
+                        f"Favicon file not found for feed {feed.title}: tried {possible_paths}"
+                    )
 
         session.commit()
         print(f"Successfully migrated {len(feeds)} feeds")
@@ -121,11 +135,15 @@ def migrate_favicon_files():
     finally:
         session.close()
 
+
 def update_model_class():
     """Update the RssFeed model class to include the new columns."""
-    print("Note: You'll need to manually update the RssFeed class in model.py to include:")
+    print(
+        "Note: You'll need to manually update the RssFeed class in model.py to include:"
+    )
     print("  favicon_data = Column(LargeBinary)")
     print("  favicon_mime_type = Column(String(50))")
+
 
 def run_migration():
     """Run the migration - standardized interface for migration runner."""
@@ -152,6 +170,7 @@ def run_migration():
 
     return True
 
+
 def main():
     """Run the migration - legacy interface."""
     try:
@@ -159,6 +178,7 @@ def main():
     except Exception as e:
         print(f"Migration failed: {e}")
         return False
+
 
 if __name__ == "__main__":
     main()

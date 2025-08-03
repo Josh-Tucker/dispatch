@@ -114,6 +114,7 @@ def extract_plain_text(html_content):
     """
     try:
         from bs4 import BeautifulSoup
+
         soup = BeautifulSoup(html_content, "html.parser")
         return soup.get_text(strip=True)
     except Exception as e:
@@ -139,7 +140,7 @@ def truncate_content(content, max_length=200):
         return content
 
     truncated = content[:max_length]
-    last_space = truncated.rfind(' ')
+    last_space = truncated.rfind(" ")
 
     if last_space > 0:
         truncated = truncated[:last_space]
@@ -161,7 +162,7 @@ def format_content_preview(content, max_length=300):
     if not content:
         return ""
 
-    if '<' in content and '>' in content:
+    if "<" in content and ">" in content:
         plain_text = extract_plain_text(content)
     else:
         plain_text = content
@@ -275,6 +276,7 @@ def get_feed_timestamp_color(unread_count, last_unread_date):
         hours_clamped = max(0.5, min(hours_ago, 8760))
 
         import math
+
         log_hours = math.log10(hours_clamped)
         log_min = math.log10(0.5)
         log_max = math.log10(8760)

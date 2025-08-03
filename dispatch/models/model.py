@@ -52,10 +52,16 @@ class RssFeed(Base):
 
     def get_read_frequency(self, session):
         """Calculate the frequency of read articles (read count / total count)"""
-        total_count = session.query(func.count(RssEntry.id)).filter_by(feed_id=self.id).scalar()
+        total_count = (
+            session.query(func.count(RssEntry.id)).filter_by(feed_id=self.id).scalar()
+        )
         if total_count == 0:
             return 0.0
-        read_count = session.query(func.count(RssEntry.id)).filter_by(feed_id=self.id, read=True).scalar()
+        read_count = (
+            session.query(func.count(RssEntry.id))
+            .filter_by(feed_id=self.id, read=True)
+            .scalar()
+        )
         return read_count / total_count
 
 
@@ -75,6 +81,7 @@ class RssEntry(Base):
 
     feed = relationship("RssFeed", back_populates="entries")
 
+
 class Settings(Base):
     __tablename__ = "settings"
 
@@ -93,24 +100,22 @@ class Settings(Base):
         session.add(Settings(key=key, value=value))
 
 
-
-if DATABASE_URL.startswith('sqlite'):
+if DATABASE_URL.startswith("sqlite"):
     engine = create_engine(
         DATABASE_URL,
         pool_timeout=20,
         pool_recycle=-1,
         pool_pre_ping=True,
-        connect_args={
-            'timeout': 30,
-            'check_same_thread': False
-        },
-        echo=False
+        connect_args={"timeout": 30, "check_same_thread": False},
+        echo=False,
     )
 else:
     engine = create_engine(DATABASE_URL)
 
+
 def init_database():
     """Initialize the database by creating all tables."""
     Base.metadata.create_all(engine)
+
 
 Session = sessionmaker(bind=engine)

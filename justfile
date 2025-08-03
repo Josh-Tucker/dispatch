@@ -1,9 +1,7 @@
 init:
-    python3 -m venv .venv
-    python3 -m pip install --upgrade pip
-    python3 -m pip --version
-    pip install -r requirements-all.txt
-    cd dispatch; python3  init_db.py
+    uv venv
+    uv pip install -e ".[dev]"
+    cd dispatch; python3 init_db.py
 
 run:
     cd dispatch; DEBUG=true python3 app.py
@@ -77,33 +75,35 @@ quality-all: quality-fix quality-format
 
 # Requirements management
 install-prod:
-    pip install -r requirements.txt
+    uv pip install -e .
 
 install-dev:
-    pip install -r requirements-dev.txt
+    uv pip install -e ".[dev]"
 
 install-all:
-    pip install -r requirements-all.txt
+    uv pip install -e ".[dev]"
 
 update-requirements:
-    pip freeze > requirements-current.txt
+    uv pip freeze > requirements-current.txt
     @echo "Current environment frozen to requirements-current.txt"
-    @echo "Review and update requirements.txt and requirements-dev.txt as needed"
+    @echo "Review and update pyproject.toml dependencies as needed"
+
+sync:
+    uv pip sync
 
 dev-setup: init
-    @echo "Development environment setup complete!"
+    @echo "Development environment setup complete with uv!"
     @echo "Run 'just test' to run all tests"
     @echo "Run 'just test-coverage' to run tests with coverage"
     @echo "Run 'just run' to start the application"
     @echo ""
-    @echo "Requirements commands:"
+    @echo "uv commands:"
     @echo "  just install-prod     - Install production dependencies only"
     @echo "  just install-dev      - Install development dependencies only"
     @echo "  just install-all      - Install all dependencies"
+    @echo "  just sync             - Sync dependencies with lockfile"
     @echo ""
     @echo "Code quality commands:"
-    @echo "  just lint             - Run flake8 linting"
-    @echo "  just format           - Format code with black"
     @echo "  just ruff-check       - Check code with ruff"
     @echo "  just ruff-fix         - Fix auto-fixable ruff issues"
     @echo "  just ruff-format      - Format code with ruff"

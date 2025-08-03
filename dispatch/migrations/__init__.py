@@ -14,6 +14,7 @@ import sys
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+
 def discover_migrations(migrations_dir=None):
     """
     Discover all migration files in the migrations directory.
@@ -29,7 +30,7 @@ def discover_migrations(migrations_dir=None):
 
     for file_path in migration_files:
         filename = os.path.basename(file_path)
-        if filename.startswith('__'):
+        if filename.startswith("__"):
             continue
 
         # Extract migration ID from filename (e.g., "001" from "001_add_column.py")
@@ -41,6 +42,7 @@ def discover_migrations(migrations_dir=None):
     # Sort by migration ID to ensure correct order
     migrations.sort(key=lambda x: x[0])
     return migrations
+
 
 def load_migration_module(module_name, file_path):
     """
@@ -69,6 +71,7 @@ def load_migration_module(module_name, file_path):
     except Exception as e:
         print(f"❌ Error loading migration {module_name}: {e}")
         return None
+
 
 def has_migration_table():
     """
@@ -108,6 +111,7 @@ def has_migration_table():
     except Exception as e:
         print(f"❌ Error checking migration table: {e}")
         return False
+
 
 def create_migration_table():
     """
@@ -161,6 +165,7 @@ def create_migration_table():
         print(f"❌ Error creating migration table: {e}")
         return False
 
+
 def is_migration_applied(migration_id):
     """
     Check if a migration has already been applied.
@@ -186,15 +191,18 @@ def is_migration_applied(migration_id):
         else:
             # For other databases, use SQLAlchemy
             session = Session()
-            result = session.execute(
-                "SELECT 1 FROM migrations WHERE id = :id",
-                {'id': migration_id}
-            ).fetchone() is not None
+            result = (
+                session.execute(
+                    "SELECT 1 FROM migrations WHERE id = :id", {"id": migration_id}
+                ).fetchone()
+                is not None
+            )
             session.close()
             return result
     except Exception as e:
         print(f"❌ Error checking migration status: {e}")
         return False
+
 
 def record_migration(migration_id, name, description):
     """
@@ -213,32 +221,34 @@ def record_migration(migration_id, name, description):
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO migrations (id, name, description)
                 VALUES (?, ?, ?)
-            """, (migration_id, name, description))
+            """,
+                (migration_id, name, description),
+            )
             conn.commit()
             conn.close()
         else:
             # For other databases, use SQLAlchemy
             session = Session()
-            session.execute("""
+            session.execute(
+                """
                 INSERT INTO migrations (id, name, description)
                 VALUES (:id, :name, :description)
-            """, {
-                'id': migration_id,
-                'name': name,
-                'description': description
-            })
+            """,
+                {"id": migration_id, "name": name, "description": description},
+            )
             session.commit()
             session.close()
-
 
         return True
     except Exception as e:
         print(f"❌ Error recording migration: {e}")
 
         return False
+
 
 def run_migrations():
     """
@@ -282,20 +292,20 @@ def run_migrations():
             return False
 
         # Get migration metadata
-        name = getattr(module, 'MIGRATION_NAME', module_name)
-        description = getattr(module, 'MIGRATION_DESCRIPTION', 'No description')
+        name = getattr(module, "MIGRATION_NAME", module_name)
+        description = getattr(module, "MIGRATION_DESCRIPTION", "No description")
 
         print(f"📝 Running: {description}")
 
         # Run the migration
         try:
             # Try the standardized run_migration function first
-            if hasattr(module, 'run_migration'):
+            if hasattr(module, "run_migration"):
                 result = module.run_migration()
-            elif hasattr(module, 'migrate_database'):
+            elif hasattr(module, "migrate_database"):
                 # Fallback for legacy migrations
                 result = module.migrate_database()
-            elif hasattr(module, 'main'):
+            elif hasattr(module, "main"):
                 # Last resort - call main function
                 result = module.main()
                 if result is None:
@@ -325,6 +335,7 @@ def run_migrations():
     print(f"   ⏭️  {skip_count} migration(s) skipped (already applied)")
     return True
 
+
 def get_migration_status():
     """
     Get the status of all migrations.
@@ -340,18 +351,25 @@ def get_migration_status():
 
         # Try to get metadata from module
         module = load_migration_module(module_name, file_path)
-        name = getattr(module, 'MIGRATION_NAME', module_name) if module else module_name
-        description = getattr(module, 'MIGRATION_DESCRIPTION', 'No description') if module else 'No description'
+        name = getattr(module, "MIGRATION_NAME", module_name) if module else module_name
+        description = (
+            getattr(module, "MIGRATION_DESCRIPTION", "No description")
+            if module
+            else "No description"
+        )
 
-        status.append({
-            'id': migration_id,
-            'name': name,
-            'description': description,
-            'applied': applied,
-            'file_path': file_path
-        })
+        status.append(
+            {
+                "id": migration_id,
+                "name": name,
+                "description": description,
+                "applied": applied,
+                "file_path": file_path,
+            }
+        )
 
     return status
+
 
 if __name__ == "__main__":
     # Run migrations when called directly

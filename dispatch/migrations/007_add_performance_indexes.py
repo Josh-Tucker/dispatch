@@ -15,6 +15,7 @@ MIGRATION_ID = "007"
 MIGRATION_NAME = "add_performance_indexes"
 MIGRATION_DESCRIPTION = "Add performance indexes for common query patterns"
 
+
 def apply_migration():
     """Apply the migration to add performance indexes."""
     print(f"🔄 Applying migration {MIGRATION_ID}: {MIGRATION_DESCRIPTION}")
@@ -39,34 +40,68 @@ def apply_migration():
             # List of indexes to create with their descriptions
             indexes = [
                 # RssEntry table indexes (highest priority)
-                ("idx_rss_entries_feed_id", "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_id ON rss_entries(feed_id)",
-                 "Feed ID lookup for foreign key relationships"),
-                ("idx_rss_entries_read", "CREATE INDEX IF NOT EXISTS idx_rss_entries_read ON rss_entries(read)",
-                 "Read status filtering"),
-                ("idx_rss_entries_feed_read", "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_read ON rss_entries(feed_id, read)",
-                 "Feed-specific read/unread queries"),
-                ("idx_rss_entries_published", "CREATE INDEX IF NOT EXISTS idx_rss_entries_published ON rss_entries(published DESC)",
-                 "Published date ordering"),
-                ("idx_rss_entries_feed_published", "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_published ON rss_entries(feed_id, published DESC)",
-                 "Feed-specific published date ordering"),
-                ("idx_rss_entries_read_published", "CREATE INDEX IF NOT EXISTS idx_rss_entries_read_published ON rss_entries(read, published DESC)",
-                 "Unread entries by date"),
-                ("idx_rss_entries_feed_link", "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_link ON rss_entries(feed_id, link)",
-                 "Duplicate detection during feed parsing"),
-
+                (
+                    "idx_rss_entries_feed_id",
+                    "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_id ON rss_entries(feed_id)",
+                    "Feed ID lookup for foreign key relationships",
+                ),
+                (
+                    "idx_rss_entries_read",
+                    "CREATE INDEX IF NOT EXISTS idx_rss_entries_read ON rss_entries(read)",
+                    "Read status filtering",
+                ),
+                (
+                    "idx_rss_entries_feed_read",
+                    "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_read ON rss_entries(feed_id, read)",
+                    "Feed-specific read/unread queries",
+                ),
+                (
+                    "idx_rss_entries_published",
+                    "CREATE INDEX IF NOT EXISTS idx_rss_entries_published ON rss_entries(published DESC)",
+                    "Published date ordering",
+                ),
+                (
+                    "idx_rss_entries_feed_published",
+                    "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_published ON rss_entries(feed_id, published DESC)",
+                    "Feed-specific published date ordering",
+                ),
+                (
+                    "idx_rss_entries_read_published",
+                    "CREATE INDEX IF NOT EXISTS idx_rss_entries_read_published ON rss_entries(read, published DESC)",
+                    "Unread entries by date",
+                ),
+                (
+                    "idx_rss_entries_feed_link",
+                    "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_link ON rss_entries(feed_id, link)",
+                    "Duplicate detection during feed parsing",
+                ),
                 # RssFeed table indexes
-                ("idx_rss_feeds_url", "CREATE INDEX IF NOT EXISTS idx_rss_feeds_url ON rss_feeds(url)",
-                 "Feed URL lookup for duplicate detection"),
-                ("idx_rss_feeds_pinned", "CREATE INDEX IF NOT EXISTS idx_rss_feeds_pinned ON rss_feeds(pinned DESC)",
-                 "Pinned feed sorting"),
-                ("idx_rss_feeds_pinned_title", "CREATE INDEX IF NOT EXISTS idx_rss_feeds_pinned_title ON rss_feeds(pinned DESC, title)",
-                 "Pinned + title sorting"),
-                ("idx_rss_feeds_tags", "CREATE INDEX IF NOT EXISTS idx_rss_feeds_tags ON rss_feeds(tags)",
-                 "Tag filtering queries"),
-
+                (
+                    "idx_rss_feeds_url",
+                    "CREATE INDEX IF NOT EXISTS idx_rss_feeds_url ON rss_feeds(url)",
+                    "Feed URL lookup for duplicate detection",
+                ),
+                (
+                    "idx_rss_feeds_pinned",
+                    "CREATE INDEX IF NOT EXISTS idx_rss_feeds_pinned ON rss_feeds(pinned DESC)",
+                    "Pinned feed sorting",
+                ),
+                (
+                    "idx_rss_feeds_pinned_title",
+                    "CREATE INDEX IF NOT EXISTS idx_rss_feeds_pinned_title ON rss_feeds(pinned DESC, title)",
+                    "Pinned + title sorting",
+                ),
+                (
+                    "idx_rss_feeds_tags",
+                    "CREATE INDEX IF NOT EXISTS idx_rss_feeds_tags ON rss_feeds(tags)",
+                    "Tag filtering queries",
+                ),
                 # Settings table index
-                ("idx_settings_key", "CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key)",
-                 "Settings lookup by key"),
+                (
+                    "idx_settings_key",
+                    "CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key)",
+                    "Settings lookup by key",
+                ),
             ]
 
             created_count = 0
@@ -75,10 +110,13 @@ def apply_migration():
             for index_name, sql, description in indexes:
                 try:
                     # Check if index already exists
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         SELECT name FROM sqlite_master
                         WHERE type='index' AND name=?
-                    """, (index_name,))
+                    """,
+                        (index_name,),
+                    )
 
                     if cursor.fetchone():
                         print(f"  ⏭️  Index {index_name} already exists - skipping")
@@ -98,7 +136,9 @@ def apply_migration():
             conn.close()
 
             print(f"✅ Migration {MIGRATION_ID} completed successfully")
-            print(f"   📊 Created {created_count} new indexes, {skipped_count} already existed")
+            print(
+                f"   📊 Created {created_count} new indexes, {skipped_count} already existed"
+            )
 
             if created_count > 0:
                 print("   🚀 Performance should be significantly improved!")
@@ -114,18 +154,54 @@ def apply_migration():
             with engine.connect() as conn:
                 # Note: Index syntax may need adjustment for PostgreSQL/MySQL
                 indexes = [
-                    ("idx_rss_entries_feed_id", "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_id ON rss_entries(feed_id)"),
-                    ("idx_rss_entries_read", "CREATE INDEX IF NOT EXISTS idx_rss_entries_read ON rss_entries(read)"),
-                    ("idx_rss_entries_feed_read", "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_read ON rss_entries(feed_id, read)"),
-                    ("idx_rss_entries_published", "CREATE INDEX IF NOT EXISTS idx_rss_entries_published ON rss_entries(published DESC)"),
-                    ("idx_rss_entries_feed_published", "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_published ON rss_entries(feed_id, published DESC)"),
-                    ("idx_rss_entries_read_published", "CREATE INDEX IF NOT EXISTS idx_rss_entries_read_published ON rss_entries(read, published DESC)"),
-                    ("idx_rss_entries_feed_link", "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_link ON rss_entries(feed_id, link)"),
-                    ("idx_rss_feeds_url", "CREATE INDEX IF NOT EXISTS idx_rss_feeds_url ON rss_feeds(url)"),
-                    ("idx_rss_feeds_pinned", "CREATE INDEX IF NOT EXISTS idx_rss_feeds_pinned ON rss_feeds(pinned DESC)"),
-                    ("idx_rss_feeds_pinned_title", "CREATE INDEX IF NOT EXISTS idx_rss_feeds_pinned_title ON rss_feeds(pinned DESC, title)"),
-                    ("idx_rss_feeds_tags", "CREATE INDEX IF NOT EXISTS idx_rss_feeds_tags ON rss_feeds(tags)"),
-                    ("idx_settings_key", "CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key)"),
+                    (
+                        "idx_rss_entries_feed_id",
+                        "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_id ON rss_entries(feed_id)",
+                    ),
+                    (
+                        "idx_rss_entries_read",
+                        "CREATE INDEX IF NOT EXISTS idx_rss_entries_read ON rss_entries(read)",
+                    ),
+                    (
+                        "idx_rss_entries_feed_read",
+                        "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_read ON rss_entries(feed_id, read)",
+                    ),
+                    (
+                        "idx_rss_entries_published",
+                        "CREATE INDEX IF NOT EXISTS idx_rss_entries_published ON rss_entries(published DESC)",
+                    ),
+                    (
+                        "idx_rss_entries_feed_published",
+                        "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_published ON rss_entries(feed_id, published DESC)",
+                    ),
+                    (
+                        "idx_rss_entries_read_published",
+                        "CREATE INDEX IF NOT EXISTS idx_rss_entries_read_published ON rss_entries(read, published DESC)",
+                    ),
+                    (
+                        "idx_rss_entries_feed_link",
+                        "CREATE INDEX IF NOT EXISTS idx_rss_entries_feed_link ON rss_entries(feed_id, link)",
+                    ),
+                    (
+                        "idx_rss_feeds_url",
+                        "CREATE INDEX IF NOT EXISTS idx_rss_feeds_url ON rss_feeds(url)",
+                    ),
+                    (
+                        "idx_rss_feeds_pinned",
+                        "CREATE INDEX IF NOT EXISTS idx_rss_feeds_pinned ON rss_feeds(pinned DESC)",
+                    ),
+                    (
+                        "idx_rss_feeds_pinned_title",
+                        "CREATE INDEX IF NOT EXISTS idx_rss_feeds_pinned_title ON rss_feeds(pinned DESC, title)",
+                    ),
+                    (
+                        "idx_rss_feeds_tags",
+                        "CREATE INDEX IF NOT EXISTS idx_rss_feeds_tags ON rss_feeds(tags)",
+                    ),
+                    (
+                        "idx_settings_key",
+                        "CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key)",
+                    ),
                 ]
 
                 created_count = 0
@@ -139,13 +215,16 @@ def apply_migration():
                         print(f"  ⚠️  Warning: Could not create index {index_name}: {e}")
 
                 conn.commit()
-                print(f"✅ Migration {MIGRATION_ID} completed - created {created_count} indexes")
+                print(
+                    f"✅ Migration {MIGRATION_ID} completed - created {created_count} indexes"
+                )
 
             return True
 
     except Exception as e:
         print(f"❌ Migration {MIGRATION_ID} failed: {e}")
         return False
+
 
 def rollback_migration():
     """Rollback the migration by dropping the created indexes."""
@@ -197,7 +276,9 @@ def rollback_migration():
             conn.commit()
             conn.close()
 
-            print(f"✅ Migration {MIGRATION_ID} rollback completed - dropped {dropped_count} indexes")
+            print(
+                f"✅ Migration {MIGRATION_ID} rollback completed - dropped {dropped_count} indexes"
+            )
             return True
 
         else:
@@ -216,7 +297,9 @@ def rollback_migration():
                         print(f"  ⚠️  Could not drop index {index_name}: {e}")
 
                 conn.commit()
-                print(f"✅ Migration {MIGRATION_ID} rollback completed - dropped {dropped_count} indexes")
+                print(
+                    f"✅ Migration {MIGRATION_ID} rollback completed - dropped {dropped_count} indexes"
+                )
 
             return True
 
@@ -224,9 +307,11 @@ def rollback_migration():
         print(f"❌ Migration {MIGRATION_ID} rollback failed: {e}")
         return False
 
+
 def run_migration():
     """Run the migration - called by migration runner."""
     return apply_migration()
+
 
 def main():
     """Main function for running migration directly."""
@@ -236,6 +321,7 @@ def main():
         success = apply_migration()
 
     sys.exit(0 if success else 1)
+
 
 if __name__ == "__main__":
     main()

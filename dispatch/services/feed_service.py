@@ -26,11 +26,11 @@ def get_favicon_url(feed_url):
             return f"{parsed_url.scheme}://{parsed_url.netloc}/favicon.ico"
 
         favicon_url = icon_link.get("href")
-        if favicon_url and not favicon_url.startswith('http'):
+        if favicon_url and not favicon_url.startswith("http"):
             parsed_url = urlparse(feed_url)
-            if favicon_url.startswith('//'):
+            if favicon_url.startswith("//"):
                 favicon_url = f"{parsed_url.scheme}:{favicon_url}"
-            elif favicon_url.startswith('/'):
+            elif favicon_url.startswith("/"):
                 favicon_url = f"{parsed_url.scheme}://{parsed_url.netloc}{favicon_url}"
             else:
                 favicon_url = urljoin(feed_url, favicon_url)
@@ -50,22 +50,24 @@ def download_and_store_favicon(feed_url):
     try:
         favicon_response = requests.get(favicon_url, timeout=10)
         if favicon_response.status_code == 200:
-            content_type = favicon_response.headers.get('content-type', '')
+            content_type = favicon_response.headers.get("content-type", "")
             if content_type:
-                mime_type = content_type.split(';')[0].strip()
+                mime_type = content_type.split(";")[0].strip()
             else:
                 mime_type, _ = mimetypes.guess_type(favicon_url)
                 if not mime_type:
-                    if favicon_url.lower().endswith('.ico'):
-                        mime_type = 'image/x-icon'
-                    elif favicon_url.lower().endswith('.png'):
-                        mime_type = 'image/png'
-                    elif favicon_url.lower().endswith('.jpg') or favicon_url.lower().endswith('.jpeg'):
-                        mime_type = 'image/jpeg'
-                    elif favicon_url.lower().endswith('.svg'):
-                        mime_type = 'image/svg+xml'
+                    if favicon_url.lower().endswith(".ico"):
+                        mime_type = "image/x-icon"
+                    elif favicon_url.lower().endswith(".png"):
+                        mime_type = "image/png"
+                    elif favicon_url.lower().endswith(
+                        ".jpg"
+                    ) or favicon_url.lower().endswith(".jpeg"):
+                        mime_type = "image/jpeg"
+                    elif favicon_url.lower().endswith(".svg"):
+                        mime_type = "image/svg+xml"
                     else:
-                        mime_type = 'image/x-icon'
+                        mime_type = "image/x-icon"
 
             return favicon_response.content, mime_type
     except Exception as e:
@@ -86,7 +88,9 @@ def add_feed(feed_url):
 
         feed = feedparser.parse(feed_url)
 
-        favicon_data, favicon_mime_type = download_and_store_favicon(feed.feed.link or feed_url)
+        favicon_data, favicon_mime_type = download_and_store_favicon(
+            feed.feed.link or feed_url
+        )
 
         rss_feed = RssFeed(
             url=feed_url,
@@ -102,7 +106,9 @@ def add_feed(feed_url):
         session.close()
         print(f"Feed added: {rss_feed.title}")
         if favicon_data:
-            print(f"Favicon stored in database ({len(favicon_data)} bytes, {favicon_mime_type})")
+            print(
+                f"Favicon stored in database ({len(favicon_data)} bytes, {favicon_mime_type})"
+            )
     except Exception as e:
         session.rollback()
         session.close()
@@ -118,13 +124,17 @@ def refresh_feed_favicon(feed_id):
             print(f"Feed with ID {feed_id} not found.")
             return False
 
-        favicon_data, favicon_mime_type = download_and_store_favicon(feed.link or feed.url)
+        favicon_data, favicon_mime_type = download_and_store_favicon(
+            feed.link or feed.url
+        )
 
         if favicon_data:
             feed.favicon_data = favicon_data
             feed.favicon_mime_type = favicon_mime_type
             session.commit()
-            print(f"Favicon refreshed for feed: {feed.title} ({len(favicon_data)} bytes, {favicon_mime_type})")
+            print(
+                f"Favicon refreshed for feed: {feed.title} ({len(favicon_data)} bytes, {favicon_mime_type})"
+            )
             return True
         else:
             print(f"Could not fetch favicon for feed: {feed.title}")
@@ -148,7 +158,9 @@ def refresh_all_feed_favicons():
         for feed in feeds:
             print(f"Refreshing favicon for: {feed.title}")
 
-            favicon_data, favicon_mime_type = download_and_store_favicon(feed.link or feed.url)
+            favicon_data, favicon_mime_type = download_and_store_favicon(
+                feed.link or feed.url
+            )
 
             if favicon_data:
                 feed.favicon_data = favicon_data
@@ -210,8 +222,7 @@ def get_all_feeds(sort_by="title"):
 
         unread_counts_query = (
             session.query(
-                RssEntry.feed_id,
-                func.count(RssEntry.id).label('unread_count')
+                RssEntry.feed_id, func.count(RssEntry.id).label("unread_count")
             )
             .filter(RssEntry.feed_id.in_(feed_ids))
             .filter(RssEntry.read == False)
@@ -222,8 +233,7 @@ def get_all_feeds(sort_by="title"):
 
         total_counts_query = (
             session.query(
-                RssEntry.feed_id,
-                func.count(RssEntry.id).label('total_count')
+                RssEntry.feed_id, func.count(RssEntry.id).label("total_count")
             )
             .filter(RssEntry.feed_id.in_(feed_ids))
             .group_by(RssEntry.feed_id)
@@ -232,10 +242,7 @@ def get_all_feeds(sort_by="title"):
         total_counts = dict(total_counts_query)
 
         read_counts_query = (
-            session.query(
-                RssEntry.feed_id,
-                func.count(RssEntry.id).label('read_count')
-            )
+            session.query(RssEntry.feed_id, func.count(RssEntry.id).label("read_count"))
             .filter(RssEntry.feed_id.in_(feed_ids))
             .filter(RssEntry.read is True)
             .group_by(RssEntry.feed_id)
@@ -245,8 +252,7 @@ def get_all_feeds(sort_by="title"):
 
         latest_entries_subquery = (
             session.query(
-                RssEntry.feed_id,
-                func.max(RssEntry.published).label('latest_published')
+                RssEntry.feed_id, func.max(RssEntry.published).label("latest_published")
             )
             .filter(RssEntry.feed_id.in_(feed_ids))
             .group_by(RssEntry.feed_id)
@@ -254,14 +260,11 @@ def get_all_feeds(sort_by="title"):
         )
 
         latest_entries_query = (
-            session.query(
-                RssEntry.feed_id,
-                RssEntry.published
-            )
+            session.query(RssEntry.feed_id, RssEntry.published)
             .join(
                 latest_entries_subquery,
-                (RssEntry.feed_id == latest_entries_subquery.c.feed_id) &
-                (RssEntry.published == latest_entries_subquery.c.latest_published)
+                (RssEntry.feed_id == latest_entries_subquery.c.feed_id)
+                & (RssEntry.published == latest_entries_subquery.c.latest_published),
             )
             .all()
         )
@@ -270,7 +273,7 @@ def get_all_feeds(sort_by="title"):
         latest_unread_subquery = (
             session.query(
                 RssEntry.feed_id,
-                func.max(RssEntry.published).label('latest_unread_published')
+                func.max(RssEntry.published).label("latest_unread_published"),
             )
             .filter(RssEntry.feed_id.in_(feed_ids))
             .filter(RssEntry.read == False)
@@ -279,14 +282,14 @@ def get_all_feeds(sort_by="title"):
         )
 
         latest_unread_query = (
-            session.query(
-                RssEntry.feed_id,
-                RssEntry.published
-            )
+            session.query(RssEntry.feed_id, RssEntry.published)
             .join(
                 latest_unread_subquery,
-                (RssEntry.feed_id == latest_unread_subquery.c.feed_id) &
-                (RssEntry.published == latest_unread_subquery.c.latest_unread_published)
+                (RssEntry.feed_id == latest_unread_subquery.c.feed_id)
+                & (
+                    RssEntry.published
+                    == latest_unread_subquery.c.latest_unread_published
+                ),
             )
             .filter(RssEntry.read == False)
             .all()
@@ -294,11 +297,7 @@ def get_all_feeds(sort_by="title"):
         latest_unread_dates = dict(latest_unread_query)
 
         latest_titles_query = (
-            session.query(
-                RssEntry.feed_id,
-                RssEntry.title,
-                RssEntry.published
-            )
+            session.query(RssEntry.feed_id, RssEntry.title, RssEntry.published)
             .filter(RssEntry.feed_id.in_(feed_ids))
             .filter(RssEntry.title.isnot(None))
             .order_by(RssEntry.feed_id, desc(RssEntry.published))
@@ -331,7 +330,10 @@ def get_all_feeds(sort_by="title"):
         if sort_by == "title":
             feeds.sort(key=lambda f: (not f.pinned, f.title or ""))
         elif sort_by == "last_updated":
-            feeds.sort(key=lambda f: (not f.pinned, f.last_new_article_found or datetime.min), reverse=True)
+            feeds.sort(
+                key=lambda f: (not f.pinned, f.last_new_article_found or datetime.min),
+                reverse=True,
+            )
         elif sort_by == "frequency_read":
             feeds.sort(key=lambda f: (not f.pinned, f.read_frequency), reverse=True)
         else:
@@ -339,7 +341,9 @@ def get_all_feeds(sort_by="title"):
 
         all_feed = RssFeed(id="all", title="All Feeds")
         all_feed.unread_count = total_unread_count
-        all_feed.last_unread_entry_date = max(latest_unread_dates.values()) if latest_unread_dates else None
+        all_feed.last_unread_entry_date = (
+            max(latest_unread_dates.values()) if latest_unread_dates else None
+        )
 
         global_latest_query = (
             session.query(RssEntry.title)
@@ -359,7 +363,11 @@ def get_all_feeds(sort_by="title"):
         print(f"Error in optimized get_all_feeds: {e}")
         try:
             session = Session()
-            feeds = session.query(RssFeed).order_by(desc(RssFeed.pinned), RssFeed.title).all()
+            feeds = (
+                session.query(RssFeed)
+                .order_by(desc(RssFeed.pinned), RssFeed.title)
+                .all()
+            )
             for feed in feeds:
                 feed.unread_count = 0
                 feed.last_new_article_found = None
@@ -388,14 +396,34 @@ def get_feed_by_id(feed_id):
     if feed:
         feed.unread_count = feed.get_unread_count(session)
         # Calculate the latest published date from entries for this feed
-        latest_entry = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).first()
+        latest_entry = (
+            session.query(RssEntry)
+            .filter_by(feed_id=feed.id)
+            .order_by(desc(RssEntry.published))
+            .first()
+        )
         feed.last_new_article_found = latest_entry.published if latest_entry else None
         # Calculate the latest unread entry date for this feed
-        latest_unread_entry = session.query(RssEntry).filter_by(feed_id=feed.id, read=False).order_by(desc(RssEntry.published)).first()
-        feed.last_unread_entry_date = latest_unread_entry.published if latest_unread_entry else None
+        latest_unread_entry = (
+            session.query(RssEntry)
+            .filter_by(feed_id=feed.id, read=False)
+            .order_by(desc(RssEntry.published))
+            .first()
+        )
+        feed.last_unread_entry_date = (
+            latest_unread_entry.published if latest_unread_entry else None
+        )
         # Get latest entry titles for preview (last 3 entries)
-        latest_entries = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).limit(3).all()
-        feed.latest_entry_titles = [entry.title for entry in latest_entries if entry.title]
+        latest_entries = (
+            session.query(RssEntry)
+            .filter_by(feed_id=feed.id)
+            .order_by(desc(RssEntry.published))
+            .limit(3)
+            .all()
+        )
+        feed.latest_entry_titles = [
+            entry.title for entry in latest_entries if entry.title
+        ]
         feed.read_frequency = feed.get_read_frequency(session)
         # Add frequency data for sparkline graph
         feed.frequency_data = get_feed_frequency_data(feed.id)
@@ -463,14 +491,19 @@ def get_feed_frequency_data(feed_id, weeks=12):
         start_date = end_date - timedelta(weeks=weeks)
 
         # Use SQL to group by week and count entries efficiently
-        weekly_counts = session.query(
-            func.strftime('%Y-%W', RssEntry.published).label('week'),
-            func.count(RssEntry.id).label('count')
-        ).filter(
-            RssEntry.feed_id == feed_id,
-            RssEntry.published >= start_date,
-            RssEntry.published <= end_date
-        ).group_by(func.strftime('%Y-%W', RssEntry.published)).all()
+        weekly_counts = (
+            session.query(
+                func.strftime("%Y-%W", RssEntry.published).label("week"),
+                func.count(RssEntry.id).label("count"),
+            )
+            .filter(
+                RssEntry.feed_id == feed_id,
+                RssEntry.published >= start_date,
+                RssEntry.published <= end_date,
+            )
+            .group_by(func.strftime("%Y-%W", RssEntry.published))
+            .all()
+        )
 
         # Convert to dict for easy lookup
         week_counts = dict(weekly_counts)
@@ -480,7 +513,7 @@ def get_feed_frequency_data(feed_id, weeks=12):
         current_week_start = start_date
 
         for week_num in range(weeks):
-            week_key = current_week_start.strftime('%Y-%W')
+            week_key = current_week_start.strftime("%Y-%W")
             count = week_counts.get(week_key, 0)
             frequency_data.append(count)
             current_week_start += timedelta(days=7)
@@ -498,14 +531,14 @@ def parse_tags_string(tags_string):
     """Parse a comma-separated string of tags into a list."""
     if not tags_string:
         return []
-    return [tag.strip() for tag in tags_string.split(',') if tag.strip()]
+    return [tag.strip() for tag in tags_string.split(",") if tag.strip()]
 
 
 def format_tags_list(tags_list):
     """Format a list of tags into a comma-separated string."""
     if not tags_list:
         return None
-    return ', '.join(tag.strip() for tag in tags_list if tag.strip())
+    return ", ".join(tag.strip() for tag in tags_list if tag.strip())
 
 
 def get_all_tags():
@@ -527,7 +560,7 @@ def get_feeds_by_tag(tag):
     """Get all feeds that have a specific tag."""
     session = Session()
     try:
-        feeds = session.query(RssFeed).filter(RssFeed.tags.like(f'%{tag}%')).all()
+        feeds = session.query(RssFeed).filter(RssFeed.tags.like(f"%{tag}%")).all()
         # Filter to ensure exact tag match (not substring)
         matching_feeds = []
         for feed in feeds:
@@ -536,14 +569,36 @@ def get_feeds_by_tag(tag):
                 if tag in feed_tags:
                     feed.unread_count = feed.get_unread_count(session)
                     # Calculate the latest published date from entries for this feed
-                    latest_entry = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).first()
-                    feed.last_new_article_found = latest_entry.published if latest_entry else None
+                    latest_entry = (
+                        session.query(RssEntry)
+                        .filter_by(feed_id=feed.id)
+                        .order_by(desc(RssEntry.published))
+                        .first()
+                    )
+                    feed.last_new_article_found = (
+                        latest_entry.published if latest_entry else None
+                    )
                     # Calculate the latest unread entry date for this feed
-                    latest_unread_entry = session.query(RssEntry).filter_by(feed_id=feed.id, read=False).order_by(desc(RssEntry.published)).first()
-                    feed.last_unread_entry_date = latest_unread_entry.published if latest_unread_entry else None
+                    latest_unread_entry = (
+                        session.query(RssEntry)
+                        .filter_by(feed_id=feed.id, read=False)
+                        .order_by(desc(RssEntry.published))
+                        .first()
+                    )
+                    feed.last_unread_entry_date = (
+                        latest_unread_entry.published if latest_unread_entry else None
+                    )
                     # Get latest entry titles for preview (last 3 entries)
-                    latest_entries = session.query(RssEntry).filter_by(feed_id=feed.id).order_by(desc(RssEntry.published)).limit(3).all()
-                    feed.latest_entry_titles = [entry.title for entry in latest_entries if entry.title]
+                    latest_entries = (
+                        session.query(RssEntry)
+                        .filter_by(feed_id=feed.id)
+                        .order_by(desc(RssEntry.published))
+                        .limit(3)
+                        .all()
+                    )
+                    feed.latest_entry_titles = [
+                        entry.title for entry in latest_entries if entry.title
+                    ]
                     feed.read_frequency = feed.get_read_frequency(session)
                     # Add frequency data for sparkline graph
                     feed.frequency_data = get_feed_frequency_data(feed.id)

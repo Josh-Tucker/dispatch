@@ -23,7 +23,7 @@ def add_feeds_from_opml(opml_file):
         """Recursively extract feed URLs from nested OPML structure."""
         feeds = []
 
-        if hasattr(outline, 'xmlUrl') and outline.xmlUrl:
+        if hasattr(outline, "xmlUrl") and outline.xmlUrl:
             feeds.append(outline.xmlUrl)
 
         if len(outline) > 0:
@@ -33,14 +33,16 @@ def add_feeds_from_opml(opml_file):
 
         return feeds
 
-    if hasattr(opml_file, 'read'):
+    if hasattr(opml_file, "read"):
         content = opml_file.read()
         if isinstance(content, bytes):
-            content = content.decode('utf-8')
+            content = content.decode("utf-8")
 
-        content = content.lstrip('\ufeff')
+        content = content.lstrip("\ufeff")
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.opml', delete=False, encoding='utf-8') as temp_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".opml", delete=False, encoding="utf-8"
+        ) as temp_file:
             temp_file.write(content)
             temp_file_path = temp_file.name
 
@@ -81,7 +83,9 @@ def add_feeds_from_opml(opml_file):
             error_messages.append(error_msg)
 
     total_count = len(feed_urls)
-    print(f"OPML import complete: {success_count}/{total_count} feeds added successfully")
+    print(
+        f"OPML import complete: {success_count}/{total_count} feeds added successfully"
+    )
 
     return success_count, total_count, error_messages
 

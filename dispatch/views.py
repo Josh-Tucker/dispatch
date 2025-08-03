@@ -13,8 +13,3 @@ The actual implementation has been moved to the services package for better orga
 """
 
 from services import *
-
-
-
-
-

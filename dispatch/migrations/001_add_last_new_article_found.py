@@ -14,6 +14,7 @@ MIGRATION_ID = "001"
 MIGRATION_NAME = "add_last_new_article_found"
 MIGRATION_DESCRIPTION = "Add last_new_article_found column to rss_feeds table"
 
+
 def migrate_database():
     """Add last_new_article_found column to existing rss_feeds table if it doesn't exist."""
 
@@ -42,7 +43,9 @@ def migrate_database():
         """)
 
         if not cursor.fetchone():
-            print("📋 rss_feeds table doesn't exist yet - will be created by SQLAlchemy")
+            print(
+                "📋 rss_feeds table doesn't exist yet - will be created by SQLAlchemy"
+            )
             conn.close()
             return True
 
@@ -50,8 +53,10 @@ def migrate_database():
         cursor.execute("PRAGMA table_info(rss_feeds)")
         columns = [column[1] for column in cursor.fetchall()]
 
-        if 'last_new_article_found' in columns:
-            print("✅ Column 'last_new_article_found' already exists - no migration needed")
+        if "last_new_article_found" in columns:
+            print(
+                "✅ Column 'last_new_article_found' already exists - no migration needed"
+            )
             conn.close()
             return True
 
@@ -82,7 +87,9 @@ def migrate_database():
         conn.commit()
 
         # Verify the migration
-        cursor.execute("SELECT COUNT(*) FROM rss_feeds WHERE last_new_article_found IS NOT NULL")
+        cursor.execute(
+            "SELECT COUNT(*) FROM rss_feeds WHERE last_new_article_found IS NOT NULL"
+        )
         updated_count = cursor.fetchone()[0]
 
         cursor.execute("SELECT COUNT(*) FROM rss_feeds")
@@ -90,7 +97,9 @@ def migrate_database():
 
         print("✅ Migration completed successfully!")
         print(f"   📊 Updated {updated_count} feeds with existing articles")
-        print(f"   📋 {total_count - updated_count} feeds without articles will be updated when new articles are found")
+        print(
+            f"   📋 {total_count - updated_count} feeds without articles will be updated when new articles are found"
+        )
 
         conn.close()
         return True
@@ -98,13 +107,14 @@ def migrate_database():
     except Exception as e:
         print(f"❌ Migration failed: {e}")
         print(f"🔍 Error details: {e!s}")
-        if 'conn' in locals():
+        if "conn" in locals():
             try:
                 conn.rollback()
                 conn.close()
             except:
                 pass
         return False
+
 
 if __name__ == "__main__":
     print("🗄️  Running database migration for last_new_article_found feature...")

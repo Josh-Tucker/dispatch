@@ -13,7 +13,10 @@ import sys
 # Migration metadata
 MIGRATION_ID = "005"
 MIGRATION_NAME = "add_conditional_request_fields"
-MIGRATION_DESCRIPTION = "Add etag and last_modified fields to rss_feeds table for conditional requests"
+MIGRATION_DESCRIPTION = (
+    "Add etag and last_modified fields to rss_feeds table for conditional requests"
+)
+
 
 def migrate_database():
     """Add conditional request fields to existing rss_feeds table if they don't exist."""
@@ -50,7 +53,9 @@ def migrate_database():
         """)
 
         if not cursor.fetchone():
-            print("📋 rss_feeds table doesn't exist yet - will be created by SQLAlchemy")
+            print(
+                "📋 rss_feeds table doesn't exist yet - will be created by SQLAlchemy"
+            )
             conn.close()
             return True
 
@@ -59,10 +64,10 @@ def migrate_database():
         columns = [column[1] for column in cursor.fetchall()]
 
         fields_to_add = []
-        if 'etag' not in columns:
-            fields_to_add.append(('etag', 'TEXT DEFAULT NULL'))
-        if 'last_modified' not in columns:
-            fields_to_add.append(('last_modified', 'TEXT DEFAULT NULL'))
+        if "etag" not in columns:
+            fields_to_add.append(("etag", "TEXT DEFAULT NULL"))
+        if "last_modified" not in columns:
+            fields_to_add.append(("last_modified", "TEXT DEFAULT NULL"))
 
         if not fields_to_add:
             print("✅ Conditional request fields already exist - no migration needed")
@@ -96,13 +101,14 @@ def migrate_database():
     except Exception as e:
         print(f"❌ Migration failed: {e}")
         print(f"🔍 Error details: {e!s}")
-        if 'conn' in locals():
+        if "conn" in locals():
             try:
                 conn.rollback()
                 conn.close()
             except:
                 pass
         return False
+
 
 if __name__ == "__main__":
     print("🗄️  Running database migration for conditional request fields...")
