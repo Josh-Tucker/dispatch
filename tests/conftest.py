@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'dispatch'))
 
 from models import Base, RssFeed, RssEntry, Settings
 from app import app as flask_app
-from views import Session
+from models import Session
 
 
 @pytest.fixture(scope='session')
@@ -21,9 +21,9 @@ def temp_db():
     temp_dir = tempfile.mkdtemp()
     db_path = os.path.join(temp_dir, 'test_rss_database.db')
     db_url = f'sqlite:///{db_path}'
-    
+
     yield db_url
-    
+
     # Cleanup
     shutil.rmtree(temp_dir, ignore_errors=True)
 
@@ -52,35 +52,35 @@ def app(test_engine, monkeypatch):
     """Create and configure a test Flask app."""
     # Mock the Session to use our test database
     TestSession = sessionmaker(bind=test_engine)
-    
+
     # Patch Session in all the places it's imported
     monkeypatch.setattr('model.Session', TestSession)
     monkeypatch.setattr('views.Session', TestSession)  # For backward compatibility
     monkeypatch.setattr('app.Session', TestSession)
-    
+
     # Patch Session in all service modules that directly import Session
     # Need to patch the imported Session in each service module
     import services.feed_service as feed_service
-    import services.entry_service as entry_service  
+    import services.entry_service as entry_service
     import services.theme_service as theme_service
-    
+
     monkeypatch.setattr(feed_service, 'Session', TestSession)
     monkeypatch.setattr(entry_service, 'Session', TestSession)
     monkeypatch.setattr(theme_service, 'Session', TestSession)
-    
+
     # Also patch the Session in the services module paths for any tests that import directly
     monkeypatch.setattr('services.feed_service.Session', TestSession)
     monkeypatch.setattr('services.entry_service.Session', TestSession)
     monkeypatch.setattr('services.theme_service.Session', TestSession)
-    
+
     flask_app.config['TESTING'] = True
     flask_app.config['WTF_CSRF_ENABLED'] = False
     flask_app.config['DATABASE_URL'] = test_engine.url
-    
+
     # Create static directories for testing
     static_dir = os.path.join(os.path.dirname(__file__), '..', 'dispatch', 'static', 'img')
     os.makedirs(static_dir, exist_ok=True)
-    
+
     with flask_app.app_context():
         yield flask_app
 
@@ -151,7 +151,7 @@ def multiple_feeds(test_session):
         )
         test_session.add(feed)
         feeds.append(feed)
-    
+
     test_session.commit()
     for feed in feeds:
         test_session.refresh(feed)
@@ -176,7 +176,7 @@ def multiple_entries(test_session, sample_feed):
         )
         test_session.add(entry)
         entries.append(entry)
-    
+
     test_session.commit()
     for entry in entries:
         test_session.refresh(entry)
