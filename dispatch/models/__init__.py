@@ -16,12 +16,12 @@ from .model import (
 )
 
 __all__ = [
+    'DATABASE_URL',
     'Base',
-    'RssFeed',
     'RssEntry',
+    'RssFeed',
+    'Session',
     'Settings',
     'engine',
-    'Session',
-    'init_database',
-    'DATABASE_URL'
+    'init_database'
 ]
