@@ -162,14 +162,12 @@ def apply_migration():
             conn.commit()
             conn.close()
 
-            print(f"✅ Migration {MIGRATION_ID} completed successfully")
-            print(
-                f"   📊 Created {created_count} new indexes, "
-                f"{skipped_count} already existed"
-            )
+            print("Migration " + MIGRATION_ID + " completed successfully")
+            print("Created " + str(created_count) + " new indexes")
+            print("Found " + str(skipped_count) + " existing indexes")
 
             if created_count > 0:
-                print("   🚀 Performance should be significantly improved!")
+                print("Performance should be significantly improved!")
 
             return True
 
@@ -277,8 +275,10 @@ def apply_migration():
 
                 conn.commit()
                 print(
-                    f"✅ Migration {MIGRATION_ID} completed - "
-                    f"created {created_count} indexes"
+                    "Migration "
+                    + MIGRATION_ID
+                    + " completed - created "
+                    + str(created_count)
                 )
 
             return True
@@ -339,8 +339,10 @@ def rollback_migration():
             conn.close()
 
             print(
-                f"✅ Migration {MIGRATION_ID} rollback completed - "
-                f"dropped {dropped_count} indexes"
+                "Migration "
+                + MIGRATION_ID
+                + " rollback done - dropped "
+                + str(dropped_count)
             )
             return True
 
@@ -361,8 +363,10 @@ def rollback_migration():
 
                 conn.commit()
                 print(
-                    f"✅ Migration {MIGRATION_ID} rollback completed - "
-                    f"dropped {dropped_count} indexes"
+                    "Migration "
+                    + MIGRATION_ID
+                    + " rollback - dropped "
+                    + str(dropped_count)
                 )
 
             return True

@@ -13,9 +13,13 @@ This script:
 import mimetypes
 import os
 import sys
+from typing import TYPE_CHECKING
 
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
+
+if TYPE_CHECKING:
+    pass
 
 # Add the parent directory to the path so we can import our modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -58,6 +62,78 @@ def add_favicon_columns():
     session.close()
 
 
+def _get_favicon_file_path(favicon_path: str) -> str | None:
+    """Find the actual file path for a favicon, trying different locations."""
+    clean_path = favicon_path.lstrip("/")
+    possible_paths = [
+        os.path.join("dispatch", "static", clean_path),  # Full path from project root
+        os.path.join("static", clean_path),  # Relative path
+        favicon_path if favicon_path.startswith("static/") else None,  # Direct path
+    ]
+    # Filter out None values
+    possible_paths = [p for p in possible_paths if p is not None]
+
+    for path in possible_paths:
+        if os.path.exists(path):
+            return path
+    return None
+
+
+def _determine_favicon_mime_type(file_path: str) -> str:
+    """Determine MIME type for favicon file."""
+    mime_type, _ = mimetypes.guess_type(file_path)
+    if mime_type:
+        return mime_type
+
+    # Default MIME types for common favicon formats
+    lower_path = file_path.lower()
+    if lower_path.endswith(".ico"):
+        return "image/x-icon"
+    elif lower_path.endswith(".png"):
+        return "image/png"
+    elif lower_path.endswith((".jpg", ".jpeg")):
+        return "image/jpeg"
+    elif lower_path.endswith(".svg"):
+        return "image/svg+xml"
+    else:
+        return "image/x-icon"  # Default fallback
+
+
+def _migrate_single_favicon(feed: RssFeed) -> None:
+    """Migrate a single feed's favicon to database storage."""
+    if not feed.favicon_path:
+        return
+
+    file_path = _get_favicon_file_path(feed.favicon_path)
+    if not file_path:
+        possible_paths = [
+            os.path.join("dispatch", "static", feed.favicon_path.lstrip("/")),
+            os.path.join("static", feed.favicon_path.lstrip("/")),
+        ]
+        print(f"Favicon file not found for feed {feed.title}: tried {possible_paths}")
+        return
+
+    try:
+        # Read the favicon file
+        with open(file_path, "rb") as f:
+            favicon_data = f.read()
+
+        # Determine MIME type
+        mime_type = _determine_favicon_mime_type(file_path)
+
+        # Update the feed with favicon data
+        feed.favicon_data = favicon_data
+        feed.favicon_mime_type = mime_type
+
+        print(
+            f"Migrated favicon for feed: {feed.title} "
+            f"({len(favicon_data)} bytes, {mime_type})"
+        )
+
+    except Exception as e:
+        print(f"Error migrating favicon for feed {feed.title}: {e}")
+
+
 def migrate_favicon_files():
     """Migrate existing favicon files to database."""
     session = Session()
@@ -66,67 +142,7 @@ def migrate_favicon_files():
         feeds = session.query(RssFeed).filter(RssFeed.favicon_path.isnot(None)).all()
 
         for feed in feeds:
-            if feed.favicon_path:
-                # Try different path formats
-                # Remove leading slash if present
-                clean_path = feed.favicon_path.lstrip("/")
-                possible_paths = [
-                    os.path.join(
-                        "dispatch", "static", clean_path
-                    ),  # Full path from project root
-                    os.path.join("static", clean_path),  # Relative path
-                    feed.favicon_path
-                    if feed.favicon_path.startswith("static/")
-                    else None,  # Direct path if it starts with static/
-                ]
-                # Filter out None values
-                possible_paths = [p for p in possible_paths if p is not None]
-
-                file_path = None
-                for path in possible_paths:
-                    if os.path.exists(path):
-                        file_path = path
-                        break
-
-                if file_path:
-                    try:
-                        # Read the favicon file
-                        with open(file_path, "rb") as f:
-                            favicon_data = f.read()
-
-                        # Determine MIME type
-                        mime_type, _ = mimetypes.guess_type(file_path)
-                        if not mime_type:
-                            # Default MIME types for common favicon formats
-                            if file_path.lower().endswith(".ico"):
-                                mime_type = "image/x-icon"
-                            elif file_path.lower().endswith(".png"):
-                                mime_type = "image/png"
-                            elif file_path.lower().endswith(
-                                ".jpg"
-                            ) or file_path.lower().endswith(".jpeg"):
-                                mime_type = "image/jpeg"
-                            elif file_path.lower().endswith(".svg"):
-                                mime_type = "image/svg+xml"
-                            else:
-                                mime_type = "image/x-icon"  # Default fallback
-
-                        # Update the feed with favicon data
-                        feed.favicon_data = favicon_data
-                        feed.favicon_mime_type = mime_type
-
-                        print(
-                            f"Migrated favicon for feed: {feed.title} "
-                            f"({len(favicon_data)} bytes, {mime_type})"
-                        )
-
-                    except Exception as e:
-                        print(f"Error migrating favicon for feed {feed.title}: {e}")
-                else:
-                    print(
-                        f"Favicon file not found for feed {feed.title}: "
-                        f"tried {possible_paths}"
-                    )
+            _migrate_single_favicon(feed)
 
         session.commit()
         print(f"Successfully migrated {len(feeds)} feeds")

@@ -4,11 +4,12 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 import opml
+from werkzeug.datastructures import FileStorage
 
 from .feed_service import add_feed
 
 
-def add_feeds_from_opml(opml_file):
+def add_feeds_from_opml(opml_file: FileStorage | str) -> tuple[int, int, list[str]]:
     """
     Import feeds from an OPML file.
 
@@ -90,7 +91,7 @@ def add_feeds_from_opml(opml_file):
     return success_count, total_count, error_messages
 
 
-def export_feeds_to_opml():
+def export_feeds_to_opml() -> str:
     """
     Export all feeds to OPML format.
 

@@ -38,7 +38,7 @@ def article_long_date_format(date: str) -> str:
         return str(date)
 
 
-def entry_timedetla(published_date):
+def entry_timedetla(published_date: datetime | str) -> str:
     """
     Calculate and format time difference from published date to now.
     Used as a template filter to show relative time (e.g., "5 min ago", "2 hours ago").
@@ -87,7 +87,7 @@ def entry_timedetla(published_date):
         return "Unknown"
 
 
-def sanitize_html_content(content):
+def sanitize_html_content(content: str | None) -> str:
     """
     Sanitize HTML content for safe display.
 
@@ -103,7 +103,7 @@ def sanitize_html_content(content):
     return content
 
 
-def extract_plain_text(html_content):
+def extract_plain_text(html_content: str | None) -> str:
     """
     Extract plain text from HTML content.
 
@@ -123,7 +123,7 @@ def extract_plain_text(html_content):
         return html_content
 
 
-def truncate_content(content, max_length=200):
+def truncate_content(content: str | None, max_length: int = 200) -> str:
     """
     Truncate content to a specified maximum length.
 
@@ -149,7 +149,7 @@ def truncate_content(content, max_length=200):
     return truncated + "..."
 
 
-def format_content_preview(content, max_length=300):
+def format_content_preview(content: str | None, max_length: int = 300) -> str:
     """
     Format content for preview display (extract text and truncate).
 
@@ -171,7 +171,7 @@ def format_content_preview(content, max_length=300):
     return truncate_content(plain_text, max_length)
 
 
-def short_time_ago(published_date):
+def short_time_ago(published_date: datetime | str) -> str | None:
     """
     Calculate and format time difference in short format for feed cards.
     Returns formats like: 1hr, 1day, 4days, 40days, 365days, 1year
@@ -219,7 +219,9 @@ def short_time_ago(published_date):
         return None
 
 
-def get_feed_timestamp_class(unread_count, last_unread_date):
+def get_feed_timestamp_class(
+    unread_count: int, last_unread_date: datetime | str | None
+) -> str:
     """
     Determine CSS class for feed timestamp based on unread status and age.
     Returns appropriate class for color coding: plain or gradient-based color.
@@ -241,7 +243,7 @@ def get_feed_timestamp_class(unread_count, last_unread_date):
         if isinstance(last_unread_date, str):
             last_unread_date = parser.parse(last_unread_date)
 
-        now = datetime.now()
+
 
         return "feed-time-gradient"
 
@@ -250,7 +252,9 @@ def get_feed_timestamp_class(unread_count, last_unread_date):
         return "feed-time-plain"
 
 
-def get_feed_timestamp_color(unread_count, last_unread_date):
+def get_feed_timestamp_color(
+    unread_count: int, last_unread_date: datetime | str | None
+) -> str | None:
     """
     Calculate gradient color based on logarithmic age scale.
 

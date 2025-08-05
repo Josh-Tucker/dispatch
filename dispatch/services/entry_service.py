@@ -3,7 +3,7 @@ import random
 import time
 from datetime import datetime
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin
 
 import feedparser
@@ -19,6 +19,60 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session as SessionType
 
 
+def _build_cache_headers(feed: RssFeed) -> dict[str, str]:
+    """Build HTTP caching headers for feed request."""
+    headers = {}
+    if feed.etag:
+        headers["If-None-Match"] = feed.etag
+    if feed.last_modified:
+        headers["If-Modified-Since"] = feed.last_modified
+    return headers
+
+
+def _check_head_response_cache(
+    head_response: requests.Response, feed: RssFeed
+) -> tuple[bool, str] | None:
+    """Check HEAD response for cache status. Returns tuple or None to continue."""
+    if head_response.status_code == 304:
+        print(f"Feed {feed.title} not modified (304) - skipping")
+        return True, "Feed not modified"
+
+    if (
+        head_response.status_code == 200
+        and "content-length" in head_response.headers
+        and feed.content_length is not None
+    ):
+        try:
+            head_content_length = int(head_response.headers["content-length"])
+            if head_content_length == feed.content_length:
+                print(
+                    f"Feed {feed.title} content length unchanged "
+                    f"({head_content_length} bytes) - skipping"
+                )
+                return True, "Feed content length unchanged"
+        except (ValueError, TypeError):
+            pass
+
+    return None
+
+
+def _update_feed_cache_info(feed: RssFeed, response: requests.Response) -> None:
+    """Update feed cache information from response headers."""
+    if "etag" in response.headers:
+        feed.etag = response.headers["etag"]
+    if "last-modified" in response.headers:
+        feed.last_modified = response.headers["last-modified"]
+
+    current_content_length = len(response.content)
+    if "content-length" in response.headers:
+        try:
+            feed.content_length = int(response.headers["content-length"])
+        except (ValueError, TypeError):
+            feed.content_length = current_content_length
+    else:
+        feed.content_length = current_content_length
+
+
 def _fetch_feed_with_caching(feed: RssFeed) -> tuple[bool, str, dict | None]:
     """
     Fetch RSS feed content with HTTP caching support.
@@ -30,38 +84,18 @@ def _fetch_feed_with_caching(feed: RssFeed) -> tuple[bool, str, dict | None]:
         tuple: (success, message, parsed_feed_data)
     """
     try:
-        headers = {}
-        if feed.etag:
-            headers["If-None-Match"] = feed.etag
-        if feed.last_modified:
-            headers["If-Modified-Since"] = feed.last_modified
+        headers = _build_cache_headers(feed)
 
+        # Try HEAD request first for caching
         try:
             head_response = requests.head(feed.url or "", headers=headers, timeout=15)
-
-            if head_response.status_code == 304:
-                print(f"Feed {feed.title} not modified (304) - skipping")
-                return True, "Feed not modified", None
-
-            if (
-                head_response.status_code == 200
-                and "content-length" in head_response.headers
-                and feed.content_length is not None
-            ):
-                try:
-                    head_content_length = int(head_response.headers["content-length"])
-                    if head_content_length == feed.content_length:
-                        print(
-                            f"Feed {feed.title} content length unchanged "
-                            f"({head_content_length} bytes) - skipping"
-                        )
-                        return True, "Feed content length unchanged", None
-                except (ValueError, TypeError):
-                    pass
-
+            cache_result = _check_head_response_cache(head_response, feed)
+            if cache_result:
+                return cache_result[0], cache_result[1], None
         except requests.exceptions.RequestException:
             pass
 
+        # Fetch full content
         try:
             response = requests.get(feed.url or "", headers=headers, timeout=15)
 
@@ -69,33 +103,21 @@ def _fetch_feed_with_caching(feed: RssFeed) -> tuple[bool, str, dict | None]:
                 print(f"Feed {feed.title} not modified (304) - skipping")
                 return True, "Feed not modified", None
 
-            if hasattr(response, "status_code") and response.status_code >= 400:  # type: ignore[attr-defined]
+            if response.status_code >= 400:
                 print(f"HTTP error {response.status_code} for feed {feed.title}")
                 return False, f"HTTP error {response.status_code}", None
 
-            if "etag" in response.headers:
-                feed.etag = response.headers["etag"]
-            if "last-modified" in response.headers:
-                feed.last_modified = response.headers["last-modified"]
-
-            current_content_length = len(response.content)
-            if "content-length" in response.headers:
-                try:
-                    feed.content_length = int(response.headers["content-length"])
-                except (ValueError, TypeError):
-                    feed.content_length = current_content_length
-            else:
-                feed.content_length = current_content_length
-
+            _update_feed_cache_info(feed, response)
             parsed_feed = feedparser.parse(response.content)
 
         except requests.exceptions.RequestException as req_error:
             print(f"Request error for feed {feed.title}: {req_error}")
             parsed_feed = feedparser.parse(feed.url)
 
-        if hasattr(parsed_feed, "status") and parsed_feed.status >= 400:
-            print(f"HTTP error {parsed_feed.status} for feed {feed.title}")
-            return False, f"HTTP error {parsed_feed.status}", None
+        if hasattr(parsed_feed, "status") and getattr(parsed_feed, "status", 0) >= 400:
+            status = getattr(parsed_feed, "status", 0)
+            print(f"HTTP error {status} for feed {feed.title}")
+            return False, f"HTTP error {status}", None
 
         return True, "Feed fetched successfully", parsed_feed
 
@@ -216,7 +238,8 @@ def add_rss_entries_for_feed(feed_id: int, max_retries: int = 3) -> tuple[bool, 
                 return success, message
 
             entries_added = 0
-            for entry in parsed_feed.entries:
+            entries = getattr(parsed_feed, "entries", [])
+            for entry in entries:
                 if _process_feed_entry(entry, feed_id, session):
                     entries_added += 1
 
@@ -260,7 +283,7 @@ def add_rss_entries(feed_id: int, max_retries: int = 3) -> tuple[bool, str]:
     return add_rss_entries_for_feed(feed_id, max_retries)
 
 
-def add_rss_entries_for_all_feeds(max_workers: int = 3) -> list[dict]:
+def add_rss_entries_for_all_feeds(max_workers: int = 3) -> list[dict[str, Any]]:
     """
     Process all RSS feeds in parallel, adding new entries to the database.
 
@@ -352,10 +375,14 @@ def get_feed_entry_by_id(entry_id: int, max_retries: int = 3) -> RssEntry | None
     return None
 
 
-def update_entry(entry_id: int, article: dict) -> None:
+def update_entry(entry_id: int, article: dict[str, Any]) -> None:
     session = Session()
     try:
         entry = session.query(RssEntry).filter_by(id=entry_id).first()
+
+        if entry is None:
+            print(f"Entry with ID {entry_id} not found")
+            return
 
         entry.content = article["content"]
         if not entry.published and "published" in article:
@@ -371,14 +398,15 @@ def update_entry(entry_id: int, article: dict) -> None:
         print(f"Error updating entry: {e}")
 
 
-def get_remote_content(url: str, entry_id: int) -> dict | None:
+def get_remote_content(url: str, entry_id: int) -> dict[str, Any] | None:
     try:
         response = requests.get(url)
         response.raise_for_status()
         article = simple_json_from_html_string(response.text, use_readability=True)
         get_feed_entry_by_id(entry_id)
 
-        soup = BeautifulSoup(article.get("content", ""), "html.parser")
+        content = article.get("content", "") or ""
+        soup = BeautifulSoup(content, "html.parser")
 
         for a in soup.find_all("a", href=True):
             if not a["href"].startswith("http"):

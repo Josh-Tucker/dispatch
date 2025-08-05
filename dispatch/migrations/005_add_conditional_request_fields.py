@@ -36,9 +36,10 @@ def migrate_database():
 
     if not os.path.exists(db_path):
         print("🔍 Database doesn't exist yet - will be created by SQLAlchemy")
-        print("ℹ️  Migration will be handled during first application startup")
+        print("i  Migration will be handled during first application startup")
         return True
 
+    conn = None
     try:
         print(f"🔍 Checking database at: {os.path.abspath(db_path)}")
 
@@ -101,11 +102,11 @@ def migrate_database():
     except Exception as e:
         print(f"❌ Migration failed: {e}")
         print(f"🔍 Error details: {e!s}")
-        if "conn" in locals():
+        if conn is not None:
             try:
                 conn.rollback()
                 conn.close()
-            except:
+            except Exception:
                 pass
         return False
 

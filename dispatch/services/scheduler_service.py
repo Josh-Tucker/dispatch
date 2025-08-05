@@ -6,6 +6,7 @@ Handles periodic background tasks for feed updates.
 
 import logging
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.jobstores.memory import MemoryJobStore
@@ -15,13 +16,16 @@ from models import RssFeed, Session
 
 from services.entry_service import add_rss_entries_for_feed
 
+if TYPE_CHECKING:
+    pass
+
 
 class FeedScheduler:
     """Manages automatic RSS feed refreshing using APScheduler."""
 
     def __init__(self):
         """Initialize the scheduler with appropriate configuration."""
-        self.scheduler = None
+        self.scheduler: BackgroundScheduler | None = None
         self.is_running = False
         self.is_lazy_mode = False
         self.jobs_scheduled = False
@@ -65,6 +69,9 @@ class FeedScheduler:
             self.logger.warning("Scheduler is already running")
             return
 
+        if self.scheduler is None:
+            raise RuntimeError("Scheduler not properly configured")
+
         try:
             self.scheduler.start()
             self.is_running = True
@@ -90,6 +97,10 @@ class FeedScheduler:
             self.logger.warning("Scheduler is not running")
             return
 
+        if self.scheduler is None:
+            self.logger.warning("Scheduler not properly configured")
+            return
+
         try:
             self.scheduler.shutdown(wait=True)
             self.is_running = False
@@ -101,6 +112,10 @@ class FeedScheduler:
 
     def _schedule_basic_refresh(self):
         """Schedule only the basic automatic refresh job (for lazy mode)."""
+        if self.scheduler is None:
+            self.logger.error("Scheduler not properly configured")
+            return
+
         try:
             self.scheduler.remove_job("auto_refresh_feeds")
         except:
@@ -138,21 +153,23 @@ class FeedScheduler:
             for i, feed in enumerate(feeds):
                 job_id = f"refresh_feed_{feed.id}"
                 try:
-                    self.scheduler.remove_job(job_id)
+                    if self.scheduler is not None:
+                        self.scheduler.remove_job(job_id)
                 except:
                     pass
 
                 start_time = datetime.now() + timedelta(minutes=i * interval_minutes)
 
-                self.scheduler.add_job(
-                    func=self._refresh_single_feed_job,
-                    args=[feed.id],
-                    trigger=IntervalTrigger(hours=24),
-                    id=job_id,
-                    name=f"Auto Refresh: {feed.title}",
-                    next_run_time=start_time,
-                    replace_existing=True,
-                )
+                if self.scheduler is not None:
+                    self.scheduler.add_job(
+                        func=self._refresh_single_feed_job,
+                        args=[feed.id],
+                        trigger=IntervalTrigger(hours=24),
+                        id=job_id,
+                        name=f"Auto Refresh: {feed.title}",
+                        next_run_time=start_time,
+                        replace_existing=True,
+                    )
 
             self.logger.info(f"Scheduled {len(feeds)} individual feed refresh jobs")
 
@@ -163,7 +180,7 @@ class FeedScheduler:
 
     def schedule_jobs_on_demand(self):
         """Schedule individual feed jobs on demand (for lazy mode)."""
-        if not self.is_running:
+        if not self.is_running or self.scheduler is None:
             self.logger.warning("Cannot schedule jobs - scheduler not running")
             return False
 
@@ -252,7 +269,7 @@ class FeedScheduler:
 
     def get_job_status(self):
         """Get status of all scheduled jobs."""
-        if not self.is_running:
+        if not self.is_running or self.scheduler is None:
             return {"status": "stopped", "jobs": [], "lazy_mode": self.is_lazy_mode}
 
         jobs = []
@@ -278,7 +295,7 @@ class FeedScheduler:
 
     def reschedule_feeds(self):
         """Reschedule all feed refresh jobs (useful when feeds are added/removed)."""
-        if not self.is_running:
+        if not self.is_running or self.scheduler is None:
             self.logger.warning("Cannot reschedule jobs - scheduler not running")
             return
 

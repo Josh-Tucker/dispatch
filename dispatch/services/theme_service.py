@@ -1,7 +1,8 @@
+
 from models import Session, Settings
 
 
-def get_theme(theme_name):
+def get_theme(theme_name: str) -> str:
     """
     Get theme name, resolving 'default' to the stored preference.
 
@@ -31,7 +32,7 @@ def get_theme(theme_name):
     return theme_name
 
 
-def set_default_theme(theme_name):
+def set_default_theme(theme_name: str) -> bool:
     """
     Set the default theme in the database.
 
@@ -59,7 +60,7 @@ def set_default_theme(theme_name):
         session.close()
 
 
-def get_default_theme():
+def get_default_theme() -> str:
     """
     Get the default theme name from the database.
 
@@ -76,7 +77,7 @@ def get_default_theme():
         session.close()
 
 
-def get_available_themes():
+def get_available_themes() -> list[str]:
     """
     Get list of all available themes.
 
@@ -86,7 +87,7 @@ def get_available_themes():
     return ["light", "dark", "clean", "new"]
 
 
-def get_all_themes():
+def get_all_themes() -> list[dict[str, str]]:
     """
     Get all theme configurations with display names.
 

@@ -1,19 +1,34 @@
-import pytest
 import os
-import tempfile
 import shutil
+import sys
+import tempfile
+import uuid
+from collections.abc import Generator
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Any
+
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from typing import Generator
 
 # Add the dispatch directory to the path so we can import modules
-import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "dispatch"))
 
-from models.model import Base, RssFeed, RssEntry, Settings
-from app import app as flask_app
+if TYPE_CHECKING:
+    from flask import Flask
+    from flask.testing import FlaskClient, FlaskCliRunner
+    from pytest import MonkeyPatch
+    from sqlalchemy import Engine
+    from sqlalchemy.orm import Session
+
+from app import app as flask_app  # type: ignore[import-untyped]
+from models.model import (  # type: ignore[import-untyped]
+    Base,
+    RssEntry,
+    RssFeed,
+    Settings,
+)
 
 
 @pytest.fixture(scope="session")
@@ -29,10 +44,11 @@ def temp_db() -> Generator[str, None, None]:
     shutil.rmtree(temp_dir, ignore_errors=True)
 
 
-@pytest.fixture(scope="function")
-def test_engine(temp_db: str):
+@pytest.fixture(scope="session")
+def test_engine(temp_db: str) -> Generator["Engine", None, None]:
     """Create a test database engine."""
     engine = create_engine(temp_db)
+    # Create all tables
     Base.metadata.create_all(engine)
     yield engine
     Base.metadata.drop_all(engine)
@@ -40,7 +56,7 @@ def test_engine(temp_db: str):
 
 
 @pytest.fixture(scope="function")
-def test_session(test_engine):
+def test_session(test_engine: "Engine") -> Generator["Session", None, None]:
     """Create a test database session."""
     TestSession = sessionmaker(bind=test_engine)
     session = TestSession()
@@ -49,27 +65,27 @@ def test_session(test_engine):
 
 
 @pytest.fixture(scope="function")
-def app(test_engine, monkeypatch):
+def app(
+    test_engine: "Engine", monkeypatch: "MonkeyPatch"
+) -> Generator["Flask", None, None]:
     """Create and configure a test Flask app."""
     # Mock the Session to use our test database
     TestSession = sessionmaker(bind=test_engine)
 
     # Patch Session in all the places it's imported
-    import models.model as model_module
+    import models.model as model_module  # type: ignore[import-untyped]
 
     monkeypatch.setattr(model_module, "Session", TestSession)
 
     # Patch Session in all service modules that directly import Session
-    import services.feed_service as feed_service
-    import services.entry_service as entry_service
-    import services.theme_service as theme_service
-    import services.content_service as content_service
-    import services.opml_service as opml_service
+    import services.entry_service as entry_service  # type: ignore[import-untyped]
+    import services.feed_service as feed_service  # type: ignore[import-untyped]
+    import services.opml_service as opml_service  # type: ignore[import-untyped]
+    import services.theme_service as theme_service  # type: ignore[import-untyped]
 
     monkeypatch.setattr(feed_service, "Session", TestSession)
     monkeypatch.setattr(entry_service, "Session", TestSession)
     monkeypatch.setattr(theme_service, "Session", TestSession)
-    # content_service doesn't use Session directly, so no need to patch
     monkeypatch.setattr(opml_service, "Session", TestSession)
 
     flask_app.config["TESTING"] = True
@@ -87,34 +103,35 @@ def app(test_engine, monkeypatch):
 
 
 @pytest.fixture(scope="function")
-def client(app):
+def client(app: "Flask") -> "FlaskClient":
     """Create a test client."""
     return app.test_client()
 
 
 @pytest.fixture(scope="function")
-def runner(app):
+def runner(app: "Flask") -> "FlaskCliRunner":
     """Create a test CLI runner."""
     return app.test_cli_runner()
 
 
 # Domain-specific fixtures for RSS entities
 @pytest.fixture
-def sample_feed_data() -> dict:
+def sample_feed_data() -> dict[str, Any]:
     """Sample RSS feed data for testing."""
+    unique_id = str(uuid.uuid4())[:8]
     return {
-        "url": "https://example.com/feed.xml",
-        "title": "Test Feed",
-        "link": "https://example.com",
+        "url": f"https://example-{unique_id}.com/feed.xml",
+        "title": f"Test Feed {unique_id}",
+        "link": f"https://example-{unique_id}.com",
         "description": "A test RSS feed for unit testing",
         "published": datetime.now(),
-        "favicon_path": "/img/test_favicon.png",
+        "favicon_path": f"/img/test_favicon_{unique_id}.png",
         "last_updated": datetime.now(),
     }
 
 
 @pytest.fixture
-def sample_entry_data() -> dict:
+def sample_entry_data() -> dict[str, Any]:
     """Sample RSS entry data for testing."""
     return {
         "title": "Test Entry",
@@ -129,7 +146,7 @@ def sample_entry_data() -> dict:
 
 
 @pytest.fixture
-def sample_feed(test_session, sample_feed_data: dict) -> RssFeed:
+def sample_feed(test_session: "Session", sample_feed_data: dict[str, Any]) -> "RssFeed":  # type: ignore[name-defined]
     """Create a sample RSS feed for testing."""
     feed = RssFeed(**sample_feed_data)
     test_session.add(feed)
@@ -140,8 +157,8 @@ def sample_feed(test_session, sample_feed_data: dict) -> RssFeed:
 
 @pytest.fixture
 def sample_entry(
-    test_session, sample_feed: RssFeed, sample_entry_data: dict
-) -> RssEntry:
+    test_session: "Session", sample_feed: RssFeed, sample_entry_data: dict[str, Any]
+) -> "RssEntry":  # type: ignore[name-defined]
     """Create a sample RSS entry for testing."""
     entry_data = sample_entry_data.copy()
     entry_data["feed_id"] = sample_feed.id
@@ -153,7 +170,7 @@ def sample_entry(
 
 
 @pytest.fixture
-def multiple_feeds(test_session) -> list[RssFeed]:
+def multiple_feeds(test_session: "Session") -> list["RssFeed"]:  # type: ignore[name-defined]
     """Create multiple sample feeds for testing."""
     feeds = []
     for i in range(3):
@@ -177,7 +194,9 @@ def multiple_feeds(test_session) -> list[RssFeed]:
 
 
 @pytest.fixture
-def multiple_entries(test_session, sample_feed: RssFeed) -> list[RssEntry]:
+def multiple_entries(
+    test_session: "Session", sample_feed: "RssFeed"
+) -> list["RssEntry"]:  # type: ignore[name-defined]
     """Create multiple sample entries for testing."""
     entries = []
     for i in range(5):
@@ -202,7 +221,7 @@ def multiple_entries(test_session, sample_feed: RssFeed) -> list[RssEntry]:
 
 
 @pytest.fixture
-def sample_setting(test_session) -> Settings:
+def sample_setting(test_session: "Session") -> "Settings":  # type: ignore[name-defined]
     """Create a sample setting for testing."""
     setting = Settings(key="test_setting", value="test_value")
     test_session.add(setting)
@@ -212,7 +231,7 @@ def sample_setting(test_session) -> Settings:
 
 
 @pytest.fixture
-def mock_feedparser_response() -> dict:
+def mock_feedparser_response() -> dict[str, Any]:
     """Mock feedparser response for testing RSS parsing."""
     return {
         "feed": {

@@ -1,5 +1,5 @@
 import mimetypes
-from datetime import datetime
+from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import feedparser
@@ -9,7 +9,7 @@ from models import RssEntry, RssFeed, Session, Settings
 from sqlalchemy import desc, func
 
 
-def get_favicon_url(feed_url):
+def get_favicon_url(feed_url: str) -> str | None:
     if "http" not in feed_url:
         feed_url = "http://" + feed_url
 
@@ -25,15 +25,28 @@ def get_favicon_url(feed_url):
             parsed_url = urlparse(feed_url)
             return f"{parsed_url.scheme}://{parsed_url.netloc}/favicon.ico"
 
-        favicon_url = icon_link.get("href")
-        if favicon_url and not favicon_url.startswith("http"):
-            parsed_url = urlparse(feed_url)
-            if favicon_url.startswith("//"):
-                favicon_url = f"{parsed_url.scheme}:{favicon_url}"
-            elif favicon_url.startswith("/"):
-                favicon_url = f"{parsed_url.scheme}://{parsed_url.netloc}{favicon_url}"
-            else:
-                favicon_url = urljoin(feed_url, favicon_url)
+        favicon_url = None
+        if icon_link and hasattr(icon_link, "get"):
+            favicon_url = getattr(icon_link, "href", None)
+        if favicon_url:
+            # Handle case where favicon_url might be a list
+            if isinstance(favicon_url, list):
+                favicon_url = favicon_url[0] if favicon_url else None
+
+            if (
+                favicon_url
+                and isinstance(favicon_url, str)
+                and not favicon_url.startswith("http")
+            ):
+                parsed_url = urlparse(feed_url)
+                if favicon_url.startswith("//"):
+                    favicon_url = f"{parsed_url.scheme}:{favicon_url}"
+                elif favicon_url.startswith("/"):
+                    favicon_url = (
+                        f"{parsed_url.scheme}://{parsed_url.netloc}{favicon_url}"
+                    )
+                else:
+                    favicon_url = urljoin(feed_url, favicon_url)
 
         return favicon_url
     except Exception as e:
@@ -41,10 +54,10 @@ def get_favicon_url(feed_url):
         return None
 
 
-def download_and_store_favicon(feed_url):
+def download_and_store_favicon(feed_url: str) -> tuple[bytes | None, str | None]:
     """Download favicon and return binary data and MIME type."""
     favicon_url = get_favicon_url(feed_url)
-    if not favicon_url:
+    if not favicon_url or not isinstance(favicon_url, str):
         return None, None
 
     try:
@@ -54,17 +67,20 @@ def download_and_store_favicon(feed_url):
             if content_type:
                 mime_type = content_type.split(";")[0].strip()
             else:
-                mime_type, _ = mimetypes.guess_type(favicon_url)
-                if not mime_type:
-                    if favicon_url.lower().endswith(".ico"):
+                mime_type, _ = (
+                    mimetypes.guess_type(favicon_url)
+                    if isinstance(favicon_url, str)
+                    else (None, None)
+                )
+                if not mime_type and isinstance(favicon_url, str):
+                    favicon_url_lower = favicon_url.lower()
+                    if favicon_url_lower.endswith(".ico"):
                         mime_type = "image/x-icon"
-                    elif favicon_url.lower().endswith(".png"):
+                    elif favicon_url_lower.endswith(".png"):
                         mime_type = "image/png"
-                    elif favicon_url.lower().endswith(
-                        ".jpg"
-                    ) or favicon_url.lower().endswith(".jpeg"):
+                    elif favicon_url_lower.endswith((".jpg", ".jpeg")):
                         mime_type = "image/jpeg"
-                    elif favicon_url.lower().endswith(".svg"):
+                    elif favicon_url_lower.endswith(".svg"):
                         mime_type = "image/svg+xml"
                     else:
                         mime_type = "image/x-icon"
@@ -76,7 +92,7 @@ def download_and_store_favicon(feed_url):
     return None, None
 
 
-def add_feed(feed_url):
+def add_feed(feed_url: str) -> None:
     print(feed_url)
     session = Session()
     try:
@@ -88,23 +104,45 @@ def add_feed(feed_url):
 
         feed = feedparser.parse(feed_url)
 
+        # Safely access feedparser attributes
+        feed_info = getattr(feed, "feed", {})
+        feed_link = (
+            getattr(feed_info, "link", None)
+            if hasattr(feed_info, "link")
+            else feed_info.get("link")
+        )
+        feed_title = (
+            getattr(feed_info, "title", None)
+            if hasattr(feed_info, "title")
+            else feed_info.get("title")
+        )
+        feed_description = (
+            getattr(feed_info, "description", None)
+            if hasattr(feed_info, "description")
+            else feed_info.get("description")
+        )
+
         favicon_data, favicon_mime_type = download_and_store_favicon(
-            feed.feed.link or feed_url
+            feed_link or feed_url
         )
 
         rss_feed = RssFeed(
             url=feed_url,
-            title=feed.feed.title,
-            link=feed.feed.link,
-            description=feed.feed.description,
+            title=feed_title,
+            link=feed_link,
+            description=feed_description,
             favicon_data=favicon_data,
             favicon_mime_type=favicon_mime_type,
         )
 
         session.add(rss_feed)
         session.commit()
+
+        # Capture title before closing session to avoid detached instance error
+        feed_title = rss_feed.title
+
         session.close()
-        print(f"Feed added: {rss_feed.title}")
+        print(f"Feed added: {feed_title}")
         if favicon_data:
             print(
                 f"Favicon stored in database ({len(favicon_data)} bytes, "
@@ -116,7 +154,7 @@ def add_feed(feed_url):
         print(f"Error adding feed: {e}")
 
 
-def refresh_feed_favicon(feed_id):
+def refresh_feed_favicon(feed_id: int) -> bool:
     """Refresh the favicon for a specific feed."""
     session = Session()
     try:
@@ -150,7 +188,7 @@ def refresh_feed_favicon(feed_id):
         session.close()
 
 
-def refresh_all_feed_favicons():
+def refresh_all_feed_favicons() -> dict[str, int]:
     """Refresh favicons for all feeds."""
     session = Session()
     try:
@@ -184,7 +222,7 @@ def refresh_all_feed_favicons():
         session.close()
 
 
-def remove_feed(feed_id):
+def remove_feed(feed_id: int) -> None:
     session = Session()
 
     try:
@@ -205,7 +243,109 @@ def remove_feed(feed_id):
         session.close()
 
 
-def get_all_feeds(sort_by="title"):
+def _get_feed_counts(
+    session: Session, feed_ids: list[int]
+) -> tuple[dict[int, int], dict[int, int], dict[int, int]]:
+    """Get unread, total, and read counts for feeds."""
+    unread_counts_query = (
+        session.query(RssEntry.feed_id, func.count(RssEntry.id).label("unread_count"))
+        .filter(RssEntry.feed_id.in_(feed_ids))
+        .filter(~RssEntry.read)
+        .group_by(RssEntry.feed_id)
+        .all()
+    )
+    unread_counts = {row[0]: row[1] for row in unread_counts_query}
+
+    total_counts_query = (
+        session.query(RssEntry.feed_id, func.count(RssEntry.id).label("total_count"))
+        .filter(RssEntry.feed_id.in_(feed_ids))
+        .group_by(RssEntry.feed_id)
+        .all()
+    )
+    total_counts = {row[0]: row[1] for row in total_counts_query}
+
+    read_counts_query = (
+        session.query(RssEntry.feed_id, func.count(RssEntry.id).label("read_count"))
+        .filter(RssEntry.feed_id.in_(feed_ids))
+        .filter(RssEntry.read.is_(True))
+        .group_by(RssEntry.feed_id)
+        .all()
+    )
+    read_counts = {row[0]: row[1] for row in read_counts_query}
+
+    return unread_counts, total_counts, read_counts
+
+
+def _get_latest_entry_dates(session: Session, feed_ids: list[int]) -> dict[int, Any]:
+    """Get latest entry dates for feeds."""
+    latest_entries_subquery = (
+        session.query(
+            RssEntry.feed_id, func.max(RssEntry.published).label("latest_published")
+        )
+        .filter(RssEntry.feed_id.in_(feed_ids))
+        .group_by(RssEntry.feed_id)
+        .subquery()
+    )
+
+    latest_entries_query = (
+        session.query(RssEntry.feed_id, RssEntry.published)
+        .join(
+            latest_entries_subquery,
+            (RssEntry.feed_id == latest_entries_subquery.c.feed_id)
+            & (RssEntry.published == latest_entries_subquery.c.latest_published),
+        )
+        .all()
+    )
+    return {row[0]: row[1] for row in latest_entries_query}
+
+
+def _get_latest_unread_dates(session: Session, feed_ids: list[int]) -> dict[int, Any]:
+    """Get latest unread entry dates for feeds."""
+    latest_unread_subquery = (
+        session.query(
+            RssEntry.feed_id,
+            func.max(RssEntry.published).label("latest_unread_published"),
+        )
+        .filter(RssEntry.feed_id.in_(feed_ids))
+        .filter(~RssEntry.read)
+        .group_by(RssEntry.feed_id)
+        .subquery()
+    )
+
+    latest_unread_query = (
+        session.query(RssEntry.feed_id, RssEntry.published)
+        .join(
+            latest_unread_subquery,
+            (RssEntry.feed_id == latest_unread_subquery.c.feed_id)
+            & (RssEntry.published == latest_unread_subquery.c.latest_unread_published),
+        )
+        .filter(~RssEntry.read)
+        .all()
+    )
+    return {int(row[0]): row[1] for row in latest_unread_query}
+
+
+def _get_latest_titles(session: Session, feed_ids: list[int]) -> dict[int, list[str]]:
+    """Get latest entry titles for feeds."""
+    latest_titles_query = (
+        session.query(RssEntry.feed_id, RssEntry.title, RssEntry.published)
+        .filter(RssEntry.feed_id.in_(feed_ids))
+        .filter(RssEntry.title.isnot(None))
+        .order_by(RssEntry.feed_id, desc(RssEntry.published))
+        .all()
+    )
+
+    latest_titles = {}
+    for feed_id, title, _published in latest_titles_query:
+        if feed_id not in latest_titles:
+            latest_titles[feed_id] = []
+        if len(latest_titles[feed_id]) < 3:
+            latest_titles[feed_id].append(title)
+
+    return latest_titles
+
+
+def get_all_feeds(sort_by: str = "title") -> list[RssFeed]:
     session = Session()
 
     try:
@@ -222,177 +362,61 @@ def get_all_feeds(sort_by="title"):
 
         feed_ids = [feed.id for feed in feeds]
 
-        unread_counts_query = (
-            session.query(
-                RssEntry.feed_id, func.count(RssEntry.id).label("unread_count")
-            )
-            .filter(RssEntry.feed_id.in_(feed_ids))
-            .filter(RssEntry.read == False)
-            .group_by(RssEntry.feed_id)
-            .all()
-        )
-        unread_counts = dict(unread_counts_query)
-
-        total_counts_query = (
-            session.query(
-                RssEntry.feed_id, func.count(RssEntry.id).label("total_count")
-            )
-            .filter(RssEntry.feed_id.in_(feed_ids))
-            .group_by(RssEntry.feed_id)
-            .all()
-        )
-        total_counts = dict(total_counts_query)
-
-        read_counts_query = (
-            session.query(RssEntry.feed_id, func.count(RssEntry.id).label("read_count"))
-            .filter(RssEntry.feed_id.in_(feed_ids))
-            .filter(RssEntry.read is True)
-            .group_by(RssEntry.feed_id)
-            .all()
-        )
-        read_counts = dict(read_counts_query)
-
-        latest_entries_subquery = (
-            session.query(
-                RssEntry.feed_id, func.max(RssEntry.published).label("latest_published")
-            )
-            .filter(RssEntry.feed_id.in_(feed_ids))
-            .group_by(RssEntry.feed_id)
-            .subquery()
-        )
-
-        latest_entries_query = (
-            session.query(RssEntry.feed_id, RssEntry.published)
-            .join(
-                latest_entries_subquery,
-                (RssEntry.feed_id == latest_entries_subquery.c.feed_id)
-                & (RssEntry.published == latest_entries_subquery.c.latest_published),
-            )
-            .all()
-        )
-        latest_entry_dates = dict(latest_entries_query)
-
-        latest_unread_subquery = (
-            session.query(
-                RssEntry.feed_id,
-                func.max(RssEntry.published).label("latest_unread_published"),
-            )
-            .filter(RssEntry.feed_id.in_(feed_ids))
-            .filter(RssEntry.read == False)
-            .group_by(RssEntry.feed_id)
-            .subquery()
-        )
-
-        latest_unread_query = (
-            session.query(RssEntry.feed_id, RssEntry.published)
-            .join(
-                latest_unread_subquery,
-                (RssEntry.feed_id == latest_unread_subquery.c.feed_id)
-                & (
-                    RssEntry.published
-                    == latest_unread_subquery.c.latest_unread_published
-                ),
-            )
-            .filter(RssEntry.read == False)
-            .all()
-        )
-        latest_unread_dates = dict(latest_unread_query)
-
-        latest_titles_query = (
-            session.query(RssEntry.feed_id, RssEntry.title, RssEntry.published)
-            .filter(RssEntry.feed_id.in_(feed_ids))
-            .filter(RssEntry.title.isnot(None))
-            .order_by(RssEntry.feed_id, desc(RssEntry.published))
-            .all()
-        )
-
-        latest_titles = {}
-        for feed_id, title, published in latest_titles_query:
-            if feed_id not in latest_titles:
-                latest_titles[feed_id] = []
-            if len(latest_titles[feed_id]) < 3:
-                latest_titles[feed_id].append(title)
+        # Get all feed statistics using helper functions
+        unread_counts, total_counts, read_counts = _get_feed_counts(session, feed_ids)
+        latest_entry_dates = _get_latest_entry_dates(session, feed_ids)
+        latest_unread_dates = _get_latest_unread_dates(session, feed_ids)
+        latest_titles = _get_latest_titles(session, feed_ids)
 
         total_unread_count = sum(unread_counts.values())
 
         for feed in feeds:
             feed.unread_count = unread_counts.get(feed.id, 0)
-            feed.last_new_article_found = latest_entry_dates.get(feed.id, None)
+            feed.last_new_article_found = latest_entry_dates.get(int(feed.id), None)
             feed.last_unread_entry_date = latest_unread_dates.get(feed.id, None)
             feed.latest_entry_titles = latest_titles.get(feed.id, [])
 
-            total = total_counts.get(feed.id, 0)
-            read = read_counts.get(feed.id, 0)
-            feed.read_frequency = (read / total) if total > 0 else 0.0
-            if feed.id != "all":
-                feed.frequency_data = get_feed_frequency_data(feed.id)
+            total_count = total_counts.get(feed.id, 0)
+            read_count = read_counts.get(feed.id, 0)
+            if total_count > 0:
+                feed.read_frequency = (read_count / total_count) * 100
             else:
-                feed.frequency_data = []
-
-        if sort_by == "title":
-            feeds.sort(key=lambda f: (not f.pinned, f.title or ""))
-        elif sort_by == "last_updated":
-            feeds.sort(
-                key=lambda f: (not f.pinned, f.last_new_article_found or datetime.min),
-                reverse=True,
-            )
-        elif sort_by == "frequency_read":
-            feeds.sort(key=lambda f: (not f.pinned, f.read_frequency), reverse=True)
-        else:
-            feeds.sort(key=lambda f: (not f.pinned, f.title or ""))
+                feed.read_frequency = 0.0
 
         all_feed = RssFeed(id="all", title="All Feeds")
         all_feed.unread_count = total_unread_count
-        all_feed.last_unread_entry_date = (
-            max(latest_unread_dates.values()) if latest_unread_dates else None
-        )
-
-        global_latest_query = (
-            session.query(RssEntry.title)
-            .filter(RssEntry.title.isnot(None))
-            .order_by(desc(RssEntry.published))
-            .limit(3)
-            .all()
-        )
-        all_feed.latest_entry_titles = [title[0] for title in global_latest_query]
+        all_feed.last_unread_entry_date = None
+        all_feed.latest_entry_titles = []
         all_feed.read_frequency = 0.0
 
         session.close()
-        return [all_feed] + feeds
+        return [all_feed, *feeds]
 
     except Exception as e:
         session.close()
-        print(f"Error in optimized get_all_feeds: {e}")
+        print(f"Error fetching feeds: {e}")
+
         try:
-            session = Session()
-            feeds = (
-                session.query(RssFeed)
-                .order_by(desc(RssFeed.pinned), RssFeed.title)
-                .all()
-            )
+            feeds = session.query(RssFeed).order_by(desc(RssFeed.pinned)).all()
             for feed in feeds:
                 feed.unread_count = 0
-                feed.last_new_article_found = None
                 feed.last_unread_entry_date = None
                 feed.latest_entry_titles = []
                 feed.read_frequency = 0.0
-                feed.frequency_data = []
-            session.close()
 
-            # Create basic "All Feeds" entry
             all_feed = RssFeed(id="all", title="All Feeds")
             all_feed.unread_count = 0
             all_feed.last_unread_entry_date = None
             all_feed.latest_entry_titles = []
             all_feed.read_frequency = 0.0
 
-            return [all_feed] + feeds
+            return [all_feed, *feeds]
         except Exception as e2:
             print(f"Fallback also failed: {e2}")
             return []
 
 
-def get_feed_by_id(feed_id):
+def get_feed_by_id(feed_id: int) -> RssFeed | None:
     session = Session()
     feed = session.query(RssFeed).filter_by(id=feed_id).first()
     if feed:
@@ -433,7 +457,7 @@ def get_feed_by_id(feed_id):
     return feed
 
 
-def toggle_feed_pin(feed_id):
+def toggle_feed_pin(feed_id: int) -> bool | None:
     """Toggle the pinned status of a feed."""
     session = Session()
     try:
@@ -454,7 +478,7 @@ def toggle_feed_pin(feed_id):
         session.close()
 
 
-def get_feed_sort_preference():
+def get_feed_sort_preference() -> str:
     """Get the current feed sorting preference from settings."""
     session = Session()
     try:
@@ -464,7 +488,7 @@ def get_feed_sort_preference():
         session.close()
 
 
-def set_feed_sort_preference(sort_by):
+def set_feed_sort_preference(sort_by: str) -> bool:
     """Set the feed sorting preference in settings."""
     session = Session()
     try:
@@ -480,7 +504,7 @@ def set_feed_sort_preference(sort_by):
         session.close()
 
 
-def get_feed_frequency_data(feed_id, weeks=12):
+def get_feed_frequency_data(feed_id: int, weeks: int = 12) -> list[int]:
     """Get frequency data for sparkline graph showing posts per week over time."""
     session = Session()
     try:
@@ -508,13 +532,13 @@ def get_feed_frequency_data(feed_id, weeks=12):
         )
 
         # Convert to dict for easy lookup
-        week_counts = dict(weekly_counts)
+        week_counts = {row[0]: row[1] for row in weekly_counts}
 
         # Generate frequency data for each week
         frequency_data = []
         current_week_start = start_date
 
-        for week_num in range(weeks):
+        for _week_num in range(weeks):
             week_key = current_week_start.strftime("%Y-%W")
             count = week_counts.get(week_key, 0)
             frequency_data.append(count)
@@ -529,21 +553,21 @@ def get_feed_frequency_data(feed_id, weeks=12):
         session.close()
 
 
-def parse_tags_string(tags_string):
+def parse_tags_string(tags_string: str | None) -> list[str]:
     """Parse a comma-separated string of tags into a list."""
     if not tags_string:
         return []
     return [tag.strip() for tag in tags_string.split(",") if tag.strip()]
 
 
-def format_tags_list(tags_list):
+def format_tags_list(tags_list: list[str] | None) -> str | None:
     """Format a list of tags into a comma-separated string."""
     if not tags_list:
         return None
     return ", ".join(tag.strip() for tag in tags_list if tag.strip())
 
 
-def get_all_tags():
+def get_all_tags() -> list[str]:
     """Get all unique tags from all feeds."""
     session = Session()
     try:
@@ -558,7 +582,7 @@ def get_all_tags():
         session.close()
 
 
-def get_feeds_by_tag(tag):
+def get_feeds_by_tag(tag: str) -> list[RssFeed]:
     """Get all feeds that have a specific tag."""
     session = Session()
     try:
@@ -610,7 +634,7 @@ def get_feeds_by_tag(tag):
         session.close()
 
 
-def update_feed_tags(feed_id, tags_string):
+def update_feed_tags(feed_id: int, tags_string: str) -> bool:
     """Update the tags for a specific feed."""
     session = Session()
     try:
