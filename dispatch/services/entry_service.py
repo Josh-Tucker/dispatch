@@ -155,10 +155,21 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                     elif hasattr(entry, 'id'):
                         guid = entry.id
 
+                    title = ""
+                    if hasattr(entry, 'title'):
+                        title = entry.title
+                    elif description:
+                        # Use first part of description as title if no title exists
+                        title = description[:100] + "..." if len(description) > 100 else description
+                    else:
+                        title = "Untitled Entry"
+
+                    link = getattr(entry, 'link', '')
+
                     rss_entry = RssEntry(
                         feed_id=feed_id,
-                        title=entry.title,
-                        link=entry.link,
+                        title=title,
+                        link=link,
                         description=description,
                         content=content,
                         published=published_date,
