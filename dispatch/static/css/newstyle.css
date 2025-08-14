@@ -37,10 +37,10 @@
     --font-size-xl: 1.25rem;
     --font-size-xxl: 1.5rem;
     --font-size-xxxl: 1.9rem;
-    --font-size-content: clamp(18px, 1.5vw, 20px);
+    --font-size-content: 1.065rem;
 
     /* Font sizes for mobile (increased 20-40%) */
-    --font-size-mobile-base: 22px;
+    --font-size-mobile-base: 28px;
     --font-size-mobile-small: 1.1rem;
     --font-size-mobile-medium: 1.3rem;
     --font-size-mobile-large: 1.6rem;
@@ -71,6 +71,9 @@
     /* Pin button variables */
     --pin-button-size: 20px;
     --pin-icon-size: 16px;
+
+    /* Breakpoint variables */
+    --mobile-breakpoint: 900;
 }
 
 /* Default theme (light) - defined in :root */
@@ -215,7 +218,7 @@ html {
     font-size: var(--font-size-base);
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     body,
     html {
         font-size: var(--font-size-mobile-base);
@@ -240,7 +243,7 @@ html {
     margin-bottom: 2rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .settings_item {
         font-size: var(--font-size-mobile-heading);
         margin-bottom: 1.5rem;
@@ -275,7 +278,7 @@ input[type="submit"] {
     touch-action: manipulation;
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     input[type="file"]::file-selector-button,
     button[type="submit"],
     input[type="submit"] {
@@ -311,6 +314,14 @@ input[type="submit"]:hover {
     touch-action: manipulation;
 }
 
+@media (max-width: var(--mobile-breakpoint)) {
+    .delete_button {
+        font-size: var(--font-size-mobile-button);
+        height: var(--button-height-mobile);
+        padding: var(--button-padding-mobile);
+    }
+}
+
 /* Forms
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 input[type="email"],
@@ -335,7 +346,7 @@ select {
         box-shadow var(--transition-fast);
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     input[type="email"],
     input[type="number"],
     input[type="search"],
@@ -414,7 +425,7 @@ th {
     opacity: 0.7;
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     th {
         font-size: var(--font-size-mobile-xl);
     }
@@ -428,7 +439,7 @@ td {
     min-width: 10rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     th,
     td {
         padding: 16px 18px;
@@ -472,7 +483,7 @@ td:last-child {
 }
 
 /* Mobile styles */
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .content {
         padding-top: 1rem;
         width: 100%;
@@ -492,7 +503,7 @@ td:last-child {
     width: 95%;
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .main {
         width: 100%;
     }
@@ -516,7 +527,7 @@ td:last-child {
     overflow: hidden;
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .card {
         margin: var(--card-margin-mobile);
     }
@@ -538,7 +549,7 @@ td:last-child {
     align-items: center;
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .card-content {
         padding: var(--card-padding-mobile);
         grid-template-columns: 1fr auto;
@@ -666,7 +677,7 @@ td:last-child {
     flex-shrink: 0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .card-unread {
         font-size: var(--font-size-mobile-xxl);
         padding: 0.6rem;
@@ -723,7 +734,7 @@ td:last-child {
     background-color: rgba(0, 0, 0, 0.01);
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .card-header {
         padding: var(--card-padding-mobile);
     }
@@ -750,7 +761,7 @@ td:last-child {
     margin-bottom: 0.2rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .card-title {
         font-size: var(--font-size-mobile-xl);
     }
@@ -765,7 +776,7 @@ td:last-child {
     gap: var(--spacing-xs);
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .card-latest {
         font-size: var(--font-size-mobile-large);
         padding: 0.6rem;
@@ -798,7 +809,7 @@ td:last-child {
     gap: var(--spacing-sm);
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .entry_feed_title {
         font-size: var(--font-size-mobile-button);
     }
@@ -842,7 +853,7 @@ td:last-child {
     margin-bottom: 10px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .entry_title {
         font-size: var(--font-size-mobile-xxxl);
         line-height: 1.2;
@@ -880,7 +891,7 @@ td:last-child {
     margin-bottom: 3rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .entry_content {
         font-size: var(--font-size-mobile-content);
         padding: 18px 1.2rem;
@@ -989,7 +1000,7 @@ header {
     gap: var(--spacing-sm);
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     header {
         margin-top: var(--spacing-md);
         margin-bottom: var(--spacing-xl);
@@ -1037,7 +1048,7 @@ header a.menu-button:hover {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     header a.refresh-link,
     header a.menu-button {
         padding: 0.8rem 1.4rem;
@@ -1050,7 +1061,7 @@ header a.menu-button:hover {
     }
 
     /* Fix for very small mobile screens */
-    @media (max-width: 360px) {
+    @media (max-width: var(--mobile-breakpoint)) {
         header {
             flex-direction: column;
             align-items: stretch;
@@ -1576,7 +1587,7 @@ header a.menu-button:hover {
 }
 
 /* Mobile Responsive Styles */
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .page-header {
         flex-direction: column;
         align-items: flex-start;
@@ -1784,7 +1795,7 @@ header a.menu-button:hover {
 }
 
 /* Mobile responsive for tags */
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .tags-navigation {
         padding: 0;
         margin: 0 0 var(--spacing-md) 0;
@@ -1861,7 +1872,7 @@ header a.menu-button:hover {
 }
 
 /* Mobile responsive for feed tags and graphs */
-@media (max-width: 768px) {
+@media (max-width: var(--mobile-breakpoint)) {
     .feed-tags {
         font-size: var(--font-size-mobile-small);
     }
