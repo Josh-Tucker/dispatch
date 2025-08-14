@@ -73,7 +73,7 @@
     --pin-icon-size: 16px;
 
     /* Breakpoint variables */
-    --mobile-breakpoint: 900;
+    --mobile-breakpoint: 754px;
 }
 
 /* Default theme (light) - defined in :root */
