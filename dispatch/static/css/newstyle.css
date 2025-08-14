@@ -657,13 +657,14 @@ td:last-child {
     border-radius: var(--border-radius-sm);
     object-fit: cover;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    border: var(--border-width) solid var(--border-color-light);
     flex-shrink: 0;
 }
 
 .card-feed-info svg {
     width: 16px;
     height: 16px;
+    margin-right: 0;
+    fill: var(--text-colour);
     flex-shrink: 0;
 }
 
@@ -760,7 +761,14 @@ td:last-child {
     border-radius: var(--border-radius-sm);
     object-fit: cover;
     box-shadow: var(--shadow-sm);
-    border: var(--border-width) solid var(--border-color-light);
+    flex-shrink: 0;
+}
+
+.card-header svg {
+    width: 26px;
+    height: 26px;
+    margin-right: 14px;
+    fill: var(--text-colour);
     flex-shrink: 0;
 }
 
@@ -820,6 +828,21 @@ td:last-child {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
+}
+
+.entry_feed_info svg {
+    width: 16px;
+    height: 16px;
+    fill: var(--text-colour);
+    flex-shrink: 0;
+}
+
+.feed_card_left svg {
+    width: 16px;
+    height: 16px;
+    fill: var(--text-colour);
+    flex-shrink: 0;
+    margin-right: 8px;
 }
 
 @media (max-width: var(--mobile-breakpoint)) {
