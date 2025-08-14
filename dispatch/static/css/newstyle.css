@@ -103,11 +103,11 @@
 /* Dark theme */
 html.theme-dark,
 body.theme-dark {
-    --primary-colour: #f582ae !important;
-    --text-colour: #fef6e4 !important;
-    --highlight-colour: #8bd3dd !important;
-    --background-colour: #172c66 !important;
-    --border-colour: #fef6e4 !important;
+    --primary-colour: #5e7dd4 !important;
+    --text-colour: #ffffff !important;
+    --highlight-colour: #5e7dd4 !important;
+    --background-colour: #191919 !important;
+    --border-colour: #ffffff !important;
     --border-color-light: color-mix(
         in srgb,
         var(--border-colour) 5%,
@@ -337,6 +337,7 @@ select {
     padding: 6px 12px;
     /* The 6px vertically centers text on FF, ignored by Webkit */
     background-color: var(--background-colour);
+    color: var(--text-colour);
     border: var(--border-width) solid var(--border-color-dark);
     border-radius: var(--border-radius-md);
     box-shadow: var(--shadow-sm);
@@ -383,6 +384,18 @@ textarea {
     min-height: 65px;
     padding-top: 6px;
     padding-bottom: 6px;
+}
+
+/* Placeholder text styling */
+input::placeholder,
+textarea::placeholder {
+    color: color-mix(in srgb, var(--text-colour) 60%, transparent);
+}
+
+/* Select option styling */
+select option {
+    background-color: var(--background-colour);
+    color: var(--text-colour);
 }
 
 input[type="email"]:focus,
