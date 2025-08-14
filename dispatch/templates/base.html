@@ -163,7 +163,7 @@
   <div class="main">
     <header>
       <div class="header-left">
-        <a href="/" class="menu-button">home</a>
+
         {% if feed is defined and feed.id != 'all' %}
         <a href="#" id="refreshFeedLink-{{ feed.id }}" data-feed-id="{{ feed.id }}" data-feed-title="{{ feed.title|default('this feed', true) }}" class="refresh-link"
            hx-post="/refresh/{{ feed.id }}"
