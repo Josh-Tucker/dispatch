@@ -1,10 +1,5 @@
 <script>
-    // Theme management
-    document.addEventListener("DOMContentLoaded", function () {
-        const currentTheme = "{{ theme }}";
-        applyTheme(currentTheme);
-    });
-
+    // Theme management - classes are already applied server-side
     function applyTheme(themeName) {
         // Remove all existing theme classes
         const themeClasses = [

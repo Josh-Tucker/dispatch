@@ -40,13 +40,13 @@
     --font-size-content: 1.4rem;
 
     /* Font sizes for mobile (increased 20-40%) */
-    --font-size-mobile-base: 28px;
+    --font-size-mobile-base: 18px;
     --font-size-mobile-small: 1.1rem;
     --font-size-mobile-medium: 1.3rem;
     --font-size-mobile-large: 1.6rem;
     --font-size-mobile-xl: 1.8rem;
     --font-size-mobile-xxl: 2.1rem;
-    --font-size-mobile-xxxl: 2rem;
+    --font-size-mobile-xxxl: 1.8rem;
     --font-size-mobile-button: 32px;
     --font-size-mobile-heading: 36px;
     --font-size-mobile-content: 22px;
@@ -138,7 +138,7 @@ html {
 
 @media (max-width: 768px) {
     .main {
-        width: 100%;
+        width: 95%;
     }
 }
 
@@ -319,7 +319,7 @@ html {
     }
 
     .card-time {
-        font-size: var(--font-size-mobile-medium);
+        font-size: var(--font-size-mobile-small);
         padding: 0.6rem;
         padding-right: 1.4rem;
     }
@@ -509,7 +509,7 @@ header a.menu-button {
     margin: 0 0.3rem 0 0; /* Add a bit of margin between buttons */
     cursor: pointer;
     font-weight: 500;
-    font-size: var(--font-size-medium);
+    font-size: var(--font-size-xl);
     min-width: 4.5rem; /* Ensure minimum touch target size */
     touch-action: manipulation;
 }
@@ -528,12 +528,13 @@ header a.menu-button:hover {
     header a.refresh-link,
     header a.menu-button {
         padding: 0.8rem 1.4rem;
-        font-size: var(--font-size-mobile-xl);
+        font-size: var(--font-size-mobile-xxl);
         margin-bottom: 0.5rem;
         min-height: 48px; /* Better touch target */
         display: flex;
         align-items: center;
         justify-content: center;
+        width: 4rem;
     }
 
     /* Fix for very small mobile screens */
@@ -1039,6 +1040,7 @@ header a.menu-button:hover {
     .tags-navigation {
         padding: 0;
         margin: 0 0 var(--spacing-md) 0;
+        font-size: var(--font-size-mobile-xl);
     }
 
     .tags-tabs {
@@ -1046,8 +1048,7 @@ header a.menu-button:hover {
     }
 
     .tag-tab {
-        padding: var(--spacing-xs) var(--spacing-sm);
-        font-size: var(--font-size-mobile-small);
+        font-size: var(--font-size-mobile-xl);
     }
 }
 
