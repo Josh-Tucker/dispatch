@@ -1,4 +1,10 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='/css/settings.css') }}">
+{% endblock %}
+
+{% block content %}
 
 <div class="settings_container">
     <div class="settings_item">

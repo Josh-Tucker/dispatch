@@ -109,33 +109,6 @@ html {
   gap: 10px;
 } */
 
-.settings-button {
-    text-align: right;
-}
-
-.settings_item {
-    font-size: var(--font-size-mobile-heading);
-    margin-bottom: 2rem;
-}
-
-@media (max-width: 768px) {
-    .settings_item {
-        font-size: var(--font-size-mobile-heading);
-        margin-bottom: 1.5rem;
-    }
-    .settings_item h1 {
-        font-size: 42px;
-    }
-}
-
-.settings_item::after {
-    content: "";
-    display: block;
-    margin-top: 1em;
-    margin-bottom: var(--spacing-lg);
-    border-bottom: var(--border-width) solid var(--border-color-light);
-}
-
 input[type="file"]::file-selector-button,
 button[type="submit"],
 input[type="submit"] {
@@ -378,13 +351,6 @@ td:last-child {
         padding-left: 0;
         padding-right: 0;
     }
-}
-
-.settings_container {
-    width: clamp(320px, 95%, 900px);
-    max-width: 100%;
-    margin: 0 auto;
-    padding: 0 1rem;
 }
 
 .main {
@@ -982,8 +948,7 @@ header a.menu-button:hover {
         }
 
         header a.menu-button,
-        header a.refresh-link,
-        header a.settings-button {
+        header a.refresh-link {
             width: 100%;
             margin-right: 0;
             margin-bottom: 0.5rem;
