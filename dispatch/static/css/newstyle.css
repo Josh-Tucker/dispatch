@@ -109,227 +109,6 @@ html {
   gap: 10px;
 } */
 
-input[type="file"]::file-selector-button,
-button[type="submit"],
-input[type="submit"] {
-    border-radius: var(--border-radius-md);
-    padding: var(--button-padding);
-    height: var(--button-height);
-    cursor: pointer;
-    color: var(--text-colour);
-    background-color: var(--background-colour);
-    border: var(--border-width) solid var(--border-colour);
-    box-shadow: var(--shadow-sm);
-    margin-right: var(--spacing-lg);
-    transition: all var(--transition-fast);
-    font-size: var(--font-size-base);
-    touch-action: manipulation;
-}
-
-@media (max-width: 768px) {
-    input[type="file"]::file-selector-button,
-    button[type="submit"],
-    input[type="submit"] {
-        font-size: var(--font-size-mobile-button);
-        height: var(--button-height-mobile);
-        padding: var(--button-padding-mobile);
-    }
-}
-
-input[type="file"]::file-selector-button:hover,
-button[type="submit"]:hover,
-input[type="submit"]:hover {
-    background-color: var(--highlight-colour);
-    color: white;
-    border-color: var(--highlight-colour);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-}
-
-.delete_button {
-    border-radius: var(--border-radius-md);
-    padding: var(--button-padding);
-    height: var(--button-height);
-    cursor: pointer;
-    color: white;
-    background-color: var(--error-color);
-    border: var(--border-width) solid var(--error-color);
-    box-shadow: var(--shadow-sm);
-    margin-right: var(--spacing-lg);
-    transition: all var(--transition-fast);
-    font-size: var(--font-size-small);
-    white-space: nowrap;
-    touch-action: manipulation;
-}
-
-@media (max-width: 768px) {
-    .delete_button {
-        font-size: var(--font-size-mobile-button);
-        height: var(--button-height-mobile);
-        padding: var(--button-padding-mobile);
-    }
-}
-
-/* Forms
-–––––––––––––––––––––––––––––––––––––––––––––––––– */
-input[type="email"],
-input[type="number"],
-input[type="search"],
-input[type="text"],
-input[type="tel"],
-input[type="url"],
-input[type="password"],
-textarea,
-select {
-    height: 38px;
-    padding: 6px 12px;
-    /* The 6px vertically centers text on FF, ignored by Webkit */
-    background-color: var(--background-colour);
-    color: var(--text-colour);
-    border: var(--border-width) solid var(--border-color-dark);
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-sm);
-    box-sizing: border-box;
-    transition:
-        border-color var(--transition-fast),
-        box-shadow var(--transition-fast);
-}
-
-@media (max-width: 768px) {
-    input[type="email"],
-    input[type="number"],
-    input[type="search"],
-    input[type="text"],
-    input[type="tel"],
-    input[type="url"],
-    input[type="password"],
-    textarea,
-    select {
-        height: 44px;
-        padding: var(--spacing-sm) 14px;
-        font-size: var(
-            --font-size-mobile-button
-        ); /* Prevents iOS zoom on focus */
-    }
-}
-
-/* Removes awkward default styles on some inputs for iOS */
-input[type="email"],
-input[type="number"],
-input[type="search"],
-input[type="text"],
-input[type="tel"],
-input[type="url"],
-input[type="password"],
-textarea,
-select {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-}
-
-textarea {
-    min-height: 65px;
-    padding-top: 6px;
-    padding-bottom: 6px;
-}
-
-/* Placeholder text styling */
-input::placeholder,
-textarea::placeholder {
-    color: color-mix(in srgb, var(--text-colour) 60%, transparent);
-}
-
-/* Select option styling */
-select option {
-    background-color: var(--background-colour);
-    color: var(--text-colour);
-}
-
-input[type="email"]:focus,
-input[type="number"]:focus,
-input[type="search"]:focus,
-input[type="text"]:focus,
-input[type="tel"]:focus,
-input[type="url"]:focus,
-input[type="password"]:focus,
-textarea:focus,
-select:focus {
-    border-color: var(--primary-colour);
-    outline: 0;
-    box-shadow: 0 0 0 3px rgba(255, 82, 174, 0.1);
-}
-
-legend {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-}
-
-fieldset {
-    padding: 0;
-    border-width: 0;
-}
-/*
-label>.label-body {
-    display: inline-block;
-    margin-left: .5rem;
-    font-weight: normal;
-} */
-
-th {
-    font-size: var(--font-size-medium);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-colour);
-    opacity: 0.7;
-}
-
-@media (max-width: 768px) {
-    th {
-        font-size: var(--font-size-mobile-xl);
-    }
-}
-
-th,
-td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: var(--border-width) solid var(--border-color-light);
-    min-width: 10rem;
-}
-
-@media (max-width: 768px) {
-    th,
-    td {
-        padding: 16px 18px;
-        font-size: var(--font-size-mobile-large);
-    }
-}
-
-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    border: var(--border-width) solid var(--border-color-medium);
-    border-radius: var(--border-radius-lg);
-    overflow: hidden;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-    background-color: var(--background-colour);
-    margin-bottom: 2rem;
-}
-
-th:first-child,
-td:first-child {
-    padding-left: 1rem;
-}
-
-th:last-child,
-td:last-child {
-    padding-right: 1rem;
-}
-
 .content {
     min-height: 95vh;
     padding-top: 0rem;
@@ -676,14 +455,6 @@ td:last-child {
     height: 16px;
     fill: var(--text-colour);
     flex-shrink: 0;
-}
-
-.feed_card_left svg {
-    width: 16px;
-    height: 16px;
-    fill: var(--text-colour);
-    flex-shrink: 0;
-    margin-right: 8px;
 }
 
 @media (max-width: 768px) {
@@ -1601,28 +1372,6 @@ header a.menu-button:hover {
     flex-shrink: 0;
 }
 
-.tags-navigation-controls .refresh-link,
-.tags-navigation-controls .menu-button,
-.tags-navigation-controls .sort-button {
-    padding: calc(var(--spacing-md) * 1.3) calc(var(--spacing-lg) * 1.3);
-    min-width: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.tags-navigation-controls svg {
-    color: var(--text-colour);
-    width: calc(18px * 1.3);
-    height: calc(18px * 1.3);
-}
-
-.tags-navigation-controls .refresh-link:hover svg,
-.tags-navigation-controls .menu-button:hover svg,
-.tags-navigation-controls .sort-button:hover svg {
-    color: var(--highlight-colour);
-}
-
 .tag-tab {
     padding: calc(var(--spacing-sm) * 1.3) calc(var(--spacing-md) * 1.3);
     background: var(--background-colour);
@@ -1648,53 +1397,6 @@ header a.menu-button:hover {
 }
 
 /* Tags Management Styles */
-.feed_card_tags {
-    margin-top: var(--spacing-sm);
-    padding-top: var(--spacing-sm);
-    border-top: 1px solid var(--border-color-light);
-}
-
-.feed_card_tags form {
-    display: flex;
-    gap: var(--spacing-sm);
-    align-items: stretch;
-}
-
-.tags-input {
-    flex: 1;
-    padding: var(--spacing-sm);
-    border: 1px solid var(--border-color-medium);
-    border-radius: var(--border-radius-sm);
-    font-size: var(--font-size-small);
-    background: var(--background-colour);
-    color: var(--text-colour);
-}
-
-.tags-input:focus {
-    outline: none;
-    border-color: var(--highlight-colour);
-    box-shadow: 0 0 0 2px rgba(187, 0, 51, 0.1);
-}
-
-.tags-update-btn {
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--highlight-colour);
-    color: white;
-    border: none;
-    border-radius: var(--border-radius-sm);
-    font-size: var(--font-size-small);
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    white-space: nowrap;
-}
-
-.tags-update-btn:hover {
-    background: #990022;
-}
-
-.tags-update-btn:active {
-    background: #770011;
-}
 
 /* Mobile responsive for tags */
 @media (max-width: 768px) {
@@ -1710,20 +1412,6 @@ header a.menu-button:hover {
     .tag-tab {
         padding: var(--spacing-xs) var(--spacing-sm);
         font-size: var(--font-size-mobile-small);
-    }
-
-    .feed_card_tags form {
-        flex-direction: column;
-        gap: var(--spacing-xs);
-    }
-
-    .tags-input {
-        font-size: var(--font-size-mobile-small);
-    }
-
-    .tags-update-btn {
-        font-size: var(--font-size-mobile-small);
-        padding: var(--spacing-sm);
     }
 }
 
