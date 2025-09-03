@@ -1,4 +1,9 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %} {% block page_css %}
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='/css/entry.css') }}"
+/>
+{% endblock %} {% block content %}
 
 <div class="entry_feed_title">
     <div class="entry_feed_header">
