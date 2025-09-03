@@ -491,43 +491,28 @@ header {
 }
 
 /* Style both header links like cards */
-header a.refresh-link,
-header a.menu-button {
+a.refresh-link,
+a.menu-button,
+.sort-button svg {
     /* Core card visual styles */
     display: inline-block; /* Needed for padding, transform etc. */
     background-color: var(--background-colour);
     color: var(--text-colour);
-    border: var(--border-width) solid var(--border-colour);
-    border-radius: var(--border-radius-md);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     text-decoration: none;
-    transition: all 0.2s ease;
 
     /* Button-specific adjustments */
     padding: 0.4rem; /* Give them some padding */
     text-align: center;
     margin: 0 0.3rem 0 0; /* Add a bit of margin between buttons */
     cursor: pointer;
-    font-weight: 500;
     font-size: var(--font-size-xl);
-    min-width: 4.5rem; /* Ensure minimum touch target size */
+    min-width: 2.5rem; /* Ensure minimum touch target size */
     touch-action: manipulation;
 }
 
-/* Apply hover effect similar to fetch-article-button */
-header a.refresh-link:hover,
-header a.menu-button:hover {
-    background-color: var(--highlight-colour);
-    color: white;
-    border-color: var(--highlight-colour);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
 @media (max-width: 768px) {
-    header a.refresh-link,
-    header a.menu-button {
-        padding: 0.8rem 1.4rem;
+    a.refresh-link,
+    a.menu-button {
         font-size: var(--font-size-mobile-xxl);
         margin-bottom: 0.5rem;
         min-height: 48px; /* Better touch target */
@@ -550,8 +535,8 @@ header a.menu-button:hover {
             width: 100%;
         }
 
-        header a.menu-button,
-        header a.refresh-link {
+        a.menu-button,
+        a.refresh-link {
             width: 100%;
             margin-right: 0;
             margin-bottom: 0.5rem;
