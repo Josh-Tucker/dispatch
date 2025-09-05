@@ -41,7 +41,7 @@
 
     /* Font sizes for mobile (increased 20-40%) */
     --font-size-mobile-base: 14px;
-    --font-size-mobile-small: 1.1rem;
+    --font-size-mobile-small: 1rem;
     --font-size-mobile-medium: 1.3rem;
     --font-size-mobile-large: 1.6rem;
     --font-size-mobile-xl: 1.4rem;
@@ -125,8 +125,8 @@ html {
 /* Mobile styles */
 @media (max-width: 768px) {
     .content {
-        padding-top: 1rem;
         width: 100%;
+        margin-top: 0px;
         padding-left: 0;
         padding-right: 0;
     }
@@ -186,9 +186,6 @@ html {
     .card-content {
         padding: var(--card-padding-mobile);
         grid-template-columns: 1fr auto;
-        grid-template-areas:
-            "latest time"
-            "preview preview";
         grid-template-rows: auto auto;
         gap: var(--spacing-xs);
     }
@@ -419,8 +416,8 @@ html {
 
 @media (max-width: 768px) {
     .card-latest {
-        font-size: var(--font-size-mobile-large);
-        padding: 0.6rem;
+        font-size: var(--font-size-mobile-small);
+        padding: 0.2rem;
     }
 }
 
@@ -501,12 +498,13 @@ a.menu-button,
     text-decoration: none;
 
     /* Button-specific adjustments */
-    padding: 0.4rem; /* Give them some padding */
+    /*padding: 0.4rem;  Give them some padding */
     text-align: center;
     margin: 0 0.3rem 0 0; /* Add a bit of margin between buttons */
     cursor: pointer;
     font-size: var(--font-size-xl);
-    min-width: 2.5rem; /* Ensure minimum touch target size */
+    min-width: 1.5rem; /* Ensure minimum touch target size */
+    max-width: 4.5rem;
     touch-action: manipulation;
 }
 
@@ -527,6 +525,7 @@ a.menu-button,
         header {
             flex-direction: column;
             align-items: stretch;
+            margin-top: -1rem;
         }
 
         header div {
@@ -911,7 +910,7 @@ a.menu-button,
 
     .page-actions {
         width: 100%;
-        justify-content: flex-start;
+        justify-content: right;
     }
 
     .feed-favicon {
@@ -922,7 +921,7 @@ a.menu-button,
 
     .action-button {
         font-size: var(--font-size-mobile-button);
-        padding: var(--spacing-md) var(--spacing-xl);
+        padding: var(--spacing-sm) var(--spacing-sm);
     }
 
     .refresh_button {
@@ -947,12 +946,12 @@ a.menu-button,
 
     .pin-button {
         font-size: var(--font-size-mobile-button);
-        padding: var(--spacing-md) var(--spacing-xl);
+        padding: var(--spacing-sm) var(--spacing-sm);
     }
 
     .mark-read-button {
         font-size: var(--font-size-mobile-button);
-        padding: var(--spacing-md) var(--spacing-xl);
+        padding: var(--spacing-sm) var(--spacing-sm);
     }
 
     .feedback-message {
@@ -972,8 +971,9 @@ a.menu-button,
 
 /* Tags Navigation Styles */
 .tags-navigation {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "tags controls";
     align-items: flex-end;
     margin: var(--spacing-xs) 0 var(--spacing-lg) 0;
     padding: 0;
@@ -985,6 +985,7 @@ a.menu-button,
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-sm);
+    grid-area: tags;
 }
 
 .tags-navigation-controls {
@@ -992,6 +993,8 @@ a.menu-button,
     align-items: center;
     gap: var(--spacing-sm);
     flex-shrink: 0;
+    grid-area: controls;
+    justify-content: center;
 }
 
 .tag-tab {
@@ -1023,6 +1026,10 @@ a.menu-button,
 /* Mobile responsive for tags */
 @media (max-width: 768px) {
     .tags-navigation {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "controls"
+            "tags";
         padding: 0;
         margin: 0 0 var(--spacing-md) 0;
         font-size: var(--font-size-mobile-xl);
@@ -1030,6 +1037,8 @@ a.menu-button,
 
     .tags-tabs {
         gap: var(--spacing-xs);
+        display: flex;
+        justify-content: center;
     }
 
     .tag-tab {

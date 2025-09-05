@@ -353,7 +353,7 @@
 
     .fetch-article-button {
         font-size: var(--font-size-mobile-button);
-        padding: var(--spacing-md) var(--spacing-xl);
+        padding: var(--spacing-md) var(--spacing-sm);
         gap: var(--spacing-sm);
         justify-content: center;
     }
