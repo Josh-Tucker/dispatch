@@ -6,7 +6,7 @@ init:
     cd dispatch; python3  init_db.py
 
 run:
-    cd dispatch; DEBUG=true python3 app.py
+    cd dispatch; DEBUG=true ../.venv/bin/python app.py
 
 # Test commands
 test:
