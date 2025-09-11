@@ -5,25 +5,23 @@
 
     <div class="card-content">
         <div class="card-latest">{{ entry.published|entry_timedetla }}</div>
-        <div class="card-unread entry-card">
-            <div class="card-feed-info">
-                {% if not entry.feed.favicon_data %} {% include 'bx-rss.svg' %}
-                {% else %}
-                <img
-                    class="card-favicon"
-                    src="{{ url_for('serve_favicon', feed_id=entry.feed.id) }}"
-                    alt="Feed Logo"
-                />
-                {% endif %}
-                <span class="card-feed-title">{{ entry.feed.title }}</span>
-            </div>
-            <div class="card-read-status">
-                {% if entry.read %}
-                <small>◯&nbsp;</small>
-                {% else %}
-                <small>⬤&nbsp;</small>
-                {% endif %}
-            </div>
+        <div class="card-feed-info">
+            {% if not entry.feed.favicon_data %} {% include 'bx-rss.svg' %} {%
+            else %}
+            <img
+                class="card-favicon"
+                src="{{ url_for('serve_favicon', feed_id=entry.feed.id) }}"
+                alt="Feed Logo"
+            />
+            {% endif %}
+            <span class="card-feed-title">{{ entry.feed.title }}</span>
+        </div>
+        <div class="card-read-status">
+            {% if entry.read %}
+            <small>◯</small>
+            {% else %}
+            <small>⬤</small>
+            {% endif %}
         </div>
     </div>
 </a>

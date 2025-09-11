@@ -41,10 +41,11 @@
 
     /* Font sizes for mobile (increased 20-40%) */
     --font-size-mobile-base: 14px;
+    --font-size-mobile-xs: 0.7rem;
     --font-size-mobile-small: 1rem;
     --font-size-mobile-medium: 1.3rem;
     --font-size-mobile-large: 1.6rem;
-    --font-size-mobile-xl: 1.4rem;
+    --font-size-mobile-xl: 1.2rem;
     --font-size-mobile-xxl: 1.4rem;
     --font-size-mobile-xxxl: 1.6rem;
     --font-size-mobile-button: 1rem;
@@ -185,7 +186,7 @@ html {
 @media (max-width: 768px) {
     .card-content {
         padding: var(--card-padding-mobile);
-        grid-template-columns: 1fr auto;
+        grid-template-columns: auto 2fr auto;
         grid-template-rows: auto auto;
         gap: var(--spacing-xs);
     }
@@ -265,6 +266,9 @@ html {
     align-items: center;
     gap: 0.5rem;
     flex: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .card-feed-info .card-favicon {
@@ -316,7 +320,7 @@ html {
     }
 
     .card-time {
-        font-size: var(--font-size-mobile-small);
+        font-size: var(--font-size-mobile-xs);
         padding: 0.6rem;
         padding-right: 1.4rem;
     }
@@ -327,7 +331,7 @@ html {
     }
 
     .card-entry-preview {
-        font-size: var(--font-size-mobile-xs);
+        font-size: var(--font-size-mobile-small);
         text-align: left;
         margin-left: 0;
         margin-top: var(--spacing-xs);
@@ -341,7 +345,7 @@ html {
     }
 
     .card-feed-title {
-        font-size: var(--font-size-mobile-medium);
+        font-size: var(--font-size-mobile-small);
         margin-right: 20px;
         mask: linear-gradient(to right, black 0%, black 60%, transparent 100%);
         -webkit-mask: linear-gradient(
@@ -906,6 +910,21 @@ a.menu-button,
     .page-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 0px;
+    }
+
+    .entry-header-title {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: var(--spacing-sm);
+        margin-bottom: 1rem;
+        max-width: 100%;
+    }
+
+    .entry-header-title h1 {
+        margin: 0;
+        overflow: hidden;
     }
 
     .page-actions {
@@ -986,6 +1005,7 @@ a.menu-button,
     flex-wrap: wrap;
     gap: var(--spacing-sm);
     grid-area: tags;
+    margin-bottom: 6px;
 }
 
 .tags-navigation-controls {

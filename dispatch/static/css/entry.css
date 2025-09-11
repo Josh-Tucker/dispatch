@@ -126,7 +126,6 @@
     margin-left: auto;
     margin-right: auto;
     border-radius: var(--border-radius-md);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .entry_content figcaption {
@@ -303,7 +302,7 @@
     }
 
     .entry_title {
-        font-size: var(--font-size-mobile-xxxl);
+        font-size: var(--font-size-mobile-xxl);
         line-height: 1.2;
     }
 
