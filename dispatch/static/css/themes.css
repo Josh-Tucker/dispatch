@@ -25,11 +25,11 @@
 /* Dark theme */
 html.theme-dark,
 body.theme-dark {
-    --primary-colour: #5e7dd4 !important;
-    --text-colour: #ffffff !important;
-    --highlight-colour: #5e7dd4 !important;
-    --background-colour: #191919 !important;
-    --border-colour: #ffffff !important;
+    --primary-colour: #66cd7a !important;
+    --text-colour: #f0f0f0 !important;
+    --highlight-colour: #66cd7a !important;
+    --background-colour: #000000 !important;
+    --border-colour: #191919 !important;
     --border-color-light: color-mix(
         in srgb,
         var(--border-colour) 5%,
@@ -75,11 +75,11 @@ body.theme-clean {
 /* New theme */
 html.theme-new,
 body.theme-new {
-    --primary-colour: #e8452e !important;
-    --text-colour: #010101 !important;
-    --highlight-colour: #e8452e !important;
-    --background-colour: #f3d4bd !important;
-    --border-colour: #010101 !important;
+    --primary-colour: #9333ea !important;
+    --text-colour: #5d4c37 !important;
+    --highlight-colour: #9333ea !important;
+    --background-colour: #fff7ed !important;
+    --border-colour: #e6ded5 !important;
     --border-color-light: color-mix(
         in srgb,
         var(--border-colour) 5%,

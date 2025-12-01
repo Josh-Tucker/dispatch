@@ -101,14 +101,14 @@
 .entry_content {
     font-family: "Neuton", serif;
     font-family: "IBM Plex Serif", serif;
-    font-weight: 400;
+    font-weight: 450;
     font-style: normal;
     font-size: var(--font-size-content);
     padding-top: 20px;
     max-width: 70%;
     margin: 0;
     text-align: left;
-    line-height: 1.6;
+    line-height: 1.7;
     margin-bottom: 3rem;
 }
 
