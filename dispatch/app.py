@@ -39,6 +39,10 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 executor = Executor(app)
 app.config["EXECUTOR_TYPE"] = "thread"
 
+# Configure URL scheme - use HTTPS by default for reverse proxy compatibility
+# Set PREFERRED_URL_SCHEME=http environment variable to force HTTP if needed
+app.config["PREFERRED_URL_SCHEME"] = os.getenv("PREFERRED_URL_SCHEME", "https")
+
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/rss_database.db")
 
 _startup_time = time.time()
