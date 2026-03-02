@@ -54,7 +54,7 @@
     </div>
     <div class="feed-error-banner-body">
         <strong>Last fetch failed</strong>
-        {% if feed.last_error_date %}<span class="feed-error-date">{{ feed.last_error_date|entry_timedetla }}</span>{% endif %}
+        {% if feed.last_error_date %}<span class="feed-error-date">{{ feed.last_error_date|entry_timedelta }}</span>{% endif %}
         <code class="feed-error-message">{{ feed.last_error }}</code>
     </div>
 </div>
@@ -74,7 +74,7 @@ the HTMX trigger for infinite scroll #}
         <h2 class="card-title">{{ entry.title }}</h2>
     </div>
     <div class="card-content">
-        <div class="card-latest">{{ entry.published|entry_timedetla }}</div>
+        <div class="card-latest">{{ entry.published|entry_timedelta }}</div>
         <div class="card-unread entry-card">
             <div class="card-feed-info">
                 {% if not entry.feed.favicon_data %} {% include 'bx-rss.svg' %}

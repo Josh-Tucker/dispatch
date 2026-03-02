@@ -1,7 +1,10 @@
+import logging
 from datetime import datetime
 
 import dateutil.parser
 from dateutil import parser
+
+logger = logging.getLogger(__name__)
 
 
 def article_date_format(date: str) -> str:
@@ -17,7 +20,7 @@ def article_date_format(date: str) -> str:
     try:
         return dateutil.parser.parse(date).strftime("%d %b %Y")
     except Exception as e:
-        print(f"Error formatting date '{date}': {e}")
+        logger.debug(f"Date format failed: '{date}' — {e}")
         return str(date)
 
 
@@ -34,11 +37,11 @@ def article_long_date_format(date: str) -> str:
     try:
         return dateutil.parser.parse(date).strftime("%A, %B %d, %Y")
     except Exception as e:
-        print(f"Error formatting long date '{date}': {e}")
+        logger.debug(f"Long date format failed: '{date}' — {e}")
         return str(date)
 
 
-def entry_timedetla(published_date):
+def entry_timedelta(published_date):
     """
     Calculate and format time difference from published date to now.
     Used as a template filter to show relative time (e.g., "5 min ago", "2 hours ago").
@@ -82,7 +85,7 @@ def entry_timedetla(published_date):
             return f"{years} year{'s' if years != 1 else ''} ago"
 
     except Exception as e:
-        print(f"Error calculating time delta for '{published_date}': {e}")
+        logger.debug(f"Time delta calculation failed: '{published_date}' — {e}")
         return "Unknown"
 
 
@@ -117,7 +120,7 @@ def extract_plain_text(html_content):
         soup = BeautifulSoup(html_content, "html.parser")
         return soup.get_text(strip=True)
     except Exception as e:
-        print(f"Error extracting plain text: {e}")
+        logger.debug(f"Plain text extraction failed — {e}")
         return html_content
 
 
@@ -212,7 +215,7 @@ def short_time_ago(published_date):
             return f"{years} year{'s' if years != 1 else ''}"
 
     except Exception as e:
-        print(f"Error calculating short time ago for '{published_date}': {e}")
+        logger.debug(f"Short time-ago calculation failed: '{published_date}' — {e}")
         return None
 
 
@@ -243,7 +246,7 @@ def get_feed_timestamp_class(unread_count, last_unread_date):
         return "feed-time-gradient"
 
     except Exception as e:
-        print(f"Error determining feed timestamp class: {e}")
+        logger.debug(f"Feed timestamp class calculation failed — {e}")
         return "feed-time-plain"
 
 
@@ -301,5 +304,5 @@ def get_feed_timestamp_color(unread_count, last_unread_date):
         return f"rgb({r}, {g}, {b})"
 
     except Exception as e:
-        print(f"Error calculating feed timestamp color: {e}")
+        logger.debug(f"Feed timestamp color calculation failed — {e}")
         return None

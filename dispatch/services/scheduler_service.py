@@ -15,6 +15,8 @@ from models import RssFeed, Session
 
 from services.entry_service import add_rss_entries_for_feed
 
+logger = logging.getLogger(__name__)
+
 
 class FeedScheduler:
     """Manages automatic RSS feed refreshing using APScheduler."""
@@ -25,24 +27,9 @@ class FeedScheduler:
         self.is_running = False
         self.is_lazy_mode = False
         self.jobs_scheduled = False
-        self.logger = self._setup_logging()
+        self.logger = logger
 
         self._configure_scheduler()
-
-    def _setup_logging(self):
-        """Set up logging for the scheduler."""
-        logger = logging.getLogger('feed_scheduler')
-        logger.setLevel(logging.INFO)
-
-        if not logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-            )
-            handler.setFormatter(formatter)
-            logger.addHandler(handler)
-
-        return logger
 
     def _configure_scheduler(self):
         """Configure the APScheduler with appropriate settings."""
@@ -131,41 +118,39 @@ class FeedScheduler:
 
     def _schedule_staggered_feed_checks(self):
         """Schedule individual feed checks staggered throughout the day."""
-        session = Session()
-        try:
-            feeds = session.query(RssFeed).filter(RssFeed.id != 'all').all()
+        with Session() as session:
+            try:
+                feeds = session.query(RssFeed).filter(RssFeed.id != 'all').all()
 
-            if not feeds:
-                self.logger.info("No feeds found to schedule")
-                return
+                if not feeds:
+                    self.logger.info("No feeds found to schedule")
+                    return
 
-            interval_minutes = max(1, (24 * 60) // len(feeds))
+                interval_minutes = max(1, (24 * 60) // len(feeds))
 
-            for i, feed in enumerate(feeds):
-                job_id = f'refresh_feed_{feed.id}'
-                try:
-                    self.scheduler.remove_job(job_id)
-                except:
-                    pass
+                for i, feed in enumerate(feeds):
+                    job_id = f'refresh_feed_{feed.id}'
+                    try:
+                        self.scheduler.remove_job(job_id)
+                    except:
+                        pass
 
-                start_time = datetime.now() + timedelta(minutes=i * interval_minutes)
+                    start_time = datetime.now() + timedelta(minutes=i * interval_minutes)
 
-                self.scheduler.add_job(
-                    func=self._refresh_single_feed_job,
-                    args=[feed.id],
-                    trigger=IntervalTrigger(hours=24),
-                    id=job_id,
-                    name=f'Auto Refresh: {feed.title}',
-                    next_run_time=start_time,
-                    replace_existing=True
-                )
+                    self.scheduler.add_job(
+                        func=self._refresh_single_feed_job,
+                        args=[feed.id],
+                        trigger=IntervalTrigger(hours=24),
+                        id=job_id,
+                        name=f'Auto Refresh: {feed.title}',
+                        next_run_time=start_time,
+                        replace_existing=True
+                    )
 
-            self.logger.info(f"Scheduled {len(feeds)} individual feed refresh jobs")
+                self.logger.info(f"Scheduled {len(feeds)} individual feed refresh jobs")
 
-        except Exception as e:
-            self.logger.error(f"Error scheduling staggered feed checks: {e}")
-        finally:
-            session.close()
+            except Exception as e:
+                self.logger.error(f"Error scheduling staggered feed checks: {e}")
 
     def schedule_jobs_on_demand(self):
         """Schedule individual feed jobs on demand (for lazy mode)."""
@@ -190,65 +175,64 @@ class FeedScheduler:
         """Background job to refresh all feeds."""
         self.logger.info("Starting automatic refresh of all feeds")
 
-        session = Session()
-        try:
-            feeds = session.query(RssFeed).filter(RssFeed.id != 'all').all()
-            success_count = 0
-            error_count = 0
-            skipped_count = 0
+        with Session() as session:
+            try:
+                feeds = session.query(RssFeed).filter(RssFeed.id != 'all').all()
+                success_count = 0
+                error_count = 0
+                skipped_count = 0
 
-            for feed in feeds:
-                try:
-                    success, message = add_rss_entries_for_feed(feed.id)
+                for feed in feeds:
+                    try:
+                        success, message = add_rss_entries_for_feed(feed.id)
 
-                    if success:
-                        if "not modified" in message.lower() or "unchanged" in message.lower():
-                            skipped_count += 1
-                            self.logger.debug(f"Skipped {feed.title}: {message}")
+                        if success:
+                            if "not modified" in message.lower() or "unchanged" in message.lower():
+                                skipped_count += 1
+                                self.logger.debug(f"Skipped {feed.title}: {message}")
+                            else:
+                                success_count += 1
+                                self.logger.info(f"Refreshed {feed.title}: {message}")
                         else:
-                            success_count += 1
-                            self.logger.info(f"Refreshed {feed.title}: {message}")
-                    else:
+                            error_count += 1
+                            self.logger.warning(f"Failed to refresh {feed.title}: {message}")
+
+                    except Exception as e:
                         error_count += 1
-                        self.logger.warning(f"Failed to refresh {feed.title}: {message}")
+                        self.logger.error(f"Error refreshing feed {feed.title}: {e}")
 
-                except Exception as e:
-                    error_count += 1
-                    self.logger.error(f"Error refreshing feed {feed.title}: {e}")
+                self.logger.info(
+                    f"Automatic feed refresh completed: "
+                    f"{success_count} updated, {skipped_count} skipped, {error_count} errors"
+                )
 
-            self.logger.info(
-                f"Automatic feed refresh completed: "
-                f"{success_count} updated, {skipped_count} skipped, {error_count} errors"
-            )
-
-        except Exception as e:
-            self.logger.error(f"Error in automatic feed refresh job: {e}")
-        finally:
-            session.close()
+            except Exception as e:
+                self.logger.error(f"Error in automatic feed refresh job: {e}")
 
     def _refresh_single_feed_job(self, feed_id):
         """Background job to refresh a single feed."""
-        session = Session()
-        try:
-            feed = session.query(RssFeed).filter_by(id=feed_id).first()
-            if not feed:
-                self.logger.warning(f"Feed {feed_id} not found for automatic refresh")
+        with Session() as session:
+            try:
+                feed = session.query(RssFeed).filter_by(id=feed_id).first()
+                if not feed:
+                    self.logger.warning(f"Feed {feed_id} not found for automatic refresh")
+                    return
+
+                feed_title = feed.title
+
+            except Exception as e:
+                self.logger.error(f"Error in single feed refresh job for {feed_id}: {e}")
                 return
 
-            success, message = add_rss_entries_for_feed(feed_id)
+        success, message = add_rss_entries_for_feed(feed_id)
 
-            if success:
-                if "not modified" in message.lower() or "unchanged" in message.lower():
-                    self.logger.debug(f"Auto-refresh skipped {feed.title}: {message}")
-                else:
-                    self.logger.info(f"Auto-refreshed {feed.title}: {message}")
+        if success:
+            if "not modified" in message.lower() or "unchanged" in message.lower():
+                self.logger.debug(f"Auto-refresh skipped {feed_title}: {message}")
             else:
-                self.logger.warning(f"Auto-refresh failed for {feed.title}: {message}")
-
-        except Exception as e:
-            self.logger.error(f"Error in single feed refresh job for {feed_id}: {e}")
-        finally:
-            session.close()
+                self.logger.info(f"Auto-refreshed {feed_title}: {message}")
+        else:
+            self.logger.warning(f"Auto-refresh failed for {feed_title}: {message}")
 
     def get_job_status(self):
         """Get status of all scheduled jobs."""

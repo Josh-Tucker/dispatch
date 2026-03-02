@@ -1,4 +1,5 @@
 import atexit
+import logging
 import os
 import time
 from datetime import datetime
@@ -33,11 +34,21 @@ from services.scheduler_service import (
 )
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+logging.basicConfig(
+    level=getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO),
+    format="%(asctime)s %(levelname)-8s %(name)-30s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logging.getLogger("apscheduler").setLevel(logging.WARNING)
+
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
 # Handle reverse proxy headers for HTTPS
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 executor = Executor(app)
 app.config["EXECUTOR_TYPE"] = "thread"
+_tasks: dict = {}
 
 # Configure URL scheme - use HTTPS by default for reverse proxy compatibility
 # Set PREFERRED_URL_SCHEME=http environment variable to force HTTP if needed
@@ -51,24 +62,30 @@ _first_request_handled = False
 scheduler = None
 try:
     scheduler = start_scheduler(lazy=True)
-    print(
-        "✅ Lazy background feed scheduler started - full initialization deferred until first request"
-    )
+    logger.info("Lazy background scheduler started — full initialization deferred until first request")
 except Exception as e:
-    print(f"⚠️  Failed to start lazy background scheduler: {e}")
-    print("   Manual feed refresh will still work")
+    logger.warning(f"Background scheduler failed to start — {e} (manual refresh still available)")
 
 
 def cleanup_scheduler():
     if scheduler:
         try:
             stop_scheduler()
-            print("✅ Background scheduler stopped gracefully")
+            logger.info("Background scheduler stopped")
         except Exception as e:
-            print(f"⚠️  Error stopping scheduler: {e}")
+            logger.error(f"Background scheduler shutdown failed — {e}")
 
 
 atexit.register(cleanup_scheduler)
+
+
+def htmx_redirect(url):
+    """Return an HTMX redirect response for HTMX requests, or a normal redirect."""
+    if request.headers.get("HX-Request"):
+        response = make_response("")
+        response.headers["HX-Redirect"] = url
+        return response
+    return redirect(url)
 
 
 def monitor_performance(route_name):
@@ -81,12 +98,12 @@ def monitor_performance(route_name):
                 result = func(*args, **kwargs)
                 end_time = time.perf_counter()
                 duration = (end_time - start_time) * 1000
-                print(f"🚀 Route '{route_name}' completed in {duration:.1f}ms")
+                logger.debug(f"Route '{route_name}' completed in {duration:.1f}ms")
                 return result
             except Exception as e:
                 end_time = time.perf_counter()
                 duration = (end_time - start_time) * 1000
-                print(f"❌ Route '{route_name}' failed after {duration:.1f}ms: {e}")
+                logger.warning(f"Route '{route_name}' failed after {duration:.1f}ms — {e}")
                 raise
 
         wrapper.__name__ = func.__name__
@@ -100,22 +117,22 @@ def handle_first_request():
     global _first_request_handled
     if not _first_request_handled:
         startup_duration = (time.time() - _startup_time) * 1000
-        print(f"🎯 First request received {startup_duration:.1f}ms after startup")
+        logger.info(f"First request received {startup_duration:.1f}ms after startup")
 
         try:
             schedule_jobs_on_first_request()
-            print("✅ Lazy scheduler fully initialized on first request")
+            logger.info("Lazy scheduler fully initialized on first request")
         except Exception as e:
-            print(f"⚠️  Error during lazy scheduler initialization: {e}")
+            logger.warning(f"Lazy scheduler initialization failed — {e}")
 
         _first_request_handled = True
 
 
 @app.template_filter()
-def entry_timedetla(input_datetime):
-    from services.content_service import entry_timedetla as service_timedetla
+def entry_timedelta(input_datetime):
+    from services.content_service import entry_timedelta as service_timedelta
 
-    return service_timedetla(input_datetime)
+    return service_timedelta(input_datetime)
 
 
 @app.template_filter()
@@ -234,97 +251,46 @@ def entry(entry_id):
 def refresh(feed_id):
     referrer = request.referrer if request.referrer else "/"
 
-    def get_redirect_url():
+    def fallback_redirect():
         if "entry/" in referrer:
             try:
                 entry_id = referrer.split("entry/")[-1].split("?")[0].split("#")[0]
                 return redirect(url_for("entry", entry_id=entry_id))
             except Exception:
-                return redirect(url_for("entries", feed_id=feed_id))
-        elif feed_id == "all":
+                pass
+        if feed_id == "all":
             return redirect(url_for("index"))
-        else:
-            return redirect(url_for("entries", feed_id=feed_id))
-
-    is_htmx = request.headers.get("HX-Request")
+        return redirect(url_for("entries", feed_id=feed_id))
 
     try:
         if feed_id == "all":
-            if "refresh_all" in executor.futures._futures:
-                print("Task refresh_all is already running")
-                if is_htmx:
-                    response = make_response("")
-                    response.headers["HX-Redirect"] = url_for("index")
-                    return response
-                return get_redirect_url()
+            if "refresh_all" not in _tasks:
+                _tasks["refresh_all"] = executor.submit(add_rss_entries_for_all_feeds)
+                logger.info("Task started: refresh_all")
+            else:
+                logger.debug("Task already running: refresh_all")
+            return htmx_redirect(url_for("index"))
 
-            executor.submit_stored("refresh_all", add_rss_entries_for_all_feeds)
-            print("Started task refresh_all")
-            if is_htmx:
-                response = make_response("")
-                response.headers["HX-Redirect"] = url_for("index")
-                return response
-            return redirect(url_for("index"))
-        else:
+        try:
+            int(feed_id)
+        except ValueError:
+            logger.warning(f"Refresh skipped — invalid feed_id format: {feed_id}")
+            return htmx_redirect(url_for("entries", feed_id=feed_id))
+
+        task_key = f"refresh_{feed_id}"
+        if task_key not in _tasks:
             try:
-                int(feed_id)
-            except ValueError:
-                print(f"Invalid feed_id format: {feed_id}")
-                if is_htmx:
-                    response = make_response("")
-                    if feed_id == "all":
-                        response.headers["HX-Redirect"] = url_for("index")
-                    else:
-                        response.headers["HX-Redirect"] = url_for(
-                            "entries", feed_id=feed_id
-                        )
-                    return response
-                return get_redirect_url()
-
-            if f"refresh_{feed_id}" in executor.futures._futures:
-                print(f"Task refresh_{feed_id} is already running")
-                if is_htmx:
-                    response = make_response("")
-                    response.headers["HX-Redirect"] = url_for(
-                        "entries", feed_id=feed_id
-                    )
-                    return response
-                return get_redirect_url()
-
-            try:
-                executor.submit_stored(
-                    f"refresh_{feed_id}", add_rss_entries_for_feed, feed_id
-                )
-                print(f"Started task refresh_{feed_id}")
+                _tasks[task_key] = executor.submit(add_rss_entries_for_feed, feed_id)
+                logger.info(f"Task started: {task_key}")
             except Exception as e:
-                print(f"Error starting refresh task for feed {feed_id}: {e!s}")
+                logger.error(f"Task start failed: {task_key} — {e!s}")
+        else:
+            logger.debug(f"Task already running: {task_key}")
+        return htmx_redirect(url_for("entries", feed_id=feed_id))
 
-            if is_htmx:
-                response = make_response("")
-                response.headers["HX-Redirect"] = url_for("entries", feed_id=feed_id)
-                return response
-            return get_redirect_url()
-
-    except ValueError as e:
-        print(f"ValueError in refresh route: {e!s}")
-        if is_htmx:
-            response = make_response("")
-            if feed_id == "all":
-                response.headers["HX-Redirect"] = url_for("index")
-            else:
-                response.headers["HX-Redirect"] = url_for("entries", feed_id=feed_id)
-            return response
-        return get_redirect_url()
     except Exception as e:
-        print(f"Unexpected error in refresh route: {e!s}")
-        if is_htmx:
-            response = make_response("")
-            if feed_id == "all":
-                response.headers["HX-Redirect"] = url_for("index")
-            else:
-                response.headers["HX-Redirect"] = url_for("entries", feed_id=feed_id)
-            return response
-        return get_redirect_url()
+        logger.error(f"Unexpected error in refresh route — {e!s}")
+        return fallback_redirect()
 
 
 @app.route("/settings")
@@ -370,9 +336,8 @@ def add_feed_route():
         feed_url = "https://" + feed_url
 
     try:
-        session = Session()
-        existing_feed = session.query(RssFeed).filter_by(url=feed_url).first()
-        session.close()
+        with Session() as session:
+            existing_feed = session.query(RssFeed).filter_by(url=feed_url).first()
 
         if existing_feed:
             return f"<div class='feedback-message warning'>Feed already exists: {existing_feed.title}</div>"
@@ -455,7 +420,7 @@ def mark_all_read_route(feed_id):
 
         return f'<span style="color: #28a745;">✓ All entries in "{feed_name}" marked as read</span>'
     except Exception as e:
-        print(f"Error marking entries as read: {e}")
+        logger.error(f"Mark-all-read failed — {e}")
         return (
             '<span style="color: #dc3545;">✗ Error marking entries as read</span>',
             500,
@@ -477,7 +442,7 @@ def toggle_feed_pin_entries_route(feed_id):
         else:
             return "Error toggling pin status", 500
     except Exception as e:
-        print(f"Error toggling pin status: {e}")
+        logger.error(f"Pin toggle failed — {e}")
         return "Error toggling pin status", 500
 
 
@@ -521,7 +486,7 @@ def fetch_full_article_route(entry_id):
             500,
         )
     except Exception as e:
-        print(f"Error fetching full article: {e}")
+        logger.error(f"Full article fetch failed — {e}")
         return (
             '<div class="fetch-error-message"><span style="color: #dc3545;">✗ Error fetching article content</span><br><small>An unexpected error occurred.</small></div>',
             500,
@@ -531,8 +496,7 @@ def fetch_full_article_route(entry_id):
 @app.route("/favicon/<int:feed_id>")
 def serve_favicon(feed_id):
     """Serve favicon from database."""
-    session = Session()
-    try:
+    with Session() as session:
         feed = session.query(RssFeed).filter_by(id=feed_id).first()
         if feed and feed.favicon_data:
             response = Response(
@@ -542,8 +506,6 @@ def serve_favicon(feed_id):
             return response
         else:
             return "", 404
-    finally:
-        session.close()
 
 
 @app.route("/refresh_favicons", methods=["POST"])
@@ -553,7 +515,7 @@ def refresh_favicons():
     try:
         future = executor.submit(refresh_all_feed_favicons)
         task_id = f"refresh_favicons_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        executor.futures._futures[task_id] = future
+        _tasks[task_id] = future
 
         return f"""
         <div class="refresh_status success">
@@ -579,10 +541,10 @@ def refresh_favicons():
 def refresh_status(task_id):
     """Check the status of a favicon refresh task."""
     try:
-        if task_id not in executor.futures._futures:
+        if task_id not in _tasks:
             return "<p>Task not found</p>"
 
-        future = executor.futures._futures[task_id]
+        future = _tasks[task_id]
 
         if future.done():
             try:
@@ -618,29 +580,27 @@ def refresh_status(task_id):
 
 # Helper function to clean up tasks
 def cleanup_tasks():
-    """Clean up completed tasks from the executor after they've been displayed."""
+    """Clean up completed tasks from _tasks after they've been displayed."""
     try:
         current_time = datetime.now()
-        for key in list(executor.futures._futures.keys()):
+        for key in list(_tasks.keys()):
             try:
-                future = executor.futures._futures[key]
+                future = _tasks[key]
                 if future and future.done():
                     if not hasattr(future, "_completion_time"):
                         future._completion_time = current_time
-                        print(f"Task {key} completed, marking completion time")
+                        logger.debug(f"Task completed: {key}")
                     else:
                         time_since_completion = (
                             current_time - future._completion_time
                         ).total_seconds()
                         if time_since_completion > 30:
-                            executor.futures._futures.pop(key, None)
-                            print(
-                                f"Cleaned up completed task: {key} (completed {time_since_completion:.1f}s ago)"
-                            )
+                            _tasks.pop(key, None)
+                            logger.debug(f"Task cleaned up: {key} (completed {time_since_completion:.1f}s ago)")
             except Exception as e:
-                print(f"Error cleaning up task {key}: {e}")
+                logger.error(f"Task cleanup failed: {key} — {e}")
     except Exception as e:
-        print(f"Error in task cleanup: {e}")
+        logger.error(f"Task cleanup failed — {e}")
 
 
 # Register a cleanup handler for completed tasks
@@ -657,7 +617,7 @@ def cleanup_completed_tasks(response):
 
         cleanup_tasks()
     except Exception as e:
-        print(f"Error in task cleanup: {e}")
+        logger.error(f"Task cleanup failed — {e}")
     return response
 
 
@@ -667,8 +627,8 @@ def task_status():
     tasks = {}
 
     all_feeds_key = "refresh_all"
-    if all_feeds_key in executor.futures._futures:
-        future = executor.futures._futures[all_feeds_key]
+    if all_feeds_key in _tasks:
+        future = _tasks[all_feeds_key]
         tasks[all_feeds_key] = {
             "running": not future.done(),
             "completed": future.done(),
@@ -681,18 +641,17 @@ def task_status():
             "task_type": "refresh_all",
         }
 
-    for key in list(executor.futures._futures.keys()):
+    for key in list(_tasks.keys()):
         if key.startswith("refresh_") and key != "refresh_all":
-            future = executor.futures._futures[key]
+            future = _tasks[key]
             feed_id = key.split("refresh_")[1]
 
             feed_title = None
             try:
-                session = Session()
-                feed = session.query(RssFeed).filter_by(id=feed_id).first()
-                if feed:
-                    feed_title = feed.title
-                session.close()
+                with Session() as session:
+                    feed = session.query(RssFeed).filter_by(id=feed_id).first()
+                    if feed:
+                        feed_title = feed.title
             except Exception:
                 pass
 
@@ -860,13 +819,10 @@ def performance_stats():
 
         scheduler_status = get_scheduler_status()
 
-        session = Session()
-        try:
+        with Session() as session:
             feed_count = session.query(RssFeed).count()
             entry_count = session.query(RssEntry).count()
             unread_count = session.query(RssEntry).filter_by(read=False).count()
-        finally:
-            session.close()
 
         stats = {
             "startup_time_ms": startup_duration,

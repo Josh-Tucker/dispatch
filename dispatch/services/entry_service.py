@@ -1,4 +1,5 @@
 import concurrent.futures
+import logging
 import random
 import time
 from datetime import datetime
@@ -13,6 +14,8 @@ from models import RssEntry, RssFeed, Session
 from readabilipy import simple_json_from_html_string
 from sqlalchemy import desc
 from sqlalchemy.orm import joinedload
+
+logger = logging.getLogger(__name__)
 
 
 def add_rss_entries_for_feed(feed_id, max_retries=3):
@@ -32,10 +35,9 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
         try:
             feed = session.query(RssFeed).filter_by(id=feed_id).first()
             if not feed:
-                session.close()
                 return False, f"Feed with ID {feed_id} not found"
 
-            print(f"Processing feed: {feed.title}")
+            logger.debug(f'Processing feed: "{feed.title}"')
 
             try:
                 headers = {}
@@ -48,11 +50,10 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                     head_response = requests.head(feed.url, headers=headers, timeout=15)
 
                     if head_response.status_code == 304:
-                        print(f"Feed {feed.title} not modified (304) - skipping")
+                        logger.debug(f'Feed not modified (HEAD 304): "{feed.title}"')
                         feed.last_error = None
                         feed.last_error_date = None
                         session.commit()
-                        session.close()
                         return True, "Feed not modified"
 
                     if (head_response.status_code == 200 and
@@ -61,11 +62,10 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                         try:
                             head_content_length = int(head_response.headers['content-length'])
                             if head_content_length == feed.content_length:
-                                print(f"Feed {feed.title} content length unchanged ({head_content_length} bytes) - skipping")
+                                logger.debug(f'Feed content length unchanged ({head_content_length} bytes): "{feed.title}"')
                                 feed.last_error = None
                                 feed.last_error_date = None
                                 session.commit()
-                                session.close()
                                 return True, "Feed content length unchanged"
                         except (ValueError, TypeError):
                             pass
@@ -77,20 +77,18 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                     response = requests.get(feed.url, headers=headers, timeout=30)
 
                     if response.status_code == 304:
-                        print(f"Feed {feed.title} not modified (304) - skipping")
+                        logger.debug(f'Feed not modified (GET 304): "{feed.title}"')
                         feed.last_error = None
                         feed.last_error_date = None
                         session.commit()
-                        session.close()
                         return True, "Feed not modified"
 
                     if response.status_code >= 400:
                         msg = f"HTTP error {response.status_code}"
-                        print(f"{msg} for feed {feed.title}")
+                        logger.warning(f'Feed fetch failed ({response.status_code}): "{feed.title}"')
                         feed.last_error = msg
                         feed.last_error_date = datetime.now()
                         session.commit()
-                        session.close()
                         return False, msg
 
                     if 'etag' in response.headers:
@@ -110,25 +108,23 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                     parsed_feed = feedparser.parse(response.content)
 
                 except requests.exceptions.RequestException as req_error:
-                    print(f"Request error for feed {feed.title}: {req_error}")
+                    logger.warning(f'Feed request failed, falling back to direct parse: "{feed.title}" — {req_error}')
                     parsed_feed = feedparser.parse(feed.url)
 
                 if hasattr(parsed_feed, 'status') and parsed_feed.status >= 400:
                     msg = f"HTTP error {parsed_feed.status}"
-                    print(f"{msg} for feed {feed.title}")
+                    logger.warning(f'Feed parse failed ({parsed_feed.status}): "{feed.title}"')
                     feed.last_error = msg
                     feed.last_error_date = datetime.now()
                     session.commit()
-                    session.close()
                     return False, msg
 
             except Exception as parse_error:
                 msg = f"Parse error: {parse_error}"
-                print(f"Parse error for feed {feed.title}: {parse_error}")
+                logger.error(f'Feed parse error: "{feed.title}" — {parse_error}')
                 feed.last_error = msg
                 feed.last_error_date = datetime.now()
                 session.commit()
-                session.close()
                 return False, msg
 
             entries_added = 0
@@ -147,7 +143,7 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                         try:
                             published_date = parser.parse(entry.published)
                         except Exception as date_error:
-                            print(f"Date parse error for entry {entry.title}: {date_error}")
+                            logger.debug(f"Date parse error for entry '{getattr(entry, 'title', entry.link)}' — {date_error}")
                             published_date = datetime.now()
                     else:
                         published_date = datetime.now()
@@ -166,6 +162,13 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                     else:
                         content = description
 
+                    title = getattr(entry, 'title', None)
+                    if not title:
+                        raw = BeautifulSoup(content or description, 'html.parser').get_text()
+                        words = raw.split()
+                        title = (' '.join(words[:8]) + '…') if len(words) > 8 else ' '.join(words)
+                        title = title or None
+
                     author = ""
                     if hasattr(entry, 'author'):
                         author = entry.author
@@ -178,7 +181,7 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
 
                     rss_entry = RssEntry(
                         feed_id=feed_id,
-                        title=entry.title,
+                        title=title,
                         link=entry.link,
                         description=description,
                         content=content,
@@ -191,39 +194,41 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                     entries_added += 1
 
                 except Exception as entry_error:
-                    print(f"Error processing entry {getattr(entry, 'title', 'Unknown')}: {entry_error}")
+                    logger.warning(f"Entry skipped: {getattr(entry, 'title', 'Unknown')} — {entry_error}")
                     continue
 
             feed.last_error = None
             feed.last_error_date = None
             session.commit()
-            print(f"Added {entries_added} new entries for feed: {feed.title}")
+            logger.info(f'Feed refreshed: "{feed.title}" ({entries_added} new entries)')
 
-            session.close()
             return True, f"Added {entries_added} entries"
 
         except Exception as e:
             session.rollback()
-            session.close()
 
             if "database is locked" in str(e).lower() and attempt < max_retries - 1:
                 wait_time = (attempt + 1) * 2 + random.uniform(0, 1)
-                print(f"Database locked for feed {feed_id}, retrying in {wait_time:.1f} seconds (attempt {attempt + 1}/{max_retries})")
+                logger.warning(
+                    f"Database locked for feed id={feed_id} — "
+                    f"retrying in {wait_time:.1f}s (attempt {attempt + 1}/{max_retries})"
+                )
                 time.sleep(wait_time)
                 continue
             else:
-                print(f"Error processing feed {feed_id}: {e}")
+                logger.error(f"Feed processing failed: feed id={feed_id} — {e}")
                 try:
-                    err_session = Session()
-                    err_feed = err_session.query(RssFeed).filter_by(id=feed_id).first()
-                    if err_feed:
-                        err_feed.last_error = str(e)
-                        err_feed.last_error_date = datetime.now()
-                        err_session.commit()
-                    err_session.close()
+                    with Session() as err_session:
+                        err_feed = err_session.query(RssFeed).filter_by(id=feed_id).first()
+                        if err_feed:
+                            err_feed.last_error = str(e)
+                            err_feed.last_error_date = datetime.now()
+                            err_session.commit()
                 except Exception:
                     pass
                 return False, f"Error: {e}"
+        finally:
+            session.close()
 
     return False, "Max retries exceeded"
 
@@ -253,18 +258,17 @@ def add_rss_entries_for_all_feeds(max_workers=3):
     Returns:
         list: Results of processing each feed (success/failure status and messages)
     """
-    print(f"Adding feed items with {max_workers} workers (reduced for SQLite stability)")
+    logger.info(f"Starting feed refresh with {max_workers} workers")
 
-    session = Session()
-    feeds = session.query(RssFeed).all()
-    feed_ids = [feed.id for feed in feeds]
-    session.close()
+    with Session() as session:
+        feeds = session.query(RssFeed).all()
+        feed_ids = [feed.id for feed in feeds]
 
     if not feed_ids:
-        print("No feeds found to process")
+        logger.info("No feeds found to process")
         return []
 
-    print(f"Processing {len(feed_ids)} feeds with {max_workers} workers")
+    logger.debug(f"Processing {len(feed_ids)} feeds with {max_workers} workers")
 
     results = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -284,9 +288,9 @@ def add_rss_entries_for_all_feeds(max_workers=3):
                     'success': success,
                     'message': message
                 })
-                print(f"Feed {feed_id}: {message}")
+                logger.debug(f"Feed id={feed_id}: {message}")
             except Exception as exc:
-                print(f"Feed {feed_id} generated an exception: {exc}")
+                logger.error(f"Feed processing exception: feed id={feed_id} — {exc}")
                 results.append({
                     'feed_id': feed_id,
                     'success': False,
@@ -294,57 +298,51 @@ def add_rss_entries_for_all_feeds(max_workers=3):
                 })
 
     successful_feeds = sum(1 for result in results if result['success'])
-    print(f"Completed processing {len(feed_ids)} feeds. {successful_feeds} successful.")
+    logger.info(f"Feed refresh completed: {successful_feeds}/{len(feed_ids)} successful")
 
     return results
 
 
 def get_all_feed_entries():
-    session = Session()
-    entries = session.query(RssEntry).order_by(RssEntry.published.desc()).all()
-    session.close()
-    return entries
+    with Session() as session:
+        return session.query(RssEntry).order_by(RssEntry.published.desc()).all()
 
 
 def get_feed_entry_by_id(entry_id, max_retries=3):
     for attempt in range(max_retries):
-        session = Session()
-        try:
-            entry = session.query(RssEntry).options(joinedload(RssEntry.feed)).filter_by(id=entry_id).first()
-            if entry:
-                _ = entry.id, entry.title, entry.read
-                session.expunge(entry)
-            session.close()
-            return entry
-        except Exception as e:
-            session.close()
-            if "database is locked" in str(e).lower() and attempt < max_retries - 1:
-                wait_time = (attempt + 1) * 0.5 + random.uniform(0, 0.2)
-                time.sleep(wait_time)
-                continue
-            else:
-                print(f"Error getting entry {entry_id}: {e}")
-                return None
+        with Session() as session:
+            try:
+                entry = session.query(RssEntry).options(joinedload(RssEntry.feed)).filter_by(id=entry_id).first()
+                if entry:
+                    _ = entry.id, entry.title, entry.read
+                    session.expunge(entry)
+                return entry
+            except Exception as e:
+                if "database is locked" in str(e).lower() and attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 0.5 + random.uniform(0, 0.2)
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    logger.error(f"Entry query failed: entry id={entry_id} — {e}")
+                    return None
     return None
 
 
 def update_entry(entry_id, article):
-    session = Session()
-    try:
-        entry = session.query(RssEntry).filter_by(id=entry_id).first()
+    with Session() as session:
+        try:
+            entry = session.query(RssEntry).filter_by(id=entry_id).first()
 
-        entry.content = article["content"]
-        if not entry.published and "published" in article:
-            entry.published = parser.parse(article["published"])
-        if not entry.author and "author" in article:
-            entry.author = article["author"]
+            entry.content = article["content"]
+            if not entry.published and "published" in article:
+                entry.published = parser.parse(article["published"])
+            if not entry.author and "author" in article:
+                entry.author = article["author"]
 
-        session.commit()
-        session.close()
-    except Exception as e:
-        session.rollback()
-        session.close()
-        print(f"Error updating entry: {e}")
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Entry update failed: entry id={entry_id} — {e}")
 
 
 def get_remote_content(url, entry_id):
@@ -369,112 +367,100 @@ def get_remote_content(url, entry_id):
 
         return article
     except Exception as e:
-        print(f"Error fetching remote content: {e}")
+        logger.error(f"Remote content fetch failed: {url} — {e}")
         return None
 
 
 def get_feed_entries_by_feed_id(feed_id, page=1, entries_per_page=10, max_retries=3, feed_ids=None):
     for attempt in range(max_retries):
-        session = Session()
-        try:
-            query = session.query(RssEntry).options(joinedload(RssEntry.feed))
+        with Session() as session:
+            try:
+                query = session.query(RssEntry).options(joinedload(RssEntry.feed))
 
-            if feed_ids:
-                query = (
-                    query.filter(RssEntry.feed_id.in_(feed_ids))
-                    .order_by(desc(RssEntry.published))
-                    .limit(entries_per_page)
-                    .offset((page - 1) * entries_per_page)
-                )
-            elif feed_id == "all":
-                query = (
-                    query.order_by(desc(RssEntry.published))
-                    .limit(entries_per_page)
-                    .offset((page - 1) * entries_per_page)
-                )
-            else:
-                query = (
-                    query.filter_by(feed_id=feed_id)
-                    .order_by(desc(RssEntry.published))
-                    .limit(entries_per_page)
-                    .offset((page - 1) * entries_per_page)
-                )
+                if feed_ids:
+                    query = (
+                        query.filter(RssEntry.feed_id.in_(feed_ids))
+                        .order_by(desc(RssEntry.published))
+                        .limit(entries_per_page)
+                        .offset((page - 1) * entries_per_page)
+                    )
+                elif feed_id == "all":
+                    query = (
+                        query.order_by(desc(RssEntry.published))
+                        .limit(entries_per_page)
+                        .offset((page - 1) * entries_per_page)
+                    )
+                else:
+                    query = (
+                        query.filter_by(feed_id=feed_id)
+                        .order_by(desc(RssEntry.published))
+                        .limit(entries_per_page)
+                        .offset((page - 1) * entries_per_page)
+                    )
 
-            entries = query.all()
+                entries = query.all()
 
-            for entry in entries:
-                session.expunge(entry)
+                for entry in entries:
+                    session.expunge(entry)
 
-            session.close()
-            return entries
-        except Exception as e:
-            session.close()
-            if "database is locked" in str(e).lower() and attempt < max_retries - 1:
-                wait_time = (attempt + 1) * 0.5 + random.uniform(0, 0.2)
-                time.sleep(wait_time)
-                continue
-            else:
-                print(f"Error getting entries for feed {feed_id}: {e}")
-                return []
+                return entries
+            except Exception as e:
+                if "database is locked" in str(e).lower() and attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 0.5 + random.uniform(0, 0.2)
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    logger.error(f"Entries query failed: feed id={feed_id} — {e}")
+                    return []
     return []
 
 
 def mark_entry_as_read(entry_id, read_status=True, max_retries=3):
     for attempt in range(max_retries):
-        session = Session()
-        try:
-            entry = session.query(RssEntry).filter_by(id=entry_id).first()
+        with Session() as session:
+            try:
+                entry = session.query(RssEntry).filter_by(id=entry_id).first()
 
-            if entry:
-                entry.read = read_status
-                session.commit()
-                session.close()
-                print(
-                    f"RSS Entry with ID {entry_id} marked as {'read' if read_status else 'unread'}."
-                )
-                return
-            else:
-                session.close()
-                print(f"RSS Entry with ID {entry_id} not found.")
-                return
-        except Exception as e:
-            session.rollback()
-            session.close()
-            if "database is locked" in str(e).lower() and attempt < max_retries - 1:
-                wait_time = (attempt + 1) * 0.5 + random.uniform(0, 0.2)
-                time.sleep(wait_time)
-                continue
-            else:
-                print(f"Error marking entry {entry_id} as read: {e}")
-                return
+                if entry:
+                    entry.read = read_status
+                    session.commit()
+                    logger.debug(f"Entry marked as {'read' if read_status else 'unread'}: entry id={entry_id}")
+                    return
+                else:
+                    logger.warning(f"Mark-read skipped — entry id={entry_id} not found")
+                    return
+            except Exception as e:
+                session.rollback()
+                if "database is locked" in str(e).lower() and attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 0.5 + random.uniform(0, 0.2)
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    logger.error(f"Mark-read failed: entry id={entry_id} — {e}")
+                    return
 
 
 def mark_feed_entries_as_read(feed_id, read_status=True, max_retries=3):
     for attempt in range(max_retries):
-        session = Session()
-        try:
-            if feed_id == "all":
-                rss_entries = session.query(RssEntry).all()
-            else:
-                rss_entries = session.query(RssEntry).filter_by(feed_id=feed_id).all()
+        with Session() as session:
+            try:
+                if feed_id == "all":
+                    rss_entries = session.query(RssEntry).all()
+                else:
+                    rss_entries = session.query(RssEntry).filter_by(feed_id=feed_id).all()
 
-            for entry in rss_entries:
-                entry.read = read_status
+                for entry in rss_entries:
+                    entry.read = read_status
 
-            session.commit()
-            session.close()
-
-            print(
-                f"All RSS entries for feed ID {feed_id} marked as {'read' if read_status else 'unread'}."
-            )
-            return
-        except Exception as e:
-            session.rollback()
-            session.close()
-            if "database is locked" in str(e).lower() and attempt < max_retries - 1:
-                wait_time = (attempt + 1) * 0.5 + random.uniform(0, 0.2)
-                time.sleep(wait_time)
-                continue
-            else:
-                print(f"Error marking feed {feed_id} entries as read: {e}")
+                session.commit()
+                logger.info(f"All entries marked as {'read' if read_status else 'unread'}: feed id={feed_id}")
                 return
+            except Exception as e:
+                session.rollback()
+                if "database is locked" in str(e).lower() and attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 0.5 + random.uniform(0, 0.2)
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    logger.error(f"Mark-all-read failed: feed id={feed_id} — {e}")
+                    return

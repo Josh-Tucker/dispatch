@@ -14,25 +14,25 @@ class TestTemplateFilters:
         with app.app_context():
             # Test 5 minutes ago
             test_time = datetime.now() - timedelta(minutes=5)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '5 min' in result
             assert 'ago' in result
             
             # Test 1 minute ago (singular)
             test_time = datetime.now() - timedelta(minutes=1)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '1 min ago' in result
             
             # Test 0 minutes ago
             test_time = datetime.now()
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '0 min' in result
     
     def test_entry_timedelta_filter_30_to_59_minutes(self, app):
         """Test the entry_timedelta filter for 30-59 minutes."""
         with app.app_context():
             test_time = datetime.now() - timedelta(minutes=45)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             # Should return "0 hours ago" for times less than 1 hour but >= 30 minutes
             assert '0 hours ago' in result
     
@@ -41,17 +41,17 @@ class TestTemplateFilters:
         with app.app_context():
             # Test 2 hours ago
             test_time = datetime.now() - timedelta(hours=2)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '2 hours ago' in result
             
             # Test 1 hour ago (singular)
             test_time = datetime.now() - timedelta(hours=1)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '1 hour ago' in result
             
             # Test 23 hours ago
             test_time = datetime.now() - timedelta(hours=23)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '23 hours ago' in result
     
     def test_entry_timedelta_filter_days(self, app):
@@ -59,17 +59,17 @@ class TestTemplateFilters:
         with app.app_context():
             # Test 3 days ago
             test_time = datetime.now() - timedelta(days=3)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '3 days ago' in result
             
             # Test 1 day ago (singular)
             test_time = datetime.now() - timedelta(days=1)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '1 day ago' in result
             
             # Test 29 days ago
             test_time = datetime.now() - timedelta(days=29)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '29 days ago' in result
     
     def test_entry_timedelta_filter_months(self, app):
@@ -77,17 +77,17 @@ class TestTemplateFilters:
         with app.app_context():
             # Test 2 months ago (60 days)
             test_time = datetime.now() - timedelta(days=60)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '2 months ago' in result
             
             # Test 1 month ago (30 days)
             test_time = datetime.now() - timedelta(days=30)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '1 month ago' in result
             
             # Test 11 months ago
             test_time = datetime.now() - timedelta(days=330)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '11 months ago' in result
     
     def test_entry_timedelta_filter_years(self, app):
@@ -95,17 +95,17 @@ class TestTemplateFilters:
         with app.app_context():
             # Test 1 year ago
             test_time = datetime.now() - timedelta(days=365)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '1 year ago' in result
             
             # Test 2 years ago
             test_time = datetime.now() - timedelta(days=730)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '2 years ago' in result
             
             # Test 5 years ago
             test_time = datetime.now() - timedelta(days=1825)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '5 years ago' in result
     
     def test_entry_timedelta_filter_edge_cases(self, app):
@@ -113,27 +113,27 @@ class TestTemplateFilters:
         with app.app_context():
             # Test exactly 30 minutes
             test_time = datetime.now() - timedelta(minutes=30)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert 'ago' in result
             
             # Test exactly 1 hour
             test_time = datetime.now() - timedelta(hours=1)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '1 hour ago' in result
             
             # Test exactly 24 hours
             test_time = datetime.now() - timedelta(hours=24)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '1 day ago' in result
             
             # Test exactly 30 days
             test_time = datetime.now() - timedelta(days=30)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '1 month ago' in result
             
             # Test exactly 365 days
             test_time = datetime.now() - timedelta(days=365)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '1 year ago' in result
     
     def test_entry_timedelta_filter_future_time(self, app):
@@ -141,7 +141,7 @@ class TestTemplateFilters:
         with app.app_context():
             # Test future time (should handle gracefully)
             test_time = datetime.now() + timedelta(hours=1)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             # The filter should handle this without crashing
             assert isinstance(result, str)
     
@@ -159,7 +159,7 @@ class TestTemplateFilters:
             
             for delta, unit in test_cases_singular:
                 test_time = datetime.now() - delta
-                result = app.jinja_env.filters['entry_timedetla'](test_time)
+                result = app.jinja_env.filters['entry_timedelta'](test_time)
                 # Should not have 's' for singular
                 if 'min' in result:
                     # Minutes case is handled differently
@@ -178,7 +178,7 @@ class TestTemplateFilters:
             
             for delta, unit in test_cases_plural:
                 test_time = datetime.now() - delta
-                result = app.jinja_env.filters['entry_timedetla'](test_time)
+                result = app.jinja_env.filters['entry_timedelta'](test_time)
                 if 'min' in unit:
                     assert 'mins ago' in result or 'min ago' in result
                 else:
@@ -189,22 +189,22 @@ class TestTemplateFilters:
         with app.app_context():
             # Test 90 minutes (should be 1 hour)
             test_time = datetime.now() - timedelta(minutes=90)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '1 hour ago' in result
             
             # Test 25 hours (should be 1 day)
             test_time = datetime.now() - timedelta(hours=25)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '1 day ago' in result
             
             # Test 32 days (should be 1 month)
             test_time = datetime.now() - timedelta(days=32)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '1 month ago' in result
             
             # Test 400 days (should be 1 year)
             test_time = datetime.now() - timedelta(days=400)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '1 year ago' in result
 
 
@@ -229,7 +229,7 @@ class TestAppConfiguration:
     
     def test_template_filter_registration(self, app):
         """Test that custom template filters are registered."""
-        assert 'entry_timedetla' in app.jinja_env.filters
+        assert 'entry_timedelta' in app.jinja_env.filters
     
     def test_app_routes_registration(self, app):
         """Test that all expected routes are registered."""
@@ -336,7 +336,7 @@ class TestAppStartup:
     def test_imports_successful(self, app):
         """Test that all necessary imports are successful."""
         # Test that views functions are importable
-        from views import get_theme, get_all_feeds
+        from services import get_theme, get_all_feeds
         assert callable(get_theme)
         assert callable(get_all_feeds)
         
@@ -356,7 +356,7 @@ class TestAppErrorHandling:
         with app.app_context():
             # Test with None input
             try:
-                result = app.jinja_env.filters['entry_timedetla'](None)
+                result = app.jinja_env.filters['entry_timedelta'](None)
                 # Should either handle gracefully or raise a reasonable error
                 assert isinstance(result, str) or result is None
             except (TypeError, AttributeError):
@@ -373,5 +373,5 @@ class TestAppErrorHandling:
         with app.app_context():
             # Test with a known past time
             test_time = datetime(2023, 1, 1, 11, 0, 0)  # 1 hour ago
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '1 hour ago' in result

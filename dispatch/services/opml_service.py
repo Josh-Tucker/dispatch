@@ -1,3 +1,4 @@
+import logging
 import os
 import tempfile
 import xml.etree.ElementTree as ET
@@ -6,6 +7,8 @@ from datetime import datetime
 import opml
 
 from .feed_service import add_feed
+
+logger = logging.getLogger(__name__)
 
 
 def add_feeds_from_opml(opml_file):
@@ -52,7 +55,7 @@ def add_feeds_from_opml(opml_file):
                 os.unlink(temp_file_path)
             except OSError:
                 pass
-            print(f"Error parsing OPML file: {e}")
+            logger.error(f"OPML parse failed — {e}")
             return 0, 0, [f"Error parsing OPML file: {e}"]
         finally:
             try:
@@ -64,7 +67,7 @@ def add_feeds_from_opml(opml_file):
             outline = opml.parse(opml_file)
             feed_urls = extract_feeds_recursively(outline)
         except Exception as e:
-            print(f"Error parsing OPML file: {e}")
+            logger.error(f"OPML parse failed — {e}")
             return 0, 0, [f"Error parsing OPML file: {e}"]
 
     success_count = 0
@@ -74,14 +77,14 @@ def add_feeds_from_opml(opml_file):
         try:
             add_feed(feed_url)
             success_count += 1
-            print(f"Successfully added feed: {feed_url}")
+            logger.debug(f"Feed added from OPML: {feed_url}")
         except Exception as e:
             error_msg = f"Error adding feed {feed_url}: {e}"
-            print(error_msg)
+            logger.warning(f"Feed skipped during OPML import: {feed_url} — {e}")
             error_messages.append(error_msg)
 
     total_count = len(feed_urls)
-    print(f"OPML import complete: {success_count}/{total_count} feeds added successfully")
+    logger.info(f"OPML import completed: {success_count}/{total_count} feeds added")
 
     return success_count, total_count, error_messages
 
@@ -95,8 +98,7 @@ def export_feeds_to_opml():
     """
     from models import RssFeed, Session
 
-    session = Session()
-    try:
+    with Session() as session:
         feeds = session.query(RssFeed).all()
 
         opml_root = ET.Element("opml", version="1.0")
@@ -123,6 +125,3 @@ def export_feeds_to_opml():
 
         ET.indent(opml_root, space="  ", level=0)
         return ET.tostring(opml_root, encoding="unicode", xml_declaration=True)
-
-    finally:
-        session.close()

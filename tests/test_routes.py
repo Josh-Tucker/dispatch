@@ -369,35 +369,35 @@ class TestTemplateFilters:
         """Test the entry_timedelta filter for minutes."""
         with app.app_context():
             test_time = datetime.now() - timedelta(minutes=5)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '5 mins ago' in result or '5 min ago' in result
     
     def test_entry_timedelta_filter_hours(self, app):
         """Test the entry_timedelta filter for hours."""
         with app.app_context():
             test_time = datetime.now() - timedelta(hours=2)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '2 hours ago' in result or '2 hour ago' in result
     
     def test_entry_timedelta_filter_days(self, app):
         """Test the entry_timedelta filter for days."""
         with app.app_context():
             test_time = datetime.now() - timedelta(days=3)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert '3 days ago' in result or '3 day ago' in result
     
     def test_entry_timedelta_filter_months(self, app):
         """Test the entry_timedelta filter for months."""
         with app.app_context():
             test_time = datetime.now() - timedelta(days=60)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert 'month' in result
     
     def test_entry_timedelta_filter_years(self, app):
         """Test the entry_timedelta filter for years."""
         with app.app_context():
             test_time = datetime.now() - timedelta(days=400)
-            result = app.jinja_env.filters['entry_timedetla'](test_time)
+            result = app.jinja_env.filters['entry_timedelta'](test_time)
             assert 'year' in result
 
 

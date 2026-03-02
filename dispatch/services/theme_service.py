@@ -1,4 +1,8 @@
+import logging
+
 from models import Session, Settings
+
+logger = logging.getLogger(__name__)
 
 
 def get_theme(theme_name):
@@ -14,15 +18,12 @@ def get_theme(theme_name):
     available_themes = get_available_themes()
 
     if theme_name == "default":
-        session = Session()
-        try:
+        with Session() as session:
             default_theme_name = Settings.get_setting(session, "theme")
             if default_theme_name and default_theme_name in available_themes:
                 theme_name = default_theme_name
             else:
                 theme_name = "light"
-        finally:
-            session.close()
 
     # Validate theme name
     if theme_name not in available_themes:
@@ -42,21 +43,19 @@ def set_default_theme(theme_name):
 
     # Validate theme name
     if theme_name not in available_themes:
-        print(f"Invalid theme name: {theme_name}")
+        logger.warning(f"Theme update skipped — unknown theme: {theme_name}")
         return False
 
-    session = Session()
-    try:
-        Settings.set_setting(session, "theme", theme_name)
-        session.commit()
-        print(f"Default theme set to: {theme_name}")
-        return True
-    except Exception as e:
-        session.rollback()
-        print(f"Error setting default theme: {e}")
-        return False
-    finally:
-        session.close()
+    with Session() as session:
+        try:
+            Settings.set_setting(session, "theme", theme_name)
+            session.commit()
+            logger.info(f"Default theme updated: {theme_name}")
+            return True
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Default theme update failed — {e}")
+            return False
 
 
 def get_default_theme():
@@ -66,14 +65,11 @@ def get_default_theme():
     Returns:
         str: Default theme name
     """
-    session = Session()
-    try:
+    with Session() as session:
         theme_name = Settings.get_setting(session, "theme")
         if not theme_name or theme_name not in get_available_themes():
             theme_name = "light"
         return theme_name
-    finally:
-        session.close()
 
 
 def get_available_themes():

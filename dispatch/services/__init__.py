@@ -13,7 +13,7 @@ This package contains service modules that handle different aspects of the appli
 from .content_service import (
     article_date_format,
     article_long_date_format,
-    entry_timedetla,
+    entry_timedelta,
     extract_plain_text,
     format_content_preview,
     sanitize_html_content,
@@ -93,7 +93,7 @@ __all__ = [
     # Content service
     'article_date_format',
     'article_long_date_format',
-    'entry_timedetla',
+    'entry_timedelta',
     'sanitize_html_content',
     'extract_plain_text',
     'truncate_content',

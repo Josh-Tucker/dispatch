@@ -9,7 +9,7 @@ import feedparser
 from io import BytesIO
 
 from models import RssFeed, RssEntry, Settings
-from views import (
+from services import (
     add_feed, remove_feed, add_rss_entries, add_rss_entries_for_feed,
     add_rss_entries_for_all_feeds, get_all_feeds, get_feed_by_id,
     get_feed_entry_by_id, get_feed_entries_by_feed_id, mark_entry_as_read,

@@ -14,7 +14,7 @@ class TestOPMLOperations:
     
     def test_opml_parsing_valid_file(self, mock_opml_content):
         """Test parsing a valid OPML file."""
-        from views import add_feeds_from_opml
+        from services import add_feeds_from_opml
         
         mock_file = MagicMock()
         mock_file.read.return_value = mock_opml_content.encode('utf-8')
@@ -46,7 +46,7 @@ class TestOPMLOperations:
             </body>
         </opml>'''
         
-        from views import add_feeds_from_opml
+        from services import add_feeds_from_opml
         
         mock_file = MagicMock()
         mock_file.read.return_value = nested_opml.encode('utf-8')
@@ -80,7 +80,7 @@ class TestOPMLOperations:
             </body>
         </opml>'''
         
-        from views import add_feeds_from_opml
+        from services import add_feeds_from_opml
         
         mock_file = MagicMock()
         mock_file.read.return_value = malformed_opml.encode('utf-8')
@@ -103,7 +103,7 @@ class TestOPMLOperations:
             </body>
         </opml>'''
         
-        from views import add_feeds_from_opml
+        from services import add_feeds_from_opml
         
         mock_file = MagicMock()
         mock_file.read.return_value = empty_opml.encode('utf-8')
@@ -128,7 +128,7 @@ class TestOPMLOperations:
             </body>
         </opml>'''
         
-        from views import add_feeds_from_opml
+        from services import add_feeds_from_opml
         
         mock_file = MagicMock()
         mock_file.read.return_value = missing_url_opml.encode('utf-8')
@@ -156,7 +156,7 @@ class TestOPMLOperations:
             </body>
         </opml>'''
         
-        from views import add_feeds_from_opml
+        from services import add_feeds_from_opml
         
         mock_file = MagicMock()
         mock_file.read.return_value = special_char_opml.encode('utf-8')
@@ -191,7 +191,7 @@ class TestOPMLOperations:
         large_opml_parts.extend(['</body>', '</opml>'])
         large_opml = '\n'.join(large_opml_parts)
         
-        from views import add_feeds_from_opml
+        from services import add_feeds_from_opml
         
         mock_file = MagicMock()
         mock_file.read.return_value = large_opml.encode('utf-8')
@@ -207,7 +207,7 @@ class TestOPMLOperations:
         # Test UTF-8 with BOM
         utf8_bom_opml = '\ufeff<?xml version="1.0" encoding="UTF-8"?><opml version="1.0"><head><title>UTF-8 BOM</title></head><body><outline text="Test" xmlUrl="https://test.com/feed.xml" /></body></opml>'
         
-        from views import add_feeds_from_opml
+        from services import add_feeds_from_opml
         
         mock_file = MagicMock()
         mock_file.read.return_value = utf8_bom_opml.encode('utf-8-sig')
@@ -225,7 +225,7 @@ class TestConfigurationManagement:
     def test_theme_configuration_defaults(self, test_session):
         """Test default theme configuration."""
         with patch('services.theme_service.Session', return_value=test_session):
-            from views import get_theme
+            from services import get_theme
             
             # Test default theme
             default_theme = get_theme('default')
@@ -247,7 +247,7 @@ class TestConfigurationManagement:
         test_session.commit()
         
         with patch('services.theme_service.Session', return_value=test_session):
-            from views import get_theme
+            from services import get_theme
             
             # Should return dark theme when 'default' is requested
             theme = get_theme('default')
@@ -256,7 +256,7 @@ class TestConfigurationManagement:
     def test_setting_persistence(self, test_session):
         """Test that settings persist correctly."""
         with patch('services.theme_service.Session', return_value=test_session):
-            from views import set_default_theme
+            from services import set_default_theme
             
             # Set a theme setting
             set_default_theme('dark')
@@ -295,7 +295,7 @@ class TestConfigurationManagement:
     
     def test_pagination_configuration(self):
         """Test pagination settings."""
-        from views import get_feed_entries_by_feed_id
+        from services import get_feed_entries_by_feed_id
         
         # Test default pagination (should be reasonable)
         # This is tested indirectly through the function behavior
@@ -317,7 +317,7 @@ class TestConfigurationManagement:
     
     def test_date_format_configuration(self):
         """Test date formatting configuration."""
-        from views import article_date_format, article_long_date_format
+        from services import article_date_format, article_long_date_format
         
         test_date_str = "2023-12-25T14:30:00"
         
