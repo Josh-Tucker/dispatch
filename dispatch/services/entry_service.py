@@ -18,6 +18,8 @@ from sqlalchemy.orm import joinedload
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session as SessionType
 
+CIRCUIT_BREAKER_THRESHOLD = 5
+
 
 def _build_cache_headers(feed: RssFeed) -> dict[str, str]:
     """Build HTTP caching headers for feed request."""
@@ -73,12 +75,20 @@ def _update_feed_cache_info(feed: RssFeed, response: requests.Response) -> None:
         feed.content_length = current_content_length
 
 
+def _update_feed_url_if_redirected(feed: RssFeed, response: requests.Response) -> None:
+    """If the feed permanently redirected, update the stored URL to the final URL."""
+    if response.url and response.url != feed.url and response.history:
+        first_status = response.history[0].status_code
+        if first_status == 301:
+            print(
+                f"Feed {feed.title} permanently moved: {feed.url} -> {response.url}"
+            )
+            feed.url = response.url
+
+
 def _fetch_feed_with_caching(feed: RssFeed) -> tuple[bool, str, dict | None]:
     """
     Fetch RSS feed content with HTTP caching support.
-
-    Args:
-        feed: The RssFeed object to fetch
 
     Returns:
         tuple: (success, message, parsed_feed_data)
@@ -86,7 +96,6 @@ def _fetch_feed_with_caching(feed: RssFeed) -> tuple[bool, str, dict | None]:
     try:
         headers = _build_cache_headers(feed)
 
-        # Try HEAD request first for caching
         try:
             head_response = requests.head(feed.url or "", headers=headers, timeout=15)
             cache_result = _check_head_response_cache(head_response, feed)
@@ -95,7 +104,6 @@ def _fetch_feed_with_caching(feed: RssFeed) -> tuple[bool, str, dict | None]:
         except requests.exceptions.RequestException:
             pass
 
-        # Fetch full content
         try:
             response = requests.get(feed.url or "", headers=headers, timeout=15)
 
@@ -108,6 +116,7 @@ def _fetch_feed_with_caching(feed: RssFeed) -> tuple[bool, str, dict | None]:
                 return False, f"HTTP error {response.status_code}", None
 
             _update_feed_cache_info(feed, response)
+            _update_feed_url_if_redirected(feed, response)
             parsed_feed = feedparser.parse(response.content)
 
         except requests.exceptions.RequestException as req_error:
@@ -126,24 +135,45 @@ def _fetch_feed_with_caching(feed: RssFeed) -> tuple[bool, str, dict | None]:
         return False, f"Parse error: {parse_error}", None
 
 
-def _process_feed_entry(entry_data, feed_id: int, session: "SessionType") -> bool:
+def _process_feed_entry(entry_data: Any, feed_id: int, session: "SessionType") -> bool:
     """
     Process a single feed entry and add it to the database if it's new.
 
-    Args:
-        entry_data: Entry object from feedparser with attributes like title, link, etc.
-        feed_id: ID of the feed this entry belongs to
-        session: Database session to use
+    Deduplication checks GUID first (stable RSS/Atom identifier), then falls
+    back to link. Entries missing both are skipped.
 
     Returns:
         bool: True if entry was added, False if skipped (already exists or error)
     """
     try:
-        existing_entry = (
-            session.query(RssEntry)
-            .filter_by(feed_id=feed_id, link=entry_data.link)
-            .first()
-        )
+        guid = ""
+        if hasattr(entry_data, "guid"):
+            guid = entry_data.guid
+        elif hasattr(entry_data, "id"):
+            guid = entry_data.id
+
+        link = getattr(entry_data, "link", None) or ""
+
+        if not guid and not link:
+            print(
+                f"Skipping entry with no guid or link: "
+                f"{getattr(entry_data, 'title', 'Unknown')}"
+            )
+            return False
+
+        # Prefer GUID for deduplication; fall back to link
+        if guid:
+            existing_entry = (
+                session.query(RssEntry)
+                .filter_by(feed_id=feed_id, guid=guid)
+                .first()
+            )
+        else:
+            existing_entry = (
+                session.query(RssEntry)
+                .filter_by(feed_id=feed_id, link=link)
+                .first()
+            )
 
         if existing_entry:
             return False
@@ -182,21 +212,15 @@ def _process_feed_entry(entry_data, feed_id: int, session: "SessionType") -> boo
         if hasattr(entry_data, "author"):
             author = entry_data.author
 
-        guid = ""
-        if hasattr(entry_data, "guid"):
-            guid = entry_data.guid
-        elif hasattr(entry_data, "id"):
-            guid = entry_data.id
-
         rss_entry = RssEntry(
             feed_id=feed_id,
-            title=entry_data.title,
-            link=entry_data.link,
+            title=getattr(entry_data, "title", None),
+            link=link or None,
             description=description,
             content=content,
             published=published_date,
             author=author,
-            guid=guid,
+            guid=guid or None,
         )
 
         session.add(rss_entry)
@@ -210,14 +234,26 @@ def _process_feed_entry(entry_data, feed_id: int, session: "SessionType") -> boo
         return False
 
 
+def _record_fetch_success(feed: RssFeed, session: "SessionType") -> None:
+    """Reset error counters and record a successful fetch timestamp."""
+    now = datetime.utcnow()
+    feed.last_fetch_at = now
+    feed.last_success_at = now
+    feed.consecutive_errors = 0
+    feed.last_error = None
+
+
+def _record_fetch_failure(feed: RssFeed, message: str, session: "SessionType") -> None:
+    """Increment error counter and store the error message."""
+    feed.last_fetch_at = datetime.utcnow()
+    feed.consecutive_errors = (feed.consecutive_errors or 0) + 1
+    feed.last_error = message
+
+
 def add_rss_entries_for_feed(feed_id: int, max_retries: int = 3) -> tuple[bool, str]:
     """
     Adds RSS entries from a specific feed to the database.
     Attempts to process feeds even if parsing exceptions occur.
-
-    Args:
-        feed_id: The ID of the RSS feed to process
-        max_retries: Maximum number of retry attempts for database operations
 
     Returns:
         tuple: (success_flag, message)
@@ -230,12 +266,26 @@ def add_rss_entries_for_feed(feed_id: int, max_retries: int = 3) -> tuple[bool, 
                 session.close()
                 return False, f"Feed with ID {feed_id} not found"
 
+            if feed.is_muted:
+                session.close()
+                return True, "Feed is muted — skipping"
+
             print(f"Processing feed: {feed.title}")
 
             success, message, parsed_feed = _fetch_feed_with_caching(feed)
-            if not success or parsed_feed is None:
+
+            if not success:
+                _record_fetch_failure(feed, message, session)
+                session.commit()
                 session.close()
-                return success, message
+                return False, message
+
+            if parsed_feed is None:
+                # 304 / cache hit — counts as success
+                _record_fetch_success(feed, session)
+                session.commit()
+                session.close()
+                return True, message
 
             entries_added = 0
             entries = getattr(parsed_feed, "entries", [])
@@ -243,6 +293,7 @@ def add_rss_entries_for_feed(feed_id: int, max_retries: int = 3) -> tuple[bool, 
                 if _process_feed_entry(entry, feed_id, session):
                     entries_added += 1
 
+            _record_fetch_success(feed, session)
             session.commit()
             print(f"Added {entries_added} new entries for feed: {feed.title}")
 
@@ -269,27 +320,14 @@ def add_rss_entries_for_feed(feed_id: int, max_retries: int = 3) -> tuple[bool, 
 
 
 def add_rss_entries(feed_id: int, max_retries: int = 3) -> tuple[bool, str]:
-    """
-    Fetches and adds RSS entries for a specific feed to the database.
-    This is an alias for add_rss_entries_for_feed for backward compatibility.
-
-    Args:
-        feed_id: The ID of the RSS feed to process
-        max_retries: Maximum number of retry attempts for database operations
-
-    Returns:
-        tuple: (success_flag, message)
-    """
+    """Alias for add_rss_entries_for_feed for backward compatibility."""
     return add_rss_entries_for_feed(feed_id, max_retries)
 
 
 def add_rss_entries_for_all_feeds(max_workers: int = 3) -> list[dict[str, Any]]:
     """
     Process all RSS feeds in parallel, adding new entries to the database.
-
-    Args:
-        max_workers: Maximum number of worker threads to use for parallel processing
-                    (reduced for SQLite)
+    Feeds that are muted or have hit the circuit-breaker threshold are skipped.
 
     Returns:
         list: Results of processing each feed (success/failure status and messages)
@@ -301,20 +339,34 @@ def add_rss_entries_for_all_feeds(max_workers: int = 3) -> list[dict[str, Any]]:
     session = Session()
     feeds = session.query(RssFeed).all()
     feed_ids = [feed.id for feed in feeds]
+    muted_or_broken = {
+        feed.id
+        for feed in feeds
+        if feed.is_muted
+        or (feed.consecutive_errors or 0) >= CIRCUIT_BREAKER_THRESHOLD
+    }
     session.close()
 
     if not feed_ids:
         print("No feeds found to process")
         return []
 
-    print(f"Processing {len(feed_ids)} feeds with {max_workers} workers")
+    active_ids = [fid for fid in feed_ids if fid not in muted_or_broken]
+    skipped_count = len(feed_ids) - len(active_ids)
+    if skipped_count:
+        print(
+            f"Skipping {skipped_count} muted/broken feed(s) "
+            f"(circuit breaker threshold: {CIRCUIT_BREAKER_THRESHOLD})"
+        )
+    print(f"Processing {len(active_ids)} feeds with {max_workers} workers")
 
     results = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         process_func = partial(add_rss_entries_for_feed)
 
         future_to_feed_id = {
-            executor.submit(process_func, feed_id): feed_id for feed_id in feed_ids
+            executor.submit(process_func, feed_id): feed_id
+            for feed_id in active_ids
         }
 
         for future in concurrent.futures.as_completed(future_to_feed_id):
@@ -334,6 +386,12 @@ def add_rss_entries_for_all_feeds(max_workers: int = 3) -> list[dict[str, Any]]:
                         "message": f"Exception: {exc}",
                     }
                 )
+
+    # Add skipped entries to results
+    for feed_id in muted_or_broken:
+        results.append(
+            {"feed_id": feed_id, "success": True, "message": "Skipped (muted/broken)"}
+        )
 
     successful_feeds = sum(1 for result in results if result["success"])
     print(f"Completed processing {len(feed_ids)} feeds. {successful_feeds} successful.")

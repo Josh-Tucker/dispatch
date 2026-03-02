@@ -45,6 +45,11 @@ class RssFeed(Base):
     etag: Mapped[str | None] = mapped_column(String)
     last_modified: Mapped[str | None] = mapped_column(String)
     content_length: Mapped[int | None] = mapped_column(Integer)
+    last_fetch_at: Mapped[datetime.datetime | None] = mapped_column(DateTime)
+    last_success_at: Mapped[datetime.datetime | None] = mapped_column(DateTime)
+    consecutive_errors: Mapped[int] = mapped_column(Integer, default=0)
+    last_error: Mapped[str | None] = mapped_column(Text)
+    is_muted: Mapped[bool] = mapped_column(Boolean, default=False)
 
     entries = relationship("RssEntry", back_populates="feed")
 

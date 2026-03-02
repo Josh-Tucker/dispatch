@@ -8,6 +8,15 @@ from bs4 import BeautifulSoup
 from models import RssEntry, RssFeed, Session, Settings
 from sqlalchemy import desc, func
 
+_FEED_CONTENT_TYPES = {
+    "application/rss+xml",
+    "application/atom+xml",
+    "application/xml",
+    "application/rss",
+    "text/xml",
+}
+_CANDIDATE_PATHS = ["/feed", "/rss", "/feed.xml", "/rss.xml", "/atom.xml", "/blog/feed"]
+
 
 def get_favicon_url(feed_url: str) -> str | None:
     if "http" not in feed_url:
@@ -630,6 +639,87 @@ def get_feeds_by_tag(tag: str) -> list[RssFeed]:
                     feed.frequency_data = get_feed_frequency_data(feed.id)
                     matching_feeds.append(feed)
         return matching_feeds
+    finally:
+        session.close()
+
+
+def discover_feed_urls(page_url: str) -> list[str]:
+    """
+    Discover RSS/Atom feed URLs from a webpage or direct feed URL.
+
+    Strategy (in order):
+    1. Try parsing the URL directly as a feed — return immediately if it has entries.
+    2. Fetch the page HTML and look for <link rel="alternate"> feed tags.
+    3. Probe common feed paths on the domain root.
+
+    Returns a deduplicated list of confirmed feed URLs, link-tag discoveries first.
+    """
+    if not page_url.startswith(("http://", "https://")):
+        page_url = "https://" + page_url
+
+    # 1. Try it directly as a feed URL
+    try:
+        parsed = feedparser.parse(page_url)
+        if parsed.entries:
+            return [page_url]
+    except Exception:
+        pass
+
+    discovered: list[str] = []
+    parsed_url = urlparse(page_url)
+    base = f"{parsed_url.scheme}://{parsed_url.netloc}"
+
+    # 2. Parse HTML for <link rel="alternate" type="application/...+xml">
+    try:
+        response = requests.get(page_url, timeout=10)
+        soup = BeautifulSoup(response.text, features="lxml")
+        for link_tag in soup.find_all("link", rel="alternate"):
+            link_type = link_tag.get("type", "")
+            href = link_tag.get("href", "")
+            if not href or not isinstance(href, str):
+                continue
+            if any(ft in link_type for ft in ("rss", "atom", "xml")):
+                if href.startswith("//"):
+                    href = f"{parsed_url.scheme}:{href}"
+                elif not href.startswith("http"):
+                    href = urljoin(base, href)
+                if href not in discovered:
+                    discovered.append(href)
+    except Exception:
+        pass
+
+    # 3. Probe common paths if nothing found via link tags
+    if not discovered:
+        for path in _CANDIDATE_PATHS:
+            candidate = f"{base}{path}"
+            try:
+                head = requests.head(candidate, timeout=5, allow_redirects=True)
+                content_type = head.headers.get("content-type", "").split(";")[0].strip()
+                if head.status_code < 400 and content_type in _FEED_CONTENT_TYPES:
+                    if candidate not in discovered:
+                        discovered.append(candidate)
+            except Exception:
+                continue
+
+    return discovered
+
+
+def toggle_feed_mute(feed_id: int) -> bool | None:
+    """Toggle the muted status of a feed. Returns new mute state or None on error."""
+    session = Session()
+    try:
+        feed = session.query(RssFeed).filter_by(id=feed_id).first()
+        if not feed:
+            print(f"Feed with ID {feed_id} not found.")
+            return None
+        feed.is_muted = not feed.is_muted
+        session.commit()
+        print(f"Feed '{feed.title}' {'muted' if feed.is_muted else 'unmuted'}")
+        return feed.is_muted
+    except Exception as e:
+        session.rollback()
+        print(f"Error toggling mute for feed {feed_id}: {e}")
+        return None
     finally:
         session.close()
 

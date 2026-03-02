@@ -47,6 +47,7 @@ from services.feed_service import (
     add_feed as add_feed_function,
 )
 from services.feed_service import (
+    discover_feed_urls,
     get_all_feeds,
     get_all_tags,
     get_feed_by_id,
@@ -55,6 +56,7 @@ from services.feed_service import (
     refresh_all_feed_favicons,
     remove_feed,
     set_feed_sort_preference,
+    toggle_feed_mute,
     toggle_feed_pin,
     update_feed_tags,
 )
