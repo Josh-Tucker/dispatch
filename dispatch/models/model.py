@@ -40,6 +40,8 @@ class RssFeed(Base):
     etag = Column(String)
     last_modified = Column(String)
     content_length = Column(Integer)
+    last_error = Column(Text)
+    last_error_date = Column(DateTime)
 
     entries = relationship("RssEntry", back_populates="feed")
 

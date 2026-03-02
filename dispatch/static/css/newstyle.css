@@ -1131,3 +1131,50 @@ a.menu-button,
 }
 
 /* ... rest of your CSS ... */
+
+/* Feed error icon (feed list) */
+.feed-error-icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--error-color);
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+/* Feed error banner (entries page) */
+.feed-error-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: var(--border-radius);
+    background-color: var(--error-bg);
+    color: var(--error-color);
+    border: var(--border-width) solid var(--error-color);
+    font-size: var(--font-size-small);
+}
+
+.feed-error-banner-icon {
+    flex-shrink: 0;
+    padding-top: 1px;
+}
+
+.feed-error-banner-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.feed-error-date {
+    opacity: 0.75;
+    margin-left: 0.5rem;
+}
+
+.feed-error-message {
+    font-family: monospace;
+    font-size: 0.85em;
+    word-break: break-all;
+    background: transparent;
+}

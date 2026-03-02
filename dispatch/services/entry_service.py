@@ -49,6 +49,9 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
 
                     if head_response.status_code == 304:
                         print(f"Feed {feed.title} not modified (304) - skipping")
+                        feed.last_error = None
+                        feed.last_error_date = None
+                        session.commit()
                         session.close()
                         return True, "Feed not modified"
 
@@ -59,6 +62,9 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                             head_content_length = int(head_response.headers['content-length'])
                             if head_content_length == feed.content_length:
                                 print(f"Feed {feed.title} content length unchanged ({head_content_length} bytes) - skipping")
+                                feed.last_error = None
+                                feed.last_error_date = None
+                                session.commit()
                                 session.close()
                                 return True, "Feed content length unchanged"
                         except (ValueError, TypeError):
@@ -72,13 +78,20 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
 
                     if response.status_code == 304:
                         print(f"Feed {feed.title} not modified (304) - skipping")
+                        feed.last_error = None
+                        feed.last_error_date = None
+                        session.commit()
                         session.close()
                         return True, "Feed not modified"
 
                     if response.status_code >= 400:
-                        print(f"HTTP error {response.status_code} for feed {feed.title}")
+                        msg = f"HTTP error {response.status_code}"
+                        print(f"{msg} for feed {feed.title}")
+                        feed.last_error = msg
+                        feed.last_error_date = datetime.now()
+                        session.commit()
                         session.close()
-                        return False, f"HTTP error {response.status_code}"
+                        return False, msg
 
                     if 'etag' in response.headers:
                         feed.etag = response.headers['etag']
@@ -101,14 +114,22 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                     parsed_feed = feedparser.parse(feed.url)
 
                 if hasattr(parsed_feed, 'status') and parsed_feed.status >= 400:
-                    print(f"HTTP error {parsed_feed.status} for feed {feed.title}")
+                    msg = f"HTTP error {parsed_feed.status}"
+                    print(f"{msg} for feed {feed.title}")
+                    feed.last_error = msg
+                    feed.last_error_date = datetime.now()
+                    session.commit()
                     session.close()
-                    return False, f"HTTP error {parsed_feed.status}"
+                    return False, msg
 
             except Exception as parse_error:
+                msg = f"Parse error: {parse_error}"
                 print(f"Parse error for feed {feed.title}: {parse_error}")
+                feed.last_error = msg
+                feed.last_error_date = datetime.now()
+                session.commit()
                 session.close()
-                return False, f"Parse error: {parse_error}"
+                return False, msg
 
             entries_added = 0
 
@@ -173,6 +194,8 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                     print(f"Error processing entry {getattr(entry, 'title', 'Unknown')}: {entry_error}")
                     continue
 
+            feed.last_error = None
+            feed.last_error_date = None
             session.commit()
             print(f"Added {entries_added} new entries for feed: {feed.title}")
 
@@ -190,6 +213,16 @@ def add_rss_entries_for_feed(feed_id, max_retries=3):
                 continue
             else:
                 print(f"Error processing feed {feed_id}: {e}")
+                try:
+                    err_session = Session()
+                    err_feed = err_session.query(RssFeed).filter_by(id=feed_id).first()
+                    if err_feed:
+                        err_feed.last_error = str(e)
+                        err_feed.last_error_date = datetime.now()
+                        err_session.commit()
+                    err_session.close()
+                except Exception:
+                    pass
                 return False, f"Error: {e}"
 
     return False, "Max retries exceeded"

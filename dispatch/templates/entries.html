@@ -1,12 +1,14 @@
 {% extends "base.html" %} {% block content %}
 <div class="page-header">
     <div class="entry-header-title">
+        {% if feed.id != 'all' and 'tag:' not in feed.id|string %}
         <img
             src="{{ url_for('serve_favicon', feed_id=feed.id) }}"
             alt=""
             class="feed-favicon"
             onerror="this.style.display='none';"
         />
+        {% endif %}
         <h1>
             {% if feed.favicon_data and 'tag:' not in feed.id|string %} {% endif
             %} {{ feed.title }}
@@ -40,6 +42,23 @@
         <div id="mark-read-result"></div>
     </div>
 </div>
+
+{% if feed.last_error %}
+<div class="feed-error-banner">
+    <div class="feed-error-banner-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+    </div>
+    <div class="feed-error-banner-body">
+        <strong>Last fetch failed</strong>
+        {% if feed.last_error_date %}<span class="feed-error-date">{{ feed.last_error_date|entry_timedetla }}</span>{% endif %}
+        <code class="feed-error-message">{{ feed.last_error }}</code>
+    </div>
+</div>
+{% endif %}
 
 {% for entry in entries %} {% if loop.last and next_page %} {# Last entry gets
 the HTMX trigger for infinite scroll #}
